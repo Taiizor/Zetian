@@ -32,6 +32,7 @@ namespace Zetian.Configuration
             Enable8BitMime = true;
             EnableBinaryMime = false;
             EnableChunking = false;
+            EnableSmtpUtf8 = true;
             EnableSizeExtension = true;
             RequireAuthentication = false;
             RequireSecureConnection = false;

@@ -331,10 +331,7 @@ namespace Zetian
         /// </summary>
         public SmtpServerBuilder WithSenderDomainWhitelist(params string[] domains)
         {
-            if (_configuration.MailboxFilter == null)
-            {
-                _configuration.MailboxFilter = new DomainMailboxFilter(true);
-            }
+            _configuration.MailboxFilter ??= new DomainMailboxFilter(true);
 
             if (_configuration.MailboxFilter is DomainMailboxFilter filter)
             {
@@ -349,10 +346,7 @@ namespace Zetian
         /// </summary>
         public SmtpServerBuilder WithSenderDomainBlacklist(params string[] domains)
         {
-            if (_configuration.MailboxFilter == null)
-            {
-                _configuration.MailboxFilter = new DomainMailboxFilter(true);
-            }
+            _configuration.MailboxFilter ??= new DomainMailboxFilter(true);
 
             if (_configuration.MailboxFilter is DomainMailboxFilter filter)
             {
@@ -367,10 +361,7 @@ namespace Zetian
         /// </summary>
         public SmtpServerBuilder WithRecipientDomainWhitelist(params string[] domains)
         {
-            if (_configuration.MailboxFilter == null)
-            {
-                _configuration.MailboxFilter = new DomainMailboxFilter(true);
-            }
+            _configuration.MailboxFilter ??= new DomainMailboxFilter(true);
 
             if (_configuration.MailboxFilter is DomainMailboxFilter filter)
             {
@@ -385,10 +376,7 @@ namespace Zetian
         /// </summary>
         public SmtpServerBuilder WithRecipientDomainBlacklist(params string[] domains)
         {
-            if (_configuration.MailboxFilter == null)
-            {
-                _configuration.MailboxFilter = new DomainMailboxFilter(true);
-            }
+            _configuration.MailboxFilter ??= new DomainMailboxFilter(true);
 
             if (_configuration.MailboxFilter is DomainMailboxFilter filter)
             {

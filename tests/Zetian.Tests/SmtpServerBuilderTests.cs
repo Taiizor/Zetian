@@ -382,5 +382,145 @@ namespace Zetian.Tests
             server.Configuration.EnablePipelining.Should().BeTrue();
             server.Configuration.Enable8BitMime.Should().BeTrue();
         }
+
+        [Fact]
+        public void EnableSmtpUtf8_ShouldSetCorrectly()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+
+            // Act
+            SmtpServer server = builder.EnableSmtpUtf8().Build();
+
+            // Assert
+            server.Configuration.EnableSmtpUtf8.Should().BeTrue();
+        }
+
+        [Fact]
+        public void WithFileMessageStore_ShouldCreateFileStore()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+            string directory = Path.Combine(Path.GetTempPath(), "test_store");
+
+            // Act
+            SmtpServer server = builder.WithFileMessageStore(directory, true).Build();
+
+            // Assert
+            server.Configuration.MessageStore.Should().NotBeNull();
+            server.Configuration.MessageStore.Should().BeOfType<Storage.FileMessageStore>();
+        }
+
+        [Fact]
+        public void MessageStore_ShouldSetCustomStore()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+            var customStore = Storage.NullMessageStore.Instance;
+
+            // Act
+            SmtpServer server = builder.MessageStore(customStore).Build();
+
+            // Assert
+            server.Configuration.MessageStore.Should().Be(customStore);
+        }
+
+        [Fact]
+        public void WithSenderDomainWhitelist_ShouldCreateFilter()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+
+            // Act
+            SmtpServer server = builder
+                .WithSenderDomainWhitelist("trusted.com", "example.com")
+                .Build();
+
+            // Assert
+            server.Configuration.MailboxFilter.Should().NotBeNull();
+            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+        }
+
+        [Fact]
+        public void WithSenderDomainBlacklist_ShouldCreateFilter()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+
+            // Act
+            SmtpServer server = builder
+                .WithSenderDomainBlacklist("spam.com", "junk.org")
+                .Build();
+
+            // Assert
+            server.Configuration.MailboxFilter.Should().NotBeNull();
+            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+        }
+
+        [Fact]
+        public void WithRecipientDomainWhitelist_ShouldCreateFilter()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+
+            // Act
+            SmtpServer server = builder
+                .WithRecipientDomainWhitelist("mydomain.com", "example.com")
+                .Build();
+
+            // Assert
+            server.Configuration.MailboxFilter.Should().NotBeNull();
+            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+        }
+
+        [Fact]
+        public void WithRecipientDomainBlacklist_ShouldCreateFilter()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+
+            // Act
+            SmtpServer server = builder
+                .WithRecipientDomainBlacklist("bad.com", "evil.org")
+                .Build();
+
+            // Assert
+            server.Configuration.MailboxFilter.Should().NotBeNull();
+            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+        }
+
+        [Fact]
+        public void MailboxFilter_ShouldSetCustomFilter()
+        {
+            // Arrange
+            SmtpServerBuilder builder = new();
+            var customFilter = Storage.AcceptAllMailboxFilter.Instance;
+
+            // Act
+            SmtpServer server = builder.MailboxFilter(customFilter).Build();
+
+            // Assert
+            server.Configuration.MailboxFilter.Should().Be(customFilter);
+        }
+
+        [Fact]
+        public void CombinedFiltering_ShouldWork()
+        {
+            // Arrange & Act
+            SmtpServer server = new SmtpServerBuilder()
+                .Port(587)
+                .EnableSmtpUtf8()
+                .WithFileMessageStore(@"C:\temp\mail", true)
+                .WithSenderDomainWhitelist("trusted.com")
+                .WithSenderDomainBlacklist("spam.com")
+                .WithRecipientDomainWhitelist("mydomain.com")
+                .Build();
+
+            // Assert
+            server.Configuration.Port.Should().Be(587);
+            server.Configuration.EnableSmtpUtf8.Should().BeTrue();
+            server.Configuration.MessageStore.Should().NotBeNull();
+            server.Configuration.MailboxFilter.Should().NotBeNull();
+        }
     }
 }

@@ -79,7 +79,7 @@ namespace Zetian.Benchmarks
             // Direct authentication simulation
             string usernameBase64 = Encoding.ASCII.GetString(_loginUsernameData).TrimEnd('\r', '\n');
             string passwordBase64 = Encoding.ASCII.GetString(_loginPasswordData).TrimEnd('\r', '\n');
-            
+
             string username = Encoding.ASCII.GetString(Convert.FromBase64String(usernameBase64));
             string password = Encoding.ASCII.GetString(Convert.FromBase64String(passwordBase64));
 

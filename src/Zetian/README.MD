@@ -225,23 +225,33 @@ Choose based on your needs:
 server.AddRateLimiting(RateLimitConfiguration.PerHour(100));
 ```
 
-### Message Filtering
+### Message Filtering (Event-Based)
 
 ```csharp
 server.AddSpamFilter(new[] { "spam.com", "junk.org" });
 server.AddSizeFilter(10 * 1024 * 1024); // 10MB max
 ```
 
-### Domain Validation
+### Domain Validation (Event-Based)
 
 ```csharp
 server.AddAllowedDomains("example.com", "mycompany.com");
 ```
 
-### Message Storage
+### Message Storage (Event-Based)
 
 ```csharp
 server.SaveMessagesToDirectory(@"C:\smtp_messages");
+```
+
+### Protocol-Level Filtering (New)
+
+```csharp
+var server = new SmtpServerBuilder()
+    .WithFileMessageStore(@"C:\mail")  // Saves at protocol level
+    .WithSenderDomainWhitelist("trusted.com")  // Rejects at MAIL FROM
+    .WithRecipientDomainWhitelist("mydomain.com")  // Rejects at RCPT TO
+    .Build();
 ```
 
 ## 📦 Requirements

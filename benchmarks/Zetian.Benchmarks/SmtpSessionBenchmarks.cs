@@ -97,7 +97,7 @@ namespace Zetian.Benchmarks
                         }
                     }
                 }
-                
+
                 if (lineBuilder.Length > 0)
                 {
                     lines.Add(lineBuilder.ToString());

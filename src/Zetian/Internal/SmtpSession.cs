@@ -436,7 +436,7 @@ namespace Zetian.Internal
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                int bytesRead = await _stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
                     return null;
@@ -463,7 +463,7 @@ namespace Zetian.Internal
                         }
 
                         byte[] lineBytes = encoding.GetBytes(line + "\r\n");
-                        await ms.WriteAsync(lineBytes, 0, lineBytes.Length, cancellationToken).ConfigureAwait(false);
+                        await ms.WriteAsync(lineBytes, cancellationToken).ConfigureAwait(false);
                         previousWasCr = false;
                     }
                     else if (b == '\r')
@@ -609,7 +609,7 @@ namespace Zetian.Internal
         {
             input = input.Trim();
 
-            if (input.StartsWith("<") && input.EndsWith(">"))
+            if (input.StartsWith('<') && input.EndsWith('>'))
             {
                 return input[1..^1];
             }

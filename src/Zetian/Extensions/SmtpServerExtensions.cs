@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Zetian.Core;
 using Zetian.Extensions.RateLimiting;
+using Zetian.Protocol;
 
 namespace Zetian.Extensions
 {
@@ -31,7 +33,7 @@ namespace Zetian.Extensions
 
             server.SessionCreated += async (sender, e) =>
             {
-                if (e.Session.RemoteEndPoint is System.Net.IPEndPoint ipEndPoint)
+                if (e.Session.RemoteEndPoint is IPEndPoint ipEndPoint)
                 {
                     if (!await rateLimiter.IsAllowedAsync(ipEndPoint.Address))
                     {
@@ -45,13 +47,13 @@ namespace Zetian.Extensions
 
             server.MessageReceived += async (sender, e) =>
             {
-                if (e.Session.RemoteEndPoint is System.Net.IPEndPoint ipEndPoint)
+                if (e.Session.RemoteEndPoint is IPEndPoint ipEndPoint)
                 {
                     if (e.Session.Properties.TryGetValue("RateLimitExceeded", out object? exceeded) &&
                         exceeded is bool && (bool)exceeded)
                     {
                         e.Cancel = true;
-                        e.Response = new Protocol.SmtpResponse(421, "Rate limit exceeded. Please try again later.");
+                        e.Response = new SmtpResponse(421, "Rate limit exceeded. Please try again later.");
                         return;
                     }
 
@@ -90,7 +92,7 @@ namespace Zetian.Extensions
                 if (!filter(e.Message))
                 {
                     e.Cancel = true;
-                    e.Response = new Protocol.SmtpResponse(550, "Message rejected by filter");
+                    e.Response = new SmtpResponse(550, "Message rejected by filter");
                 }
             };
 
@@ -233,7 +235,7 @@ namespace Zetian.Extensions
                 {
                     e.Cancel = true;
                     string addresses = string.Join(", ", invalidRecipients.Select(r => r.Address));
-                    e.Response = new Protocol.SmtpResponse(550, $"Invalid recipients: {addresses}");
+                    e.Response = new SmtpResponse(550, $"Invalid recipients: {addresses}");
                 }
             };
 

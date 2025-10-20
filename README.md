@@ -148,7 +148,42 @@ server.AddRateLimiting(
 
 ### Message Filtering
 
+#### 🔍 Important: Two Filtering Approaches
+
+Zetian provides two different filtering approaches:
+
+1. **Protocol-Level Filtering** (via Builder) - Rejects at SMTP command level
+   - Applied during MAIL FROM/RCPT TO commands
+   - More efficient, saves bandwidth
+   - Use `WithSenderDomainWhitelist`, `WithRecipientDomainWhitelist` etc.
+
+2. **Event-Based Filtering** (via Extensions) - Filters after message received
+   - Applied after the entire message is received
+   - More flexible for complex logic
+   - Use `AddSpamFilter`, `AddSizeFilter`, `AddMessageFilter` etc.
+
+Choose based on your needs:
+- Use **Protocol-Level** for early rejection and better performance
+- Use **Event-Based** for complex filtering logic or when you need the full message
+
+#### Protocol-Level Filtering (Early Rejection)
+
 ```csharp
+// Configure filtering at build time - rejects at SMTP protocol level
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithSenderDomainWhitelist("trusted.com", "example.com")  // Rejects at MAIL FROM
+    .WithSenderDomainBlacklist("spam.com", "junk.org")        // Rejects at MAIL FROM
+    .WithRecipientDomainWhitelist("mydomain.com")             // Rejects at RCPT TO
+    .MaxMessageSize(10 * 1024 * 1024)                         // Rejects at MAIL FROM
+    .WithFileMessageStore(@"C:\mail")                         // Stores at protocol level
+    .Build();
+```
+
+#### Event-Based Filtering (Late Rejection)
+
+```csharp
+// Configure filtering via extensions - processes after message is received
 // Add spam filter
 server.AddSpamFilter(new[] { "spam.com", "junk.org" });
 
@@ -166,10 +201,16 @@ server.AddMessageFilter(message =>
 ### Message Storage
 
 ```csharp
-// Save messages to directory
+// Event-based approach - saves after message is received
 server.SaveMessagesToDirectory(@"C:\smtp_messages");
 
-// Custom message processing
+// Protocol-level approach - integrated storage during SMTP transaction
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithFileMessageStore(@"C:\smtp_messages")  // Automatic storage
+    .Build();
+
+// Custom message processing (event-based)
 server.MessageReceived += async (sender, e) =>
 {
     // Save to database
@@ -186,7 +227,7 @@ server.MessageReceived += async (sender, e) =>
 ### Domain Validation
 
 ```csharp
-// Only accept emails for specific domains
+// Event-based approach - validates after message is received
 server.AddAllowedDomains("example.com", "mycompany.com");
 
 // Custom recipient validation
@@ -194,6 +235,12 @@ server.AddRecipientValidation(recipient =>
 {
     return IsValidRecipient(recipient.Address);
 });
+
+// Protocol-level approach - validates at SMTP command level
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithRecipientDomainWhitelist("example.com", "mycompany.com")
+    .Build();
 ```
 
 ## Event Handling
@@ -287,6 +334,7 @@ The `examples` directory contains comprehensive examples:
 5. **BasicExample** - Simple SMTP server without authentication
 6. **FullFeaturedExample** - Complete SMTP server with all features
 7. **CustomProcessingExample** - Custom message processing and filtering
+8. **ProtocolLevelFilteringExample** - Demonstrates the difference between protocol-level and event-based filtering
 
 ## Performance
 

@@ -1,0 +1,54 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zetian", "src\Zetian\Zetian.csproj", "{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zetian.Tests", "tests\Zetian.Tests\Zetian.Tests.csproj", "{F1E2D3C4-B5A6-9870-4321-0987654321FE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zetian.Examples", "examples\Zetian.Examples\Zetian.Examples.csproj", "{D1C2B3A4-5E6F-8901-2345-678901234567}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1A2B3C4D-5E6F-7890-AB12-CD34567890EF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9A8B7C6D-5E4F-3210-FE21-0987654321DC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{7A6B5C4D-3E2F-1098-7654-321098765432}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{089100B1-113F-4E66-888A-E83F3999EAFD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		global.json = global.json
+		NuGet.Config = NuGet.Config
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1E2D3C4-B5A6-9870-4321-0987654321FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1E2D3C4-B5A6-9870-4321-0987654321FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1E2D3C4-B5A6-9870-4321-0987654321FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1E2D3C4-B5A6-9870-4321-0987654321FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1C2B3A4-5E6F-8901-2345-678901234567}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1C2B3A4-5E6F-8901-2345-678901234567}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1C2B3A4-5E6F-8901-2345-678901234567}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1C2B3A4-5E6F-8901-2345-678901234567}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF} = {1A2B3C4D-5E6F-7890-AB12-CD34567890EF}
+		{F1E2D3C4-B5A6-9870-4321-0987654321FE} = {9A8B7C6D-5E4F-3210-FE21-0987654321DC}
+		{D1C2B3A4-5E6F-8901-2345-678901234567} = {7A6B5C4D-3E2F-1098-7654-321098765432}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B1A2C3D4-5E6F-7890-1234-567890FEDCBA}
+	EndGlobalSection
+EndGlobal

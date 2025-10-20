@@ -1,0 +1,133 @@
+name: Bug Report
+description: Report a bug in Zetian SMTP Server library
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug! Please fill out the sections below.
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: "When I try to..."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Configure SMTP server with...
+        2. Send email using...
+        3. See error...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: "The email should be sent successfully..."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: "Instead, I received an error..."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code Sample
+      description: Provide a minimal code sample that reproduces the issue
+      placeholder: |
+        ```csharp
+        var server = new SmtpServer(config);
+        // Your code here
+        ```
+      render: csharp
+    validations:
+      required: false
+  
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Include any relevant error messages or logs
+      placeholder: |
+        ```
+        Paste your logs here
+        ```
+      render: shell
+    validations:
+      required: false
+  
+  - type: dropdown
+    id: version
+    attributes:
+      label: Zetian Version
+      description: Which version of Zetian are you using?
+      options:
+        - Latest (please specify)
+        - 1.0.0
+        - 0.9.x
+        - Other (please specify)
+    validations:
+      required: true
+  
+  - type: input
+    id: dotnet-version
+    attributes:
+      label: .NET Version
+      description: Which .NET version are you targeting?
+      placeholder: ".NET 6.0, .NET 7.0, .NET 8.0, etc."
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which operating system are you using?
+      options:
+        - Windows 11
+        - Windows 10
+        - Linux (Ubuntu/Debian)
+        - Linux (RHEL/CentOS)
+        - Linux (Other)
+        - macOS
+        - Docker/Container
+        - Other
+    validations:
+      required: true
+  
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: "This started happening after..."
+    validations:
+      required: false
+  
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/Taiizor/Zetian/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

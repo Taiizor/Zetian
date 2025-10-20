@@ -11,10 +11,10 @@ from email.utils import formatdate
 def test_starttls():
     """Test STARTTLS on port 587"""
     
-    sender = "secure@example.com"
+    sender = "admin@example.com"
     recipient = "user@example.com"
-    username = "secure@example.com"
-    password = "securepass"
+    username = "admin"
+    password = "password123"
     
     msg = MIMEMultipart()
     msg['Subject'] = 'Secure Email Test (STARTTLS)'
@@ -69,10 +69,10 @@ Secure System
 def test_implicit_tls():
     """Test implicit TLS/SSL on port 465"""
     
-    sender = "secure@example.com"
+    sender = "admin@example.com"
     recipient = "admin@example.com"
-    username = "secure@example.com"
-    password = "securepass"
+    username = "admin"
+    password = "password123"
     
     msg = MIMEText("This email was sent over implicit SSL/TLS connection.")
     msg['Subject'] = 'Secure Email Test (Implicit TLS)'
@@ -110,8 +110,8 @@ def test_implicit_tls():
 def test_plaintext_rejection():
     """Test that plaintext authentication is rejected when TLS is required"""
     
-    username = "secure@example.com"
-    password = "securepass"
+    username = "admin"
+    password = "password123"
     
     try:
         with smtplib.SMTP('localhost', 587) as server:

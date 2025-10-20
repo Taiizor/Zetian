@@ -14,13 +14,13 @@ from email.utils import formatdate
 def test_secure_authenticated_send():
     """Test TLS + Authentication + Send"""
     
-    username = "secure@example.com"
-    password = "securepass"
+    username = "admin"  # Using server credentials
+    password = "password123"
     recipient = "admin@example.com"
     
     msg = MIMEMultipart()
     msg['Subject'] = 'Full Feature Test: Secure + Auth'
-    msg['From'] = username
+    msg['From'] = "admin@example.com"  # Using proper email format
     msg['To'] = recipient
     msg['Date'] = formatdate(localtime=True)
     
@@ -47,7 +47,7 @@ def test_secure_authenticated_send():
             print(f"   ✅ Authenticated as {username}")
             
             # Send
-            server.sendmail(username, [recipient], msg.as_string())
+            server.sendmail("admin@example.com", [recipient], msg.as_string())
             print(f"   ✅ Email sent securely")
             
         return True
@@ -96,8 +96,8 @@ def test_filtered_storage():
 def test_rate_limiting_with_auth():
     """Test Rate Limiting with Authentication"""
     
-    username = "ratelimit@example.com"
-    password = "testpass"
+    username = "admin"  # Using server credentials
+    password = "password123"
     recipient = "test@example.com"
     
     print("   Testing authenticated rate limits...")
@@ -108,7 +108,7 @@ def test_rate_limiting_with_auth():
     for i in range(8):
         msg = MIMEText(f"Rate limit test {i+1}")
         msg['Subject'] = f'Rate Test {i+1}'
-        msg['From'] = username
+        msg['From'] = "admin@example.com"
         msg['To'] = recipient
         msg['Date'] = formatdate(localtime=True)
         
@@ -129,7 +129,7 @@ def test_rate_limiting_with_auth():
                 except:
                     pass  # Continue if auth not required
                 
-                server.sendmail(username, [recipient], msg.as_string())
+                server.sendmail("admin@example.com", [recipient], msg.as_string())
                 success_count += 1
                 print(f"      Email {i+1}: ✅ Sent")
         except Exception as e:

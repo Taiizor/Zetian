@@ -11,10 +11,10 @@ from email.utils import formatdate
 def test_plain_auth():
     """Test PLAIN authentication"""
     
-    # Credentials
-    username = "user@example.com"
+    # Credentials - matching server configuration
+    username = "admin"
     password = "password123"
-    sender = username
+    sender = "admin@example.com"
     recipient = "recipient@example.com"
     
     # Create message
@@ -33,7 +33,7 @@ The connection required valid credentials to send.
 Authentication details:
 - Method: PLAIN
 - Port: 587
-- Username: user@example.com
+- Username: admin
 
 Best regards,
 Authenticated System
@@ -42,7 +42,7 @@ Authenticated System
     
     try:
         # Connect with authentication
-        with smtplib.SMTP('localhost', 587) as server:
+        with smtplib.SMTP('localhost', 587, timeout=10) as server:
             # Enable STARTTLS if available
             try:
                 server.starttls()
@@ -72,9 +72,10 @@ Authenticated System
 def test_login_auth():
     """Test LOGIN authentication"""
     
-    username = "admin@example.com"
-    password = "admin456"
-    sender = username
+    # Using server credentials
+    username = "admin"
+    password = "password123"
+    sender = "admin@example.com"
     recipient = "user@example.com"
     
     msg = MIMEText("This email uses LOGIN authentication method.")
@@ -84,16 +85,16 @@ def test_login_auth():
     msg['Date'] = formatdate(localtime=True)
     
     try:
-        with smtplib.SMTP('localhost', 587) as server:
-            # Try STARTTLS
-            try:
-                server.starttls()
-            except:
-                pass
-            
-            # Use LOGIN method explicitly
-            server.login(username, password)
-            server.sendmail(sender, [recipient], msg.as_string())
+        server = smtplib.SMTP('localhost', 587, timeout=10)
+        # Try STARTTLS if available
+        try:
+            server.starttls()
+        except:
+            pass
+        
+        # LOGIN authentication with server credentials
+        server.login(username, password)
+        server.sendmail(sender, [recipient], msg.as_string())
             
         print(f"✅ LOGIN authentication successful!")
         return True
@@ -162,8 +163,7 @@ def main():
     # Note for the user
     print("NOTE: Make sure the server is running with authentication enabled")
     print("Default test credentials:")
-    print("  - user@example.com / password123")
-    print("  - admin@example.com / admin456")
+    print("  - admin / password123")
     print()
     
     # Run tests

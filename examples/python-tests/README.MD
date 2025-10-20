@@ -79,7 +79,7 @@ python run_all_tests.py 1  # Runs BasicExample.py
 - ✅ Cipher information display
 
 ### RateLimitedExample.py
-- ✅ Per-minute message limit (10/minute)
+- ✅ Per-minute message limit (5/minute)
 - ✅ Maximum connection limit (5 concurrent)
 - ✅ Per-IP limit (5/IP)
 - ⏱️ Rate limit reset (60 seconds)
@@ -121,13 +121,9 @@ python run_all_tests.py 1  # Runs BasicExample.py
 
 ### Default Credentials
 ```python
-# For AuthenticatedExample.py
-username = "user@example.com"
+# For AuthenticatedExample.py (matching server configuration)
+username = "admin"
 password = "password123"
-
-# Alternative
-username = "admin@example.com"
-password = "admin456"
 ```
 
 ### Domain Filtering Settings

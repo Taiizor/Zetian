@@ -111,7 +111,7 @@ namespace Zetian.Storage
                 {
                     return Task.FromResult(true);
                 }
-                
+
                 // If we have ONLY whitelist (no blacklist), then whitelist is exclusive
                 if (_blockedFromDomains.Count == 0)
                 {
@@ -155,7 +155,7 @@ namespace Zetian.Storage
                 {
                     return Task.FromResult(true);
                 }
-                
+
                 // If we have ONLY whitelist (no blacklist), then whitelist is exclusive
                 if (_blockedToDomains.Count == 0)
                 {

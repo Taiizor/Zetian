@@ -1,9 +1,14 @@
+using System.Text;
+
 namespace Zetian.Examples
 {
     class Program
     {
         static async Task Main(string[] args)
         {
+            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.UTF8;
+
             Console.WriteLine("Zetian SMTP Server Examples");
             Console.WriteLine("============================");
             Console.WriteLine();

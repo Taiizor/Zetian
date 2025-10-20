@@ -88,20 +88,23 @@ var server = new SmtpServerBuilder()
     })
     // New features
     .EnableSmtpUtf8()
-    .SaveMessagesToDirectory(@"C:\smtp_messages")
-    .AllowedFromDomains("trusted1.com", "trusted2.com")
-    .BlockedFromDomains("spam.com", "junk.org")
+    .WithFileMessageStore(@"C:\smtp_messages")  // Protocol-level storage
+    .WithSenderDomainWhitelist("trusted1.com", "trusted2.com")  // Protocol-level filtering
+    .WithSenderDomainBlacklist("spam.com", "junk.org")
     .Build();
 ```
 
 ### Message Storage
 
 ```csharp
-// Save messages to file system with date structure
+// Save messages to file system with date structure (Protocol-level)
 var server = new SmtpServerBuilder()
     .Port(25)
-    .SaveMessagesToDirectory(@"C:\mail", createDateFolders: true)
+    .WithFileMessageStore(@"C:\mail", createDateFolders: true)  // Saves at protocol level
     .Build();
+
+// Or use the extension method (Event-based)
+server.SaveMessagesToDirectory(@"C:\mail");  // Saves via event handler
 
 // Or use custom message store
 public class MongoMessageStore : IMessageStore
@@ -121,12 +124,16 @@ var server = new SmtpServerBuilder()
 ### Mailbox Filtering
 
 ```csharp
-// Domain-based filtering
+// Protocol-level domain filtering (rejects at SMTP command level)
 var server = new SmtpServerBuilder()
-    .AllowedFromDomains("company.com", "partner.com")
-    .AllowedToDomains("mydomain.com")
-    .BlockedFromDomains("spam.com")
+    .WithSenderDomainWhitelist("company.com", "partner.com")
+    .WithRecipientDomainWhitelist("mydomain.com")
+    .WithSenderDomainBlacklist("spam.com")
     .Build();
+
+// Event-based domain filtering (filters after message received)
+server.AddAllowedDomains("example.com");  // Extension method
+server.AddSpamFilter(new[] { "spam.com" });  // Extension method
 
 // Custom mailbox filter
 public class CustomMailboxFilter : IMailboxFilter
@@ -191,6 +198,24 @@ server.MessageReceived += async (sender, e) =>
     }
 };
 ```
+
+## 🔍 Important: Two Filtering Approaches
+
+Zetian provides two different filtering approaches:
+
+1. **Protocol-Level Filtering** (via Builder) - Rejects at SMTP command level
+   - Applied during MAIL FROM/RCPT TO commands
+   - More efficient, saves bandwidth
+   - Use `WithSenderDomainWhitelist`, `WithFileMessageStore` etc.
+
+2. **Event-Based Filtering** (via Extensions) - Filters after message received
+   - Applied after the entire message is received
+   - More flexible for complex logic
+   - Use `AddAllowedDomains`, `SaveMessagesToDirectory` etc.
+
+Choose based on your needs:
+- Use **Protocol-Level** for early rejection and better performance
+- Use **Event-Based** for complex filtering logic or when you need the full message
 
 ## 🛡️ Extensions
 

@@ -19,7 +19,7 @@ namespace Zetian.Extensions
                 throw new ArgumentNullException(nameof(builder));
             }
 
-            return builder.BlockedFromDomains(spamDomains);
+            return builder.WithSenderDomainBlacklist(spamDomains);
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Zetian.Extensions
                 throw new ArgumentNullException(nameof(builder));
             }
 
-            return builder.AllowedToDomains(domains);
+            return builder.WithRecipientDomainWhitelist(domains);
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Zetian.Extensions
 
             if (!string.IsNullOrEmpty(messageDirectory))
             {
-                builder.SaveMessagesToDirectory(messageDirectory);
+                builder.WithFileMessageStore(messageDirectory);
             }
 
             return builder.Build();

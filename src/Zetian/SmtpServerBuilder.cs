@@ -309,9 +309,9 @@ namespace Zetian
         }
 
         /// <summary>
-        /// Saves messages to a directory
+        /// Sets a file-based message store with directory structure
         /// </summary>
-        public SmtpServerBuilder SaveMessagesToDirectory(string directory, bool createDateFolders = true)
+        public SmtpServerBuilder WithFileMessageStore(string directory, bool createDateFolders = true)
         {
             _configuration.MessageStore = new FileMessageStore(directory, createDateFolders);
             return this;
@@ -327,9 +327,9 @@ namespace Zetian
         }
 
         /// <summary>
-        /// Adds allowed domains for senders
+        /// Filters senders by allowing only specific domains (protocol-level filtering)
         /// </summary>
-        public SmtpServerBuilder AllowedFromDomains(params string[] domains)
+        public SmtpServerBuilder WithSenderDomainWhitelist(params string[] domains)
         {
             if (_configuration.MailboxFilter == null)
             {
@@ -345,9 +345,9 @@ namespace Zetian
         }
 
         /// <summary>
-        /// Adds blocked domains for senders
+        /// Blocks senders from specific domains (protocol-level filtering)
         /// </summary>
-        public SmtpServerBuilder BlockedFromDomains(params string[] domains)
+        public SmtpServerBuilder WithSenderDomainBlacklist(params string[] domains)
         {
             if (_configuration.MailboxFilter == null)
             {
@@ -363,9 +363,9 @@ namespace Zetian
         }
 
         /// <summary>
-        /// Adds allowed domains for recipients
+        /// Filters recipients by allowing only specific domains (protocol-level filtering)
         /// </summary>
-        public SmtpServerBuilder AllowedToDomains(params string[] domains)
+        public SmtpServerBuilder WithRecipientDomainWhitelist(params string[] domains)
         {
             if (_configuration.MailboxFilter == null)
             {
@@ -381,9 +381,9 @@ namespace Zetian
         }
 
         /// <summary>
-        /// Adds blocked domains for recipients
+        /// Blocks recipients to specific domains (protocol-level filtering)
         /// </summary>
-        public SmtpServerBuilder BlockedToDomains(params string[] domains)
+        public SmtpServerBuilder WithRecipientDomainBlacklist(params string[] domains)
         {
             if (_configuration.MailboxFilter == null)
             {

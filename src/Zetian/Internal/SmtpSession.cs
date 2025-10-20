@@ -248,6 +248,11 @@ namespace Zetian.Internal
                 lines.Add("CHUNKING");
             }
 
+            if (_configuration.EnableSmtpUtf8)
+            {
+                lines.Add("SMTPUTF8");
+            }
+
             if (_configuration.Certificate != null && !IsSecure)
             {
                 lines.Add("STARTTLS");
@@ -295,6 +300,24 @@ namespace Zetian.Internal
                 return;
             }
 
+            // Check with mailbox filter if configured
+            if (_configuration.MailboxFilter != null)
+            {
+                // Extract SIZE parameter if present
+                long messageSize = 0;
+                if (command.Parameters.TryGetValue("SIZE", out string? sizeParam) && long.TryParse(sizeParam, out long size))
+                {
+                    messageSize = size;
+                }
+
+                bool canAccept = await _configuration.MailboxFilter.CanAcceptFromAsync(this, mailFrom, messageSize).ConfigureAwait(false);
+                if (!canAccept)
+                {
+                    await SendResponseAsync(new SmtpResponse(550, "Sender rejected")).ConfigureAwait(false);
+                    return;
+                }
+            }
+
             ResetMessage();
             _mailFrom = mailFrom;
             _state = SmtpSessionState.Mail;
@@ -331,6 +354,17 @@ namespace Zetian.Internal
                 return;
             }
 
+            // Check with mailbox filter if configured
+            if (_configuration.MailboxFilter != null)
+            {
+                bool canDeliver = await _configuration.MailboxFilter.CanDeliverToAsync(this, rcptTo, _mailFrom ?? string.Empty).ConfigureAwait(false);
+                if (!canDeliver)
+                {
+                    await SendResponseAsync(new SmtpResponse(550, "Recipient rejected")).ConfigureAwait(false);
+                    return;
+                }
+            }
+
             _recipients.Add(rcptTo);
             _state = SmtpSessionState.Recipient;
 
@@ -359,6 +393,16 @@ namespace Zetian.Internal
             {
                 _currentMessage = new SmtpMessage(Id, _mailFrom, _recipients, messageData);
                 MessageCount++;
+
+                // Save message if message store is configured
+                if (_configuration.MessageStore != null)
+                {
+                    bool saved = await _configuration.MessageStore.SaveAsync(this, _currentMessage, cancellationToken).ConfigureAwait(false);
+                    if (!saved)
+                    {
+                        _logger.LogWarning("Failed to save message to message store");
+                    }
+                }
 
                 MessageEventArgs eventArgs = new(_currentMessage, this);
                 _server.OnMessageReceived(eventArgs);

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using Zetian.Storage;
 
 namespace Zetian.Configuration
 {
@@ -180,6 +181,21 @@ namespace Zetian.Configuration
         /// Gets or sets whether to use Nagle's algorithm
         /// </summary>
         public bool UseNagleAlgorithm { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets whether SMTPUTF8 is enabled
+        /// </summary>
+        public bool EnableSmtpUtf8 { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the message store for saving messages
+        /// </summary>
+        public IMessageStore? MessageStore { get; set; }
+
+        /// <summary>
+        /// Gets or sets the mailbox filter for accepting/rejecting senders and recipients
+        /// </summary>
+        public IMailboxFilter? MailboxFilter { get; set; }
 
         /// <summary>
         /// Validates the configuration

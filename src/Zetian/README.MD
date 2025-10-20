@@ -64,7 +64,11 @@ await server.StartAsync();
 - **Multi-Framework** - Supports .NET 6.0, 7.0, 8.0, 9.0, 10.0
 - **Event-Driven** - Rich event system for message processing
 - **Authentication** - PLAIN, LOGIN mechanisms + custom auth support
-- **High Performance** - Efficient async/await patterns and optimized I/O
+- **High Performance** - System.IO.Pipelines integration for optimized I/O
+- **Message Storage** - Flexible message store abstraction with file system support
+- **Mailbox Filtering** - Advanced sender/recipient filtering with domain rules
+- **SMTPUTF8** - Full UTF-8 support for international email addresses
+- **Composite Filters** - Chain multiple filters with AND/OR logic
 
 ## 🔧 Advanced Configuration
 
@@ -82,6 +86,80 @@ var server = new SmtpServerBuilder()
             ? AuthenticationResult.Succeed(user)
             : AuthenticationResult.Fail();
     })
+    // New features
+    .EnableSmtpUtf8()
+    .SaveMessagesToDirectory(@"C:\smtp_messages")
+    .AllowedFromDomains("trusted1.com", "trusted2.com")
+    .BlockedFromDomains("spam.com", "junk.org")
+    .Build();
+```
+
+### Message Storage
+
+```csharp
+// Save messages to file system with date structure
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .SaveMessagesToDirectory(@"C:\mail", createDateFolders: true)
+    .Build();
+
+// Or use custom message store
+public class MongoMessageStore : IMessageStore
+{
+    public async Task<bool> SaveAsync(ISmtpSession session, ISmtpMessage message, CancellationToken cancellationToken)
+    {
+        // Save to MongoDB
+        return true;
+    }
+}
+
+var server = new SmtpServerBuilder()
+    .MessageStore(new MongoMessageStore())
+    .Build();
+```
+
+### Mailbox Filtering
+
+```csharp
+// Domain-based filtering
+var server = new SmtpServerBuilder()
+    .AllowedFromDomains("company.com", "partner.com")
+    .AllowedToDomains("mydomain.com")
+    .BlockedFromDomains("spam.com")
+    .Build();
+
+// Custom mailbox filter
+public class CustomMailboxFilter : IMailboxFilter
+{
+    public async Task<bool> CanAcceptFromAsync(ISmtpSession session, string from, long size, CancellationToken cancellationToken)
+    {
+        // Custom validation logic
+        return !await IsBlacklisted(from);
+    }
+    
+    public async Task<bool> CanDeliverToAsync(ISmtpSession session, string to, string from, CancellationToken cancellationToken)
+    {
+        // Check if recipient exists
+        return await UserExists(to);
+    }
+}
+
+var server = new SmtpServerBuilder()
+    .MailboxFilter(new CustomMailboxFilter())
+    .Build();
+```
+
+### Composite Filters
+
+```csharp
+// Combine multiple filters with AND logic
+var compositeFilter = new CompositeMailboxFilter(CompositeMailboxFilter.CompositeMode.All)
+    .AddFilter(new DomainMailboxFilter().AllowFromDomains("trusted.com"))
+    .AddFilter(new CustomSpamFilter())
+    .AddFilter(new RateLimitFilter());
+
+var server = new SmtpServerBuilder()
+    .MailboxFilter(compositeFilter)
     .Build();
 ```
 

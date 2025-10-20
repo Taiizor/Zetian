@@ -5,6 +5,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using Zetian.Authentication;
 using Zetian.Configuration;
+using Zetian.Storage;
 
 namespace Zetian
 {
@@ -286,6 +287,114 @@ namespace Zetian
         {
             _configuration.ReadBufferSize = readBufferSize;
             _configuration.WriteBufferSize = writeBufferSize;
+            return this;
+        }
+
+        /// <summary>
+        /// Enables SMTP UTF8 support
+        /// </summary>
+        public SmtpServerBuilder EnableSmtpUtf8(bool enable = true)
+        {
+            _configuration.EnableSmtpUtf8 = enable;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the message store for saving messages
+        /// </summary>
+        public SmtpServerBuilder MessageStore(IMessageStore messageStore)
+        {
+            _configuration.MessageStore = messageStore ?? throw new ArgumentNullException(nameof(messageStore));
+            return this;
+        }
+
+        /// <summary>
+        /// Saves messages to a directory
+        /// </summary>
+        public SmtpServerBuilder SaveMessagesToDirectory(string directory, bool createDateFolders = true)
+        {
+            _configuration.MessageStore = new FileMessageStore(directory, createDateFolders);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the mailbox filter
+        /// </summary>
+        public SmtpServerBuilder MailboxFilter(IMailboxFilter mailboxFilter)
+        {
+            _configuration.MailboxFilter = mailboxFilter ?? throw new ArgumentNullException(nameof(mailboxFilter));
+            return this;
+        }
+
+        /// <summary>
+        /// Adds allowed domains for senders
+        /// </summary>
+        public SmtpServerBuilder AllowedFromDomains(params string[] domains)
+        {
+            if (_configuration.MailboxFilter == null)
+            {
+                _configuration.MailboxFilter = new DomainMailboxFilter(true);
+            }
+
+            if (_configuration.MailboxFilter is DomainMailboxFilter filter)
+            {
+                filter.AllowFromDomains(domains);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds blocked domains for senders
+        /// </summary>
+        public SmtpServerBuilder BlockedFromDomains(params string[] domains)
+        {
+            if (_configuration.MailboxFilter == null)
+            {
+                _configuration.MailboxFilter = new DomainMailboxFilter(true);
+            }
+
+            if (_configuration.MailboxFilter is DomainMailboxFilter filter)
+            {
+                filter.BlockFromDomains(domains);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds allowed domains for recipients
+        /// </summary>
+        public SmtpServerBuilder AllowedToDomains(params string[] domains)
+        {
+            if (_configuration.MailboxFilter == null)
+            {
+                _configuration.MailboxFilter = new DomainMailboxFilter(true);
+            }
+
+            if (_configuration.MailboxFilter is DomainMailboxFilter filter)
+            {
+                filter.AllowToDomains(domains);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds blocked domains for recipients
+        /// </summary>
+        public SmtpServerBuilder BlockedToDomains(params string[] domains)
+        {
+            if (_configuration.MailboxFilter == null)
+            {
+                _configuration.MailboxFilter = new DomainMailboxFilter(true);
+            }
+
+            if (_configuration.MailboxFilter is DomainMailboxFilter filter)
+            {
+                filter.BlockToDomains(domains);
+            }
+
             return this;
         }
 

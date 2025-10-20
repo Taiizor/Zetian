@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 
-def test_email(sender, recipient, subject, description):
+def test_email(sender, recipient, subject, description, should_succeed=True):
     """Test email sending with specific scenario"""
     msg = MIMEMultipart()
     msg['Subject'] = subject
@@ -24,12 +24,20 @@ This email tests the filtering rules of the SMTP server.
         with smtplib.SMTP('localhost', 25) as server:
             # Use the actual sender address for MAIL FROM
             server.sendmail(sender, [recipient], msg.as_string())
-        print(f"✅ SUCCESS: {description}")
-        print(f"   From: {sender} -> To: {recipient}")
+        
+        if should_succeed:
+            print(f"✅ PASSED: {description}")
+            print(f"   Email sent successfully: {sender} -> {recipient}")
+        else:
+            print(f"❌ FAILED: {description}")
+            print(f"   Email should have been rejected but was sent!")
     except Exception as e:
-        print(f"❌ FAILED: {description}")
-        print(f"   From: {sender} -> To: {recipient}")
-        print(f"   Error: {e}")
+        if not should_succeed:
+            print(f"✅ PASSED: {description}")
+            print(f"   Email correctly rejected: {e}")
+        else:
+            print(f"❌ FAILED: {description}")
+            print(f"   Email should have been sent but got error: {e}")
     print("-" * 50)
 
 def main():
@@ -45,41 +53,43 @@ def main():
     # Allowed recipient domains: mydomain.com, example.com, localhost
     
     scenarios = [
+        # Format: (sender, recipient, subject, description, should_succeed)
+        
         # Successful scenarios
         ("sender@trusted.com", "user@mydomain.com", "Valid sender and recipient", 
-         "Should succeed - both domains are whitelisted"),
+         "Both domains are whitelisted", True),
         
         ("admin@example.com", "support@example.com", "Both from example.com", 
-         "Should succeed - example.com is allowed for both"),
+         "example.com is allowed for both", True),
         
-        # Sender rejection scenarios
+        # Sender rejection scenarios - SHOULD BE BLOCKED
         ("spammer@spam.com", "user@mydomain.com", "Blocked sender domain", 
-         "Should fail - spam.com is blacklisted"),
+         "spam.com is blacklisted - should be rejected", False),
         
         ("hacker@junk.org", "admin@example.com", "Another blocked sender", 
-         "Should fail - junk.org is blacklisted"),
+         "junk.org is blacklisted - should be rejected", False),
         
-        # Recipient rejection scenarios  
+        # Recipient rejection scenarios - SHOULD BE BLOCKED
         ("user@trusted.com", "someone@external.com", "External recipient", 
-         "Should fail - external.com not in recipient whitelist"),
+         "external.com not in recipient whitelist - should be rejected", False),
         
         ("admin@example.com", "user@gmail.com", "Gmail recipient", 
-         "Should fail - gmail.com not in recipient whitelist"),
+         "gmail.com not in recipient whitelist - should be rejected", False),
         
         # Mixed mode test (both whitelist and blacklist active)
         ("user@other.com", "admin@mydomain.com", "Unlisted sender domain", 
-         "Should succeed - other.com not blocked, mydomain.com allowed"),
+         "other.com not blocked, mydomain.com allowed", True),
         
-        # Event-based filtering test (these pass protocol checks)
+        # Event-based filtering test - SHOULD BE BLOCKED BY EVENT FILTER
         ("attacker@phishing.net", "user@example.com", "Phishing domain", 
-         "Protocol pass, event-based filter should catch"),
+         "Should be caught by event-based filter", False),
         
         ("bot@malware.org", "admin@localhost", "Malware domain", 
-         "Protocol pass, event-based filter should catch"),
+         "Should be caught by event-based filter", False),
     ]
     
-    for sender, recipient, subject, description in scenarios:
-        test_email(sender, recipient, subject, description)
+    for sender, recipient, subject, description, should_succeed in scenarios:
+        test_email(sender, recipient, subject, description, should_succeed)
     
     print()
     print("=" * 60)

@@ -313,7 +313,7 @@ namespace Zetian.Internal
                 bool canAccept = await _configuration.MailboxFilter.CanAcceptFromAsync(this, mailFrom, messageSize).ConfigureAwait(false);
                 if (!canAccept)
                 {
-                    await SendResponseAsync(new SmtpResponse(550, "Sender rejected")).ConfigureAwait(false);
+                    await SendResponseAsync(SmtpResponse.SenderRejected).ConfigureAwait(false);
                     return;
                 }
             }
@@ -350,7 +350,7 @@ namespace Zetian.Internal
 
             if (_recipients.Count >= _configuration.MaxRecipients)
             {
-                await SendResponseAsync(new SmtpResponse(452, "Too many recipients")).ConfigureAwait(false);
+                await SendResponseAsync(SmtpResponse.TooManyRecipients).ConfigureAwait(false);
                 return;
             }
 
@@ -360,7 +360,7 @@ namespace Zetian.Internal
                 bool canDeliver = await _configuration.MailboxFilter.CanDeliverToAsync(this, rcptTo, _mailFrom ?? string.Empty).ConfigureAwait(false);
                 if (!canDeliver)
                 {
-                    await SendResponseAsync(new SmtpResponse(550, "Recipient rejected")).ConfigureAwait(false);
+                    await SendResponseAsync(SmtpResponse.RecipientRejected).ConfigureAwait(false);
                     return;
                 }
             }
@@ -517,7 +517,7 @@ namespace Zetian.Internal
                 return;
             }
 
-            await SendResponseAsync(new SmtpResponse(220, "Ready to start TLS")).ConfigureAwait(false);
+            await SendResponseAsync(SmtpResponse.ReadyToStartTls).ConfigureAwait(false);
 
             try
             {
@@ -557,7 +557,7 @@ namespace Zetian.Internal
 
             if (!IsSecure && !_configuration.AllowPlainTextAuthentication)
             {
-                await SendResponseAsync(new SmtpResponse(538, "Encryption required for authentication")).ConfigureAwait(false);
+                await SendResponseAsync(SmtpResponse.EncryptionRequiredForAuth).ConfigureAwait(false);
                 return;
             }
 
@@ -572,7 +572,7 @@ namespace Zetian.Internal
 
             if (!_configuration.AuthenticationMechanisms.Contains(mechanism))
             {
-                await SendResponseAsync(new SmtpResponse(504, "Authentication mechanism not supported")).ConfigureAwait(false);
+                await SendResponseAsync(SmtpResponse.AuthMechanismNotSupported).ConfigureAwait(false);
                 return;
             }
 
@@ -590,7 +590,7 @@ namespace Zetian.Internal
             {
                 IsAuthenticated = true;
                 AuthenticatedIdentity = result.Identity;
-                await SendResponseAsync(new SmtpResponse(235, "Authentication successful")).ConfigureAwait(false);
+                await SendResponseAsync(SmtpResponse.AuthenticationSuccessful).ConfigureAwait(false);
             }
             else
             {

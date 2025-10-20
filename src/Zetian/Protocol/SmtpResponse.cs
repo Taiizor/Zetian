@@ -248,6 +248,31 @@ namespace Zetian.Protocol
         /// <summary>554 Transaction failed</summary>
         public static readonly SmtpResponse TransactionFailed = new(554, "Transaction failed");
 
+        #region TLS and Authentication Responses
+
+        /// <summary>220 Ready to start TLS</summary>
+        public static readonly SmtpResponse ReadyToStartTls = new(220, "Ready to start TLS");
+
+        /// <summary>235 Authentication successful</summary>
+        public static readonly SmtpResponse AuthenticationSuccessful = new(235, "Authentication successful");
+
+        /// <summary>452 Too many recipients</summary>
+        public static readonly SmtpResponse TooManyRecipients = new(452, "Too many recipients");
+
+        /// <summary>504 Authentication mechanism not supported</summary>
+        public static readonly SmtpResponse AuthMechanismNotSupported = new(504, "Authentication mechanism not supported");
+
+        /// <summary>538 Encryption required for authentication</summary>
+        public static readonly SmtpResponse EncryptionRequiredForAuth = new(538, "Encryption required for authentication");
+
+        /// <summary>550 Sender rejected</summary>
+        public static readonly SmtpResponse SenderRejected = new(550, "Sender rejected");
+
+        /// <summary>550 Recipient rejected</summary>
+        public static readonly SmtpResponse RecipientRejected = new(550, "Recipient rejected");
+
+        #endregion
+
         #endregion
     }
 }

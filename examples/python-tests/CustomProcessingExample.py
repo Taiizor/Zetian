@@ -174,11 +174,12 @@ def test_auto_response():
     """Test automatic response generation"""
     
     # Send to special addresses that might trigger auto-responses
+    # Updated to use only valid recipient patterns: admin@*, user@*, test@*, info@*, support@*
     test_addresses = [
-        ("user@example.com", "noreply@example.com", "No-reply address"),
+        ("user@example.com", "admin@example.com", "Admin address"),
         ("user@example.com", "support@example.com", "Support address"),
         ("user@example.com", "info@example.com", "Info address"),
-        ("user@example.com", "postmaster@example.com", "Postmaster")
+        ("user@example.com", "test@example.com", "Test address")
     ]
     
     print("   Testing auto-response triggers...")
@@ -204,7 +205,7 @@ def test_message_modification():
     """Test if messages are modified during processing"""
     
     sender = "modify@example.com"
-    recipient = "process@example.com"
+    recipient = "admin@example.com"  # Changed to valid recipient pattern
     
     msg = MIMEMultipart('alternative')
     msg['Subject'] = '[TEST] Message Modification Test'

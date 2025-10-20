@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Mail;
+using System.Security.Cryptography.X509Certificates;
 using Xunit;
 using Zetian.Core;
 using Zetian.Storage;
@@ -98,7 +100,7 @@ namespace Zetian.Tests.Storage
             public string? ClientDomain => "test.local";
             public DateTime StartTime => DateTime.UtcNow;
             public IDictionary<string, object> Properties => new Dictionary<string, object>();
-            public System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate => null;
+            public X509Certificate2? ClientCertificate => null;
             public int MessageCount => 0;
             public bool PipeliningEnabled { get; set; }
             public bool EightBitMimeEnabled { get; set; }
@@ -110,10 +112,10 @@ namespace Zetian.Tests.Storage
         {
             public string Id => "test_message_123";
             public string SessionId => "test_session";
-            public System.Net.Mail.MailAddress? From => new("sender@test.com");
-            public IReadOnlyList<System.Net.Mail.MailAddress> Recipients => new[]
+            public MailAddress? From => new("sender@test.com");
+            public IReadOnlyList<MailAddress> Recipients => new[]
             {
-                new System.Net.Mail.MailAddress("recipient@test.com")
+                new MailAddress("recipient@test.com")
             };
             public long Size => 1024;
             public string? Subject => "Test Subject";
@@ -122,11 +124,25 @@ namespace Zetian.Tests.Storage
             public bool HasAttachments => false;
             public int AttachmentCount => 0;
             public DateTime? Date => DateTime.UtcNow;
-            public System.Net.Mail.MailPriority Priority => System.Net.Mail.MailPriority.Normal;
+            public MailPriority Priority => MailPriority.Normal;
+            public IDictionary<string, string> Headers => new Dictionary<string, string>
+            {
+                ["Subject"] = "Test Subject"
+            };
 
             public byte[] GetRawData()
             {
                 return System.Text.Encoding.UTF8.GetBytes("Test message data");
+            }
+
+            public Task<byte[]> GetRawDataAsync()
+            {
+                return Task.FromResult(GetRawData());
+            }
+
+            public Stream GetRawDataStream()
+            {
+                return new MemoryStream(GetRawData());
             }
 
             public string GetHeader(string name)
@@ -139,10 +155,27 @@ namespace Zetian.Tests.Storage
                 return new[] { GetHeader(name) };
             }
 
+            public void SaveToFile(string path)
+            {
+                File.WriteAllBytes(path, GetRawData());
+            }
+
             public Task SaveToFileAsync(string path)
             {
                 File.WriteAllBytes(path, GetRawData());
                 return Task.CompletedTask;
+            }
+
+            public void SaveToStream(Stream stream)
+            {
+                byte[] data = GetRawData();
+                stream.Write(data, 0, data.Length);
+            }
+
+            public Task SaveToStreamAsync(Stream stream)
+            {
+                byte[] data = GetRawData();
+                return stream.WriteAsync(data, 0, data.Length);
             }
         }
     }

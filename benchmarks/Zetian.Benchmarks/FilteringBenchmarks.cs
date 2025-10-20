@@ -3,6 +3,7 @@ using BenchmarkDotNet.Engines;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Zetian.Core;
+using Zetian.Extensions;
 using Zetian.Storage;
 
 namespace Zetian.Benchmarks

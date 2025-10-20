@@ -82,6 +82,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Zetian.Tests" />
+        <InternalsVisibleTo Include="Zetian.Benchmarks" />
     </ItemGroup>
 
 </Project>

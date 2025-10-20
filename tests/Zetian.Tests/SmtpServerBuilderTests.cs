@@ -2,6 +2,7 @@ using FluentAssertions;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
+using Zetian.Storage;
 
 namespace Zetian.Tests
 {
@@ -408,7 +409,7 @@ namespace Zetian.Tests
 
             // Assert
             server.Configuration.MessageStore.Should().NotBeNull();
-            server.Configuration.MessageStore.Should().BeOfType<Storage.FileMessageStore>();
+            server.Configuration.MessageStore.Should().BeOfType<FileMessageStore>();
         }
 
         [Fact]
@@ -416,7 +417,7 @@ namespace Zetian.Tests
         {
             // Arrange
             SmtpServerBuilder builder = new();
-            var customStore = Storage.NullMessageStore.Instance;
+            NullMessageStore customStore = NullMessageStore.Instance;
 
             // Act
             SmtpServer server = builder.MessageStore(customStore).Build();
@@ -438,7 +439,7 @@ namespace Zetian.Tests
 
             // Assert
             server.Configuration.MailboxFilter.Should().NotBeNull();
-            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+            server.Configuration.MailboxFilter.Should().BeOfType<DomainMailboxFilter>();
         }
 
         [Fact]
@@ -454,7 +455,7 @@ namespace Zetian.Tests
 
             // Assert
             server.Configuration.MailboxFilter.Should().NotBeNull();
-            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+            server.Configuration.MailboxFilter.Should().BeOfType<DomainMailboxFilter>();
         }
 
         [Fact]
@@ -470,7 +471,7 @@ namespace Zetian.Tests
 
             // Assert
             server.Configuration.MailboxFilter.Should().NotBeNull();
-            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+            server.Configuration.MailboxFilter.Should().BeOfType<DomainMailboxFilter>();
         }
 
         [Fact]
@@ -486,7 +487,7 @@ namespace Zetian.Tests
 
             // Assert
             server.Configuration.MailboxFilter.Should().NotBeNull();
-            server.Configuration.MailboxFilter.Should().BeOfType<Storage.DomainMailboxFilter>();
+            server.Configuration.MailboxFilter.Should().BeOfType<DomainMailboxFilter>();
         }
 
         [Fact]
@@ -494,7 +495,7 @@ namespace Zetian.Tests
         {
             // Arrange
             SmtpServerBuilder builder = new();
-            var customFilter = Storage.AcceptAllMailboxFilter.Instance;
+            AcceptAllMailboxFilter customFilter = AcceptAllMailboxFilter.Instance;
 
             // Act
             SmtpServer server = builder.MailboxFilter(customFilter).Build();

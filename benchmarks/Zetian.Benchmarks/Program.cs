@@ -14,6 +14,8 @@ namespace Zetian.Benchmarks
             Console.WriteLine("Starting Zetian SMTP Server Benchmarks...");
             Console.WriteLine("========================================");
 
+            BenchmarkRunner.Run<StorageBenchmarks>(config);
+            BenchmarkRunner.Run<FilteringBenchmarks>(config);
             BenchmarkRunner.Run<SmtpSessionBenchmarks>(config);
             BenchmarkRunner.Run<AuthenticationBenchmarks>(config);
             BenchmarkRunner.Run<MessageProcessingBenchmarks>(config);

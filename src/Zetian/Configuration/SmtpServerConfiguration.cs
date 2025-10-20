@@ -24,7 +24,7 @@ namespace Zetian.Configuration
             MaxMessageSize = 10 * 1024 * 1024; // 10 MB
             MaxRecipients = 100;
             MaxConnections = 100;
-            MaxConnectionsPerIp = 1000;
+            MaxConnectionsPerIp = 100;
             ConnectionTimeout = TimeSpan.FromMinutes(5);
             CommandTimeout = TimeSpan.FromMinutes(1);
             DataTimeout = TimeSpan.FromMinutes(3);

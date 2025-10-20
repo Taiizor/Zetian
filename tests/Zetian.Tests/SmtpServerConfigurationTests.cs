@@ -21,7 +21,7 @@ namespace Zetian.Tests
             config.MaxMessageSize.Should().Be(10 * 1024 * 1024);
             config.MaxRecipients.Should().Be(100);
             config.MaxConnections.Should().Be(100);
-            config.MaxConnectionsPerIp.Should().Be(10);
+            config.MaxConnectionsPerIp.Should().Be(100);
             config.ConnectionTimeout.Should().Be(TimeSpan.FromMinutes(5));
             config.CommandTimeout.Should().Be(TimeSpan.FromMinutes(1));
             config.DataTimeout.Should().Be(TimeSpan.FromMinutes(3));

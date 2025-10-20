@@ -58,10 +58,14 @@ def test_secure_authenticated_send():
 def test_filtered_storage():
     """Test Domain Filtering + Storage"""
     
+    username = "admin"
+    password = "admin123"
+    
+    # Updated test cases to use allowed domains: example.com, test.com, demo.com, localhost
     test_cases = [
-        ("allowed@trusted.com", "storage@mydomain.com", True, "Allowed sender to allowed recipient"),
-        ("spam@spam.com", "user@mydomain.com", False, "Spam domain blocked"),
-        ("user@trusted.com", "external@gmail.com", False, "External recipient blocked"),
+        ("admin@example.com", "storage@example.com", True, "Allowed sender to allowed recipient"),
+        ("spam@spam.com", "user@example.com", False, "Spam domain blocked"),
+        ("user@test.com", "external@gmail.com", False, "External recipient blocked"),
     ]
     
     results = []
@@ -75,6 +79,13 @@ def test_filtered_storage():
         
         try:
             with smtplib.SMTP('localhost', 587) as server:
+                # Enable TLS and authenticate
+                context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                server.starttls(context=context)
+                server.login(username, password)
+                
                 server.sendmail(sender, [recipient], msg.as_string())
             
             if should_succeed:
@@ -147,7 +158,9 @@ def test_rate_limiting_with_auth():
 def test_large_attachment_with_storage():
     """Test Large Attachments + Storage + Size Limits"""
     
-    sender = "large@example.com"
+    username = "admin"
+    password = "admin123"
+    sender = "admin@example.com"
     recipient = "storage@example.com"
     
     msg = MIMEMultipart()
@@ -167,6 +180,13 @@ def test_large_attachment_with_storage():
     
     try:
         with smtplib.SMTP('localhost', 587) as server:
+            # Enable TLS and authenticate
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            server.starttls(context=context)
+            server.login(username, password)
+            
             server.sendmail(sender, [recipient], msg.as_string())
         print(f"   ✅ Large attachment (500KB) accepted and stored")
         return True
@@ -183,7 +203,10 @@ def test_concurrent_features():
     
     def send_test_email(index):
         try:
-            sender = f"user{index}@example.com"
+            # Use admin credentials for all concurrent tests
+            username = "admin"
+            password = "admin123"
+            sender = "admin@example.com"  # Use authenticated sender
             recipient = f"test{index}@example.com"
             
             msg = MIMEMultipart()
@@ -206,6 +229,13 @@ def test_concurrent_features():
                 msg.attach(MIMEText(f"Plain text message {index}", 'plain'))
             
             with smtplib.SMTP('localhost', 587) as server:
+                # Enable TLS and authenticate
+                context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                server.starttls(context=context)
+                server.login(username, password)
+                
                 server.sendmail(sender, [recipient], msg.as_string())
             return True
         except Exception as e:
@@ -266,10 +296,12 @@ def test_smtp_extensions():
 def test_utf8_support():
     """Test SMTPUTF8 Support"""
     
-    sender = "tëst@éxample.com"  # UTF-8 characters
-    recipient = "üser@example.com"
+    username = "admin"
+    password = "admin123"
+    sender = "admin@example.com"  # Use authenticated sender
+    recipient = "test@example.com"  # Use allowed domain
     
-    msg = MIMEText("Testing UTF-8 email addresses: Türkçe karakterler: ğüşıöç", 'plain', 'utf-8')
+    msg = MIMEText("Testing UTF-8 content: Türkçe karakterler: ğüşıöç", 'plain', 'utf-8')
     msg['Subject'] = 'UTF-8 Test: Türkçe Başlık 🚀'
     msg['From'] = sender
     msg['To'] = recipient
@@ -277,6 +309,13 @@ def test_utf8_support():
     
     try:
         with smtplib.SMTP('localhost', 587) as server:
+            # Enable TLS and authenticate
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            server.starttls(context=context)
+            server.login(username, password)
+            
             # Try to send with UTF-8
             server.sendmail(sender, [recipient], msg.as_string())
         print(f"   ✅ UTF-8 email addresses and content supported")

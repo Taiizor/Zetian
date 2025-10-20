@@ -41,7 +41,7 @@ namespace Zetian.Examples
                 .MaxMessageSizeMB(50)
                 .MaxRecipients(50)
                 .MaxConnections(100)
-                .MaxConnectionsPerIP(10)
+                .MaxConnectionsPerIP(100)
 
                 // Security
                 .Certificate(certificate)

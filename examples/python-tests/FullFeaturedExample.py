@@ -289,7 +289,8 @@ def test_utf8_support():
             print(f"   ❌ Failed: {e}")
             return False
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Full Featured SMTP Server Test")
     print("Testing ALL features in combination")
@@ -340,3 +341,6 @@ if __name__ == "__main__":
     else:
         print("❌ Many features not configured")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

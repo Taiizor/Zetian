@@ -33,6 +33,7 @@ This email tests the filtering rules of the SMTP server.
     print("-" * 50)
 
 def main():
+    """Main test function"""
     print("=" * 60)
     print("SMTP Server Protocol-Level Filtering Test")
     print("=" * 60)

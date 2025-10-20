@@ -243,7 +243,8 @@ def test_message_modification():
         print(f"   Error: {e}")
         return False
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Custom Processing SMTP Server Test")
     print("=" * 60)
@@ -282,3 +283,6 @@ if __name__ == "__main__":
     print("NOTE: Custom processing behavior depends on server configuration")
     print("      Some features may not be active in all configurations")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

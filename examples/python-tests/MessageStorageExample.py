@@ -245,7 +245,8 @@ def test_large_email_storage():
             print(f"   Error: {e}")
             return False
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Message Storage SMTP Server Test")
     print("=" * 60)
@@ -281,3 +282,6 @@ if __name__ == "__main__":
     print("NOTE: Check the configured storage directory for saved emails")
     print("      Default locations: ./emails or ./stored_messages")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

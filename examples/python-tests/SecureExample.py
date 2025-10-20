@@ -161,7 +161,8 @@ def test_cipher_info():
         print(f"   Error: {e}")
         return False
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Secure SMTP Server Test (TLS/SSL)")
     print("=" * 60)
@@ -194,3 +195,6 @@ if __name__ == "__main__":
     if len(results) < len(tests):
         print(f"Note: {len(tests) - len(results)} test(s) skipped (feature not configured)")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

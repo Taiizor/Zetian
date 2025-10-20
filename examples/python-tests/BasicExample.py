@@ -107,7 +107,8 @@ def test_multiple_connections():
     print(f"✅ Multiple connections: {success_count}/5 successful")
     return all(results)
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Basic SMTP Server Test")
     print("=" * 60)
@@ -131,3 +132,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"Test Summary: {sum(results)}/{len(results)} tests passed")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

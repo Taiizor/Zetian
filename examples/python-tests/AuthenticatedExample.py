@@ -151,7 +151,8 @@ def test_no_auth_attempt():
         print(f"✅ Unauthenticated send rejected: {e}")
         return True
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Authenticated SMTP Server Test")
     print("Port: 587 (Submission)")
@@ -184,3 +185,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"Test Summary: {sum(results)}/{len(results)} tests passed")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

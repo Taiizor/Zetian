@@ -168,7 +168,8 @@ def test_rate_limit_recovery():
         print(f"❌ Still rate limited after waiting: {e}")
         return False
 
-if __name__ == "__main__":
+def main():
+    """Main test function"""
     print("=" * 60)
     print("Rate Limited SMTP Server Test")
     print("=" * 60)
@@ -203,3 +204,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"Test Summary: {sum(results)}/{len(results)} tests passed")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main()

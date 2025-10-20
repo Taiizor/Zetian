@@ -28,6 +28,9 @@ bld/
 # Roslyn cache directories
 *.ide/
 
+# Python
+__pycache__
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*

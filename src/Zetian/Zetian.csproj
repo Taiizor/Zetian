@@ -19,7 +19,7 @@
         <Authors>Taiizor</Authors>
         <Product>Zetian SMTP Server</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>A modern and efficient unique identifier generator for .NET ecosystem.</Summary>
+        <Summary>A professional, high-performance SMTP server library for .NET with minimal dependencies. Features include authentication, TLS/SSL support, rate limiting, and extensible architecture.</Summary>
         <Description>A professional, high-performance SMTP server library for .NET with minimal dependencies. Features include authentication, TLS/SSL support, rate limiting, and extensible architecture.</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>

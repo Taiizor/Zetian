@@ -64,7 +64,7 @@ await server.StartAsync();
 - **Multi-Framework** - Supports .NET 6.0, 7.0, 8.0, 9.0, 10.0
 - **Event-Driven** - Rich event system for message processing
 - **Authentication** - PLAIN, LOGIN mechanisms + custom auth support
-- **High Performance** - Efficient async/await patterns and optimized I/O
+- **High Performance** - Built with System.IO.Pipelines for efficient I/O operations
 
 ## 🔧 Advanced Configuration
 

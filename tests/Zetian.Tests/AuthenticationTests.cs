@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using System.IO.Pipelines;
 using System.Text;
 using Xunit;
 using Zetian.Authentication;
@@ -23,8 +24,9 @@ namespace Zetian.Tests
             // PLAIN format: [authzid]\0authcid\0password
             string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes("\0testuser\0password"));
 
-            using StreamReader reader = new(new MemoryStream());
-            using StreamWriter writer = new(new MemoryStream());
+            MemoryStream stream = new();
+            PipeReader reader = PipeReader.Create(stream);
+            PipeWriter writer = PipeWriter.Create(stream);
 
             // Act
             AuthenticationResult result = await authenticator.AuthenticateAsync(
@@ -44,8 +46,9 @@ namespace Zetian.Tests
             ISmtpSession session = Mock.Of<ISmtpSession>();
             string invalidBase64 = "not-valid-base64!@#";
 
-            using StreamReader reader = new(new MemoryStream());
-            using StreamWriter writer = new(new MemoryStream());
+            MemoryStream stream = new();
+            PipeReader reader = PipeReader.Create(stream);
+            PipeWriter writer = PipeWriter.Create(stream);
 
             // Act
             AuthenticationResult result = await authenticator.AuthenticateAsync(
@@ -68,8 +71,8 @@ namespace Zetian.Tests
             MemoryStream inputStream = new(Encoding.ASCII.GetBytes(responseData + "\r\n"));
             MemoryStream outputStream = new();
 
-            using StreamReader reader = new(inputStream);
-            using StreamWriter writer = new(outputStream) { AutoFlush = true };
+            PipeReader reader = PipeReader.Create(inputStream);
+            PipeWriter writer = PipeWriter.Create(outputStream);
 
             // Act
             AuthenticationResult result = await authenticator.AuthenticateAsync(
@@ -92,8 +95,8 @@ namespace Zetian.Tests
             MemoryStream inputStream = new(Encoding.ASCII.GetBytes("*\r\n"));
             MemoryStream outputStream = new();
 
-            using StreamReader reader = new(inputStream);
-            using StreamWriter writer = new(outputStream) { AutoFlush = true };
+            PipeReader reader = PipeReader.Create(inputStream);
+            PipeWriter writer = PipeWriter.Create(outputStream);
 
             // Act
             AuthenticationResult result = await authenticator.AuthenticateAsync(
@@ -123,8 +126,8 @@ namespace Zetian.Tests
                 Encoding.ASCII.GetBytes($"{username}\r\n{password}\r\n"));
             MemoryStream outputStream = new();
 
-            using StreamReader reader = new(inputStream);
-            using StreamWriter writer = new(outputStream) { AutoFlush = true };
+            PipeReader reader = PipeReader.Create(inputStream);
+            PipeWriter writer = PipeWriter.Create(outputStream);
 
             // Act
             AuthenticationResult result = await authenticator.AuthenticateAsync(
@@ -147,8 +150,8 @@ namespace Zetian.Tests
                 Encoding.ASCII.GetBytes("invalid!@#\r\n"));
             MemoryStream outputStream = new();
 
-            using StreamReader reader = new(inputStream);
-            using StreamWriter writer = new(outputStream) { AutoFlush = true };
+            PipeReader reader = PipeReader.Create(inputStream);
+            PipeWriter writer = PipeWriter.Create(outputStream);
 
             // Act
             AuthenticationResult result = await authenticator.AuthenticateAsync(

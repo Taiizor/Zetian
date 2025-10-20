@@ -1,4 +1,4 @@
-using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Core;
@@ -21,8 +21,8 @@ namespace Zetian.Authentication
         Task<AuthenticationResult> AuthenticateAsync(
             ISmtpSession session,
             string? initialResponse,
-            StreamReader reader,
-            StreamWriter writer,
+            PipeReader reader,
+            PipeWriter writer,
             CancellationToken cancellationToken);
     }
 

@@ -1,5 +1,6 @@
 using System;
-using System.IO;
+using System.Buffers;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,19 +25,20 @@ namespace Zetian.Authentication
         public async Task<AuthenticationResult> AuthenticateAsync(
             ISmtpSession session,
             string? initialResponse,
-            StreamReader reader,
-            StreamWriter writer,
+            PipeReader reader,
+            PipeWriter writer,
             CancellationToken cancellationToken)
         {
             try
             {
                 // Send username prompt
                 string usernamePrompt = Convert.ToBase64String(Encoding.ASCII.GetBytes("Username:"));
-                await writer.WriteLineAsync($"334 {usernamePrompt}").ConfigureAwait(false);
-                await writer.FlushAsync().ConfigureAwait(false);
+                byte[] prompt = Encoding.ASCII.GetBytes($"334 {usernamePrompt}\r\n");
+                await writer.WriteAsync(prompt.AsMemory(), cancellationToken).ConfigureAwait(false);
+                await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 
                 // Read username
-                string? usernameResponse = await reader.ReadLineAsync().ConfigureAwait(false);
+                string? usernameResponse = await ReadLineAsync(reader, cancellationToken).ConfigureAwait(false);
                 if (usernameResponse == "*")
                 {
                     return AuthenticationResult.Fail("Authentication cancelled");
@@ -59,11 +61,12 @@ namespace Zetian.Authentication
 
                 // Send password prompt
                 string passwordPrompt = Convert.ToBase64String(Encoding.ASCII.GetBytes("Password:"));
-                await writer.WriteLineAsync($"334 {passwordPrompt}").ConfigureAwait(false);
-                await writer.FlushAsync().ConfigureAwait(false);
+                byte[] passwordPromptBytes = Encoding.ASCII.GetBytes($"334 {passwordPrompt}\r\n");
+                await writer.WriteAsync(passwordPromptBytes.AsMemory(), cancellationToken).ConfigureAwait(false);
+                await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 
                 // Read password
-                string? passwordResponse = await reader.ReadLineAsync().ConfigureAwait(false);
+                string? passwordResponse = await ReadLineAsync(reader, cancellationToken).ConfigureAwait(false);
                 if (passwordResponse == "*")
                 {
                     return AuthenticationResult.Fail("Authentication cancelled");
@@ -100,6 +103,62 @@ namespace Zetian.Authentication
             catch (Exception ex)
             {
                 return AuthenticationResult.Fail($"Authentication error: {ex.Message}");
+            }
+        }
+
+        private async Task<string?> ReadLineAsync(PipeReader reader, CancellationToken cancellationToken)
+        {
+            StringBuilder lineBuilder = new();
+
+            while (true)
+            {
+                ReadResult result = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                ReadOnlySequence<byte> buffer = result.Buffer;
+
+                SequencePosition? position = buffer.PositionOf((byte)'\n');
+
+                if (position != null)
+                {
+                    // Process the line
+                    ReadOnlySequence<byte> line = buffer.Slice(0, position.Value);
+
+                    // Remove \r if present
+                    if (!line.IsEmpty)
+                    {
+                        byte[] lineBytes = ArrayPool<byte>.Shared.Rent((int)line.Length);
+                        try
+                        {
+                            line.CopyTo(lineBytes);
+                            int length = (int)line.Length;
+                            if (length > 0 && lineBytes[length - 1] == '\r')
+                            {
+                                length--;
+                            }
+                            lineBuilder.Append(Encoding.ASCII.GetString(lineBytes, 0, length));
+                        }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(lineBytes);
+                        }
+                    }
+
+                    string completeLine = lineBuilder.ToString();
+
+                    // Skip the line ending
+                    buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+                    reader.AdvanceTo(buffer.Start);
+
+                    return completeLine;
+                }
+
+                // Tell the PipeReader how much of the buffer we've consumed
+                reader.AdvanceTo(buffer.Start, buffer.End);
+
+                // If we've completed reading, return null
+                if (result.IsCompleted)
+                {
+                    return lineBuilder.Length > 0 ? lineBuilder.ToString() : null;
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -25,9 +27,10 @@ namespace Zetian.Internal
         private readonly Dictionary<string, object> _properties;
 
         private Stream _stream;
-        private StreamReader _reader;
-        private StreamWriter _writer;
+        private PipeReader _reader;
+        private PipeWriter _writer;
         private SmtpMessage? _currentMessage;
+        private readonly Pipe _pipe;
         private string? _mailFrom;
         private readonly List<string> _recipients;
         private SmtpSessionState _state;
@@ -55,8 +58,15 @@ namespace Zetian.Internal
             BinaryMimeEnabled = _configuration.EnableBinaryMime;
 
             _stream = _client.GetStream();
-            _reader = new StreamReader(_stream, Encoding.ASCII);
-            _writer = new StreamWriter(_stream, Encoding.ASCII) { AutoFlush = true };
+
+            // Create a pipe for bidirectional communication
+            PipeOptions options = new(pauseWriterThreshold: _configuration.WriteBufferSize,
+                                     resumeWriterThreshold: _configuration.ReadBufferSize,
+                                     pool: MemoryPool<byte>.Shared);
+            _pipe = new Pipe(options);
+
+            _reader = PipeReader.Create(_stream, new StreamPipeReaderOptions(bufferSize: _configuration.ReadBufferSize));
+            _writer = PipeWriter.Create(_stream, new StreamPipeWriterOptions());
         }
 
         public string Id { get; }
@@ -384,62 +394,85 @@ namespace Zetian.Internal
 
         private async Task<byte[]?> ReadMessageDataAsync(CancellationToken cancellationToken)
         {
-            using MemoryStream ms = new();
-            byte[] buffer = new byte[4096];
-            Encoding encoding = Encoding.ASCII;
+            ArrayBufferWriter<byte> messageBuffer = new();
             StringBuilder lineBuilder = new();
             bool previousWasCr = false;
+            long totalSize = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-                if (bytesRead == 0)
+                ReadResult result = await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                ReadOnlySequence<byte> buffer = result.Buffer;
+
+                SequencePosition consumed = buffer.Start;
+                SequencePosition examined = buffer.End;
+
+                // Process the buffer
+                foreach (ReadOnlyMemory<byte> segment in buffer)
                 {
-                    return null;
-                }
+                    ReadOnlySpan<byte> span = segment.Span;
 
-                for (int i = 0; i < bytesRead; i++)
-                {
-                    byte b = buffer[i];
-
-                    if (previousWasCr && b == '\n')
+                    for (int i = 0; i < span.Length; i++)
                     {
-                        string line = lineBuilder.ToString();
-                        lineBuilder.Clear();
+                        byte b = span[i];
 
-                        if (line == ".")
+                        if (previousWasCr && b == '\n')
                         {
-                            return ms.ToArray();
-                        }
+                            string line = lineBuilder.ToString();
+                            lineBuilder.Clear();
 
-                        // Remove dot-stuffing
-                        if (line.StartsWith(".."))
-                        {
-                            line = line[1..];
-                        }
+                            if (line == ".")
+                            {
+                                // End of message found
+                                consumed = buffer.GetPosition(i + 1, consumed);
+                                _reader.AdvanceTo(consumed);
 
-                        byte[] lineBytes = encoding.GetBytes(line + "\r\n");
-                        await ms.WriteAsync(lineBytes, 0, lineBytes.Length, cancellationToken).ConfigureAwait(false);
-                        previousWasCr = false;
-                    }
-                    else if (b == '\r')
-                    {
-                        previousWasCr = true;
-                    }
-                    else
-                    {
-                        if (previousWasCr)
-                        {
-                            lineBuilder.Append('\r');
+                                byte[] messageData = messageBuffer.WrittenMemory.ToArray();
+                                return messageData;
+                            }
+
+                            // Remove dot-stuffing
+                            if (line.StartsWith(".."))
+                            {
+                                line = line[1..];
+                            }
+
+                            // Write line to buffer
+                            byte[] lineBytes = Encoding.ASCII.GetBytes(line + "\r\n");
+                            messageBuffer.Write(lineBytes);
+                            totalSize += lineBytes.Length;
+
                             previousWasCr = false;
                         }
-                        lineBuilder.Append((char)b);
+                        else if (b == '\r')
+                        {
+                            previousWasCr = true;
+                        }
+                        else
+                        {
+                            if (previousWasCr)
+                            {
+                                lineBuilder.Append('\r');
+                                previousWasCr = false;
+                            }
+                            lineBuilder.Append((char)b);
+                        }
+
+                        if (totalSize > _configuration.MaxMessageSize)
+                        {
+                            throw new InvalidOperationException("Message size exceeds maximum");
+                        }
                     }
 
-                    if (ms.Length > _configuration.MaxMessageSize)
-                    {
-                        throw new InvalidOperationException("Message size exceeds maximum");
-                    }
+                    consumed = buffer.GetPosition(segment.Length, consumed);
+                }
+
+                // Tell the PipeReader how much of the buffer we've consumed and examined
+                _reader.AdvanceTo(consumed, examined);
+
+                if (result.IsCompleted)
+                {
+                    return null;
                 }
             }
 
@@ -486,8 +519,8 @@ namespace Zetian.Internal
                 ).ConfigureAwait(false);
 
                 _stream = sslStream;
-                _reader = new StreamReader(_stream, Encoding.ASCII);
-                _writer = new StreamWriter(_stream, Encoding.ASCII) { AutoFlush = true };
+                _reader = PipeReader.Create(_stream, new StreamPipeReaderOptions(bufferSize: _configuration.ReadBufferSize));
+                _writer = PipeWriter.Create(_stream, new StreamPipeWriterOptions());
 
                 IsSecure = true;
 
@@ -588,19 +621,91 @@ namespace Zetian.Internal
                 using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(_configuration.CommandTimeout);
 
-                Task<string?> readTask = _reader.ReadLineAsync();
-                TaskCompletionSource<string?> tcs = new();
+                StringBuilder lineBuilder = new();
 
-                using (cts.Token.Register(() => tcs.TrySetCanceled()))
+                while (true)
                 {
-                    Task<string?> completedTask = await Task.WhenAny(readTask, tcs.Task).ConfigureAwait(false);
+                    ReadResult result = await _reader.ReadAsync(cts.Token).ConfigureAwait(false);
+                    ReadOnlySequence<byte> buffer = result.Buffer;
 
-                    if (completedTask == readTask)
+                    SequencePosition? position = null;
+
+                    do
                     {
-                        return await readTask.ConfigureAwait(false);
-                    }
+                        // Look for a line ending (\r\n)
+                        position = buffer.PositionOf((byte)'\n');
 
-                    throw new TimeoutException("Command timeout");
+                        if (position != null)
+                        {
+                            // Process the line
+                            ReadOnlySequence<byte> line = buffer.Slice(0, position.Value);
+
+                            // Remove \r if present
+                            if (!line.IsEmpty && line.IsSingleSegment)
+                            {
+                                ReadOnlySpan<byte> span = line.FirstSpan;
+                                if (span.Length > 0 && span[^1] == '\r')
+                                {
+                                    span = span[..^1];
+                                }
+                                lineBuilder.Append(Encoding.ASCII.GetString(span));
+                            }
+                            else if (!line.IsEmpty)
+                            {
+                                byte[] lineBytes = ArrayPool<byte>.Shared.Rent((int)line.Length);
+                                try
+                                {
+                                    line.CopyTo(lineBytes);
+                                    int length = (int)line.Length;
+                                    if (length > 0 && lineBytes[length - 1] == '\r')
+                                    {
+                                        length--;
+                                    }
+                                    lineBuilder.Append(Encoding.ASCII.GetString(lineBytes, 0, length));
+                                }
+                                finally
+                                {
+                                    ArrayPool<byte>.Shared.Return(lineBytes);
+                                }
+                            }
+
+                            string completeLine = lineBuilder.ToString();
+                            lineBuilder.Clear();
+
+                            // Skip the line ending
+                            buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+                            _reader.AdvanceTo(buffer.Start);
+
+                            return completeLine;
+                        }
+                        else
+                        {
+                            // No line ending found, accumulate the data
+                            if (!buffer.IsEmpty)
+                            {
+                                byte[] tempBytes = ArrayPool<byte>.Shared.Rent((int)buffer.Length);
+                                try
+                                {
+                                    buffer.CopyTo(tempBytes);
+                                    lineBuilder.Append(Encoding.ASCII.GetString(tempBytes, 0, (int)buffer.Length));
+                                }
+                                finally
+                                {
+                                    ArrayPool<byte>.Shared.Return(tempBytes);
+                                }
+                            }
+                        }
+                    }
+                    while (position != null);
+
+                    // Tell the PipeReader how much of the buffer we've consumed
+                    _reader.AdvanceTo(buffer.End);
+
+                    // If we've completed reading, return null
+                    if (result.IsCompleted)
+                    {
+                        return lineBuilder.Length > 0 ? lineBuilder.ToString() : null;
+                    }
                 }
             }
             catch (Exception ex)
@@ -621,8 +726,14 @@ namespace Zetian.Internal
                     _logger.LogDebug("S: {Response}", responseText.TrimEnd());
                 }
 
-                await _writer.WriteAsync(responseText).ConfigureAwait(false);
-                await _writer.FlushAsync().ConfigureAwait(false);
+                byte[] responseBytes = Encoding.ASCII.GetBytes(responseText);
+                await _writer.WriteAsync(responseBytes.AsMemory()).ConfigureAwait(false);
+
+                FlushResult result = await _writer.FlushAsync().ConfigureAwait(false);
+                if (result.IsCompleted)
+                {
+                    throw new IOException("Connection closed");
+                }
             }
             catch (Exception ex)
             {
@@ -642,8 +753,8 @@ namespace Zetian.Internal
 
             try
             {
-                _reader?.Dispose();
-                _writer?.Dispose();
+                await _reader.CompleteAsync().ConfigureAwait(false);
+                await _writer.CompleteAsync().ConfigureAwait(false);
                 _stream?.Dispose();
                 _client?.Close();
             }
@@ -651,8 +762,6 @@ namespace Zetian.Internal
             {
                 _logger.LogError(ex, "Error closing session");
             }
-
-            await Task.CompletedTask;
         }
     }
 

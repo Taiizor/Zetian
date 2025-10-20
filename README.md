@@ -25,7 +25,7 @@ A professional, high-performance SMTP server library for .NET with minimal depen
 - 🛡️ **Rate Limiting**: Protect against abuse with configurable rate limits
 - 🔑 **Authentication**: Built-in PLAIN and LOGIN mechanisms, easily extensible
 - 📊 **Event-Driven**: Rich event system for message processing and monitoring
-- 🚀 **High Performance**: Efficient async/await patterns and optimized I/O operations
+- 🚀 **High Performance**: Built with System.IO.Pipelines for efficient I/O operations
 - 🔧 **Extensible**: Plugin architecture for custom authentication, filtering, and processing
 
 ## Installation

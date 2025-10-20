@@ -92,11 +92,11 @@ python run_all_tests.py 1  # Runs BasicExample.py
 - ✅ Large email support
 
 ### CustomProcessingExample.py
-- ✅ Spam domain filtering
-- ✅ Allowed domain control
-- ✅ Content-based filtering
-- ✅ Header modification
-- ✅ Auto-response system
+- ✅ Recipient validation (admin@*, user@*, test@*, info@*, support@*)
+- ✅ Subject content filtering (blocks: viagra, casino, lottery)
+- ✅ Mailbox storage (memory-based)
+- ✅ Message forwarding
+- ✅ Custom processing and filtering
 
 ### FullFeaturedExample.py
 - ✅ TLS + Authentication

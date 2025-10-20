@@ -15,7 +15,7 @@ def test_secure_authenticated_send():
     """Test TLS + Authentication + Send"""
     
     username = "admin"  # Using server credentials
-    password = "password123"
+    password = "admin123"  # Correct password for admin
     recipient = "admin@example.com"
     
     msg = MIMEMultipart()
@@ -74,7 +74,7 @@ def test_filtered_storage():
         msg['Message-ID'] = f"<test-{int(time.time())}-{sender}>"
         
         try:
-            with smtplib.SMTP('localhost', 25) as server:
+            with smtplib.SMTP('localhost', 587) as server:
                 server.sendmail(sender, [recipient], msg.as_string())
             
             if should_succeed:
@@ -97,7 +97,7 @@ def test_rate_limiting_with_auth():
     """Test Rate Limiting with Authentication"""
     
     username = "admin"  # Using server credentials
-    password = "password123"
+    password = "admin123"  # Correct password for admin
     recipient = "test@example.com"
     
     print("   Testing authenticated rate limits...")
@@ -166,7 +166,7 @@ def test_large_attachment_with_storage():
     msg.attach(attachment)
     
     try:
-        with smtplib.SMTP('localhost', 25) as server:
+        with smtplib.SMTP('localhost', 587) as server:
             server.sendmail(sender, [recipient], msg.as_string())
         print(f"   ✅ Large attachment (500KB) accepted and stored")
         return True
@@ -205,7 +205,7 @@ def test_concurrent_features():
                 # Plain text
                 msg.attach(MIMEText(f"Plain text message {index}", 'plain'))
             
-            with smtplib.SMTP('localhost', 25) as server:
+            with smtplib.SMTP('localhost', 587) as server:
                 server.sendmail(sender, [recipient], msg.as_string())
             return True
         except Exception as e:
@@ -226,7 +226,7 @@ def test_smtp_extensions():
     """Test SMTP Extensions Support"""
     
     try:
-        with smtplib.SMTP('localhost', 25) as server:
+        with smtplib.SMTP('localhost', 587) as server:
             # Get EHLO response
             code, response = server.ehlo()
             
@@ -276,7 +276,7 @@ def test_utf8_support():
     msg['Date'] = formatdate(localtime=True)
     
     try:
-        with smtplib.SMTP('localhost', 25) as server:
+        with smtplib.SMTP('localhost', 587) as server:
             # Try to send with UTF-8
             server.sendmail(sender, [recipient], msg.as_string())
         print(f"   ✅ UTF-8 email addresses and content supported")

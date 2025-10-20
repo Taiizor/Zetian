@@ -103,13 +103,23 @@ namespace Zetian.Storage
                 return Task.FromResult(false);
             }
 
-            // If we have an allowed list and the domain is in it, accept
+            // Check allowed list
             if (_allowedFromDomains.Count > 0)
             {
-                return Task.FromResult(_allowedFromDomains.Contains(domain));
+                // If domain is in whitelist, accept
+                if (_allowedFromDomains.Contains(domain))
+                {
+                    return Task.FromResult(true);
+                }
+                
+                // If we have ONLY whitelist (no blacklist), then whitelist is exclusive
+                if (_blockedFromDomains.Count == 0)
+                {
+                    return Task.FromResult(false);
+                }
             }
 
-            // No specific rules, use default
+            // No specific rules or mixed mode with domain not in any list, use default
             return Task.FromResult(_allowByDefault);
         }
 
@@ -137,13 +147,23 @@ namespace Zetian.Storage
                 return Task.FromResult(false);
             }
 
-            // If we have an allowed list and the domain is in it, accept
+            // Check allowed list
             if (_allowedToDomains.Count > 0)
             {
-                return Task.FromResult(_allowedToDomains.Contains(domain));
+                // If domain is in whitelist, accept
+                if (_allowedToDomains.Contains(domain))
+                {
+                    return Task.FromResult(true);
+                }
+                
+                // If we have ONLY whitelist (no blacklist), then whitelist is exclusive
+                if (_blockedToDomains.Count == 0)
+                {
+                    return Task.FromResult(false);
+                }
             }
 
-            // No specific rules, use default
+            // No specific rules or mixed mode with domain not in any list, use default
             return Task.FromResult(_allowByDefault);
         }
 

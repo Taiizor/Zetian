@@ -30,7 +30,7 @@ using var server = new SmtpServerBuilder()
     .MaxMessageSizeMB(10)
     .Build();
 
-server.MessageReceived += (sender, e) => {
+server.MessageReceived += async (sender, e) => {
     Console.WriteLine($"New message from {e.Message.From}");
     Console.WriteLine($"Subject: {e.Message.Subject}");
     

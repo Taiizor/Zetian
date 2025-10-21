@@ -284,7 +284,7 @@ const fuse = new Fuse(searchData, {
   threshold: 0.4,
   includeScore: true,
   includeMatches: true,
-  minMatchCharLength: 2,
+  minMatchCharLength: 1,
   shouldSort: true,
   location: 0,
   distance: 100,

@@ -50,32 +50,41 @@ Console.WriteLine("SMTP Server is running on port 25");`
     color: 'from-green-500 to-emerald-600',
     difficulty: 'Intermediate',
     code: `using Zetian;
+using Zetian.Authentication;
 
 // Authenticated SMTP server
 using var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication() // For testing without TLS
     .AuthenticationHandler(async (username, password) =>
     {
-        // Check user from database
-        if (await ValidateUserAsync(username, password))
+        // Example: Check hardcoded credentials
+        if (username == "testuser" && password == "testpass")
         {
             return AuthenticationResult.Succeed(username);
         }
         
+        // In production, validate against a database:
+        // if (await CheckDatabase(username, password))
+        //     return AuthenticationResult.Succeed(username);
+        
         return AuthenticationResult.Fail();
     })
+    .AddAuthenticationMechanism("PLAIN")
+    .AddAuthenticationMechanism("LOGIN")
     .Build();
 
-server.Authentication += (sender, e) => {
-    Console.WriteLine($"User {e.Username} authenticated successfully");
-};
-
 server.MessageReceived += (sender, e) => {
-    Console.WriteLine($"Authenticated user {e.Session.AuthenticatedUser} sent message");
+    if (e.Session.IsAuthenticated)
+    {
+        Console.WriteLine($"User {e.Session.AuthenticatedIdentity} sent message");
+        Console.WriteLine($"Subject: {e.Message.Subject}");
+    }
 };
 
-await server.StartAsync();`
+await server.StartAsync();
+Console.WriteLine("SMTP Server with authentication on port 587");`
   },
   {
     id: 'secure',
@@ -85,6 +94,7 @@ await server.StartAsync();`
     color: 'from-purple-500 to-pink-600',
     difficulty: 'Intermediate',
     code: `using Zetian;
+using Zetian.Authentication;
 
 // Secure SMTP server with TLS/SSL support
 using var server = new SmtpServerBuilder()
@@ -97,14 +107,18 @@ using var server = new SmtpServerBuilder()
 
 server.SessionCreated += (sender, e) => {
     Console.WriteLine($"New {(e.Session.IsSecure ? "SECURE" : "INSECURE")} connection");
+    Console.WriteLine($"  From: {e.Session.RemoteEndPoint}");
 };
 
-server.TlsStarted += (sender, e) => {
-    Console.WriteLine("TLS handshake completed");
+server.MessageReceived += (sender, e) => {
+    if (e.Session.IsSecure)
+    {
+        Console.WriteLine("Message received over secure connection");
+    }
 };
 
 await server.StartAsync();
-Console.WriteLine("Secure SMTP Server running with STARTTLS support");`
+Console.WriteLine("Secure SMTP Server running with STARTTLS support on port 587");`
   },
   {
     id: 'rate-limited',

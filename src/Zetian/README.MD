@@ -38,6 +38,7 @@ Console.WriteLine($"Server running on {server.Endpoint}");
 using var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication()
     .SimpleAuthentication("user", "password")
     .Build();
 

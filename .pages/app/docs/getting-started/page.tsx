@@ -157,7 +157,6 @@ export default function GettingStartedPage() {
               code={basicExample}
               language="csharp"
               filename="Program.cs"
-              showLineNumbers={true}
             />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">

@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
 import { 
-  Code2, 
   Shield, 
   Gauge, 
   Filter, 
@@ -10,15 +8,15 @@ import {
   Lock,
   Zap,
   FileCode,
-  Copy,
   ExternalLink,
   Check
 } from 'lucide-react';
+import CodeBlock from '@/components/CodeBlock';
 
 const examples = [
   {
     id: 'basic',
-    title: 'Basic SMTP Server',
+    title: 'Basic',
     description: 'A simple SMTP server in its most basic form',
     icon: Zap,
     color: 'from-blue-500 to-indigo-600',
@@ -46,7 +44,7 @@ Console.WriteLine("SMTP Server is running on port 25");`
   },
   {
     id: 'authenticated',
-    title: 'Authenticated Server',
+    title: 'Authenticated',
     description: 'Secure server with username and password',
     icon: Shield,
     color: 'from-green-500 to-emerald-600',
@@ -81,7 +79,7 @@ await server.StartAsync();`
   },
   {
     id: 'secure',
-    title: 'TLS/SSL Secured Server',
+    title: 'Secure',
     description: 'Encrypted connections with STARTTLS',
     icon: Lock,
     color: 'from-purple-500 to-pink-600',
@@ -110,7 +108,7 @@ Console.WriteLine("Secure SMTP Server running with STARTTLS support");`
   },
   {
     id: 'rate-limited',
-    title: 'Rate Limiting',
+    title: 'Rate Limited',
     description: 'Speed limiting for spam protection',
     icon: Gauge,
     color: 'from-yellow-500 to-orange-600',
@@ -146,7 +144,7 @@ await server.StartAsync();`
   },
   {
     id: 'filtered',
-    title: 'Message Filtering',
+    title: 'Custom Processing',
     description: 'Domain and content-based filtering',
     icon: Filter,
     color: 'from-red-500 to-rose-600',
@@ -319,27 +317,23 @@ export default function ExamplesPage() {
 
                 {/* Code */}
                 <div className="relative">
-                  <div className="absolute top-4 right-4 z-10 flex gap-2">
-                    <button
-                      onClick={() => copyToClipboard(example.code)}
-                      className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors group"
-                      aria-label="Copy Code"
-                    >
-                      <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
-                    </button>
+                  <div className="absolute top-4 right-4 z-20">
                     <a
                       href={`https://github.com/Taiizor/Zetian/tree/develop/examples/Zetian.Examples/${example.title.replace(/\s+/g, '')}Example.cs`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors group"
+                      className="p-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors group inline-flex items-center gap-2"
                       aria-label="View on GitHub"
                     >
-                      <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-white" />
+                      <ExternalLink className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                     </a>
                   </div>
-                  <pre className="p-6 bg-gray-900 dark:bg-gray-950 overflow-x-auto">
-                    <code className="text-sm text-gray-100">{example.code}</code>
-                  </pre>
+                  <CodeBlock 
+                    code={example.code}
+                    language="csharp"
+                    filename={`${example.title.replace(/\s+/g, '')}Example.cs`}
+                    showLineNumbers={true}
+                  />
                 </div>
 
                 {/* Features */}

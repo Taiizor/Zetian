@@ -242,18 +242,13 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="bg-gray-900 dark:bg-gray-800 rounded-2xl p-8 shadow-2xl"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="ml-2 text-sm text-gray-400">Program.cs</span>
-              </div>
-              
-              <pre className="text-gray-100 overflow-x-auto">
-                <code>{codeExample}</code>
-              </pre>
+              <CodeBlock 
+                code={codeExample}
+                language="csharp"
+                filename="Program.cs"
+                showLineNumbers={false}
+              />
             </motion.div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">

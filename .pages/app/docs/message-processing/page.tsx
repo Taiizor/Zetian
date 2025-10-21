@@ -156,53 +156,78 @@ server.MessageReceived += async (sender, e) =>
     var fileName = $"{directory}/{message.Id}.eml";
     await message.SaveToFileAsync(fileName);
     
-    // Save to database
-    using var db = new SmtpDbContext();
-    
-    var emailEntity = new Email
+    // Save message metadata as JSON (no external dependencies needed)
+    var messageInfo = new
     {
         Id = message.Id,
         From = message.From?.Address,
-        To = string.Join(";", message.Recipients.Select(r => r.Address)),
+        To = message.Recipients.Select(r => r.Address).ToArray(),
         Size = message.Size,
+        Subject = message.Subject,
         ReceivedDate = DateTime.UtcNow,
         RemoteIp = e.Session.RemoteEndPoint?.ToString(),
-        RawMessage = message.GetRawData()
+        HasAttachments = message.HasAttachments,
+        AttachmentCount = message.AttachmentCount
     };
     
-    db.Emails.Add(emailEntity);
-    
-    // To parse attachments, you would need to use a MIME parser library like MimeKit
-    // Example: var mimeMessage = MimeMessage.Load(new MemoryStream(message.GetRawData()));
-    
-    await db.SaveChangesAsync();
+    var jsonFile = $"{directory}/{message.Id}.json";
+    var json = JsonSerializer.Serialize(messageInfo, new JsonSerializerOptions 
+    { 
+        WriteIndented = true 
+    });
+    await File.WriteAllTextAsync(jsonFile, json);
 };
 
-// Custom Message Store
-public class MongoMessageStore : IMessageStore
+// Custom Message Store Implementation
+public class JsonMessageStore : IMessageStore
 {
-    private readonly IMongoCollection<BsonDocument> _collection;
+    private readonly string _directory;
+    
+    public JsonMessageStore(string directory)
+    {
+        _directory = directory;
+        Directory.CreateDirectory(directory);
+    }
     
     public async Task<bool> SaveAsync(
         ISmtpSession session, 
         ISmtpMessage message,
         CancellationToken cancellationToken)
     {
-        var document = new BsonDocument
+        try
         {
-            ["_id"] = message.Id,
-            ["from"] = message.From?.Address,
-            ["recipients"] = new BsonArray(message.Recipients),
-            ["subject"] = message.Subject,
-            ["textBody"] = message.TextBody,
-            ["htmlBody"] = message.HtmlBody,
-            ["size"] = message.Size,
-            ["receivedAt"] = DateTime.UtcNow,
-            ["remoteIp"] = session.RemoteEndPoint?.Address.ToString()
-        };
-        
-        await _collection.InsertOneAsync(document, cancellationToken: cancellationToken);
-        return true;
+            // Save raw message
+            var emlFile = Path.Combine(_directory, $"{message.Id}.eml");
+            await message.SaveToFileAsync(emlFile);
+            
+            // Save metadata as JSON
+            var metadata = new
+            {
+                Id = message.Id,
+                From = message.From?.Address,
+                Recipients = message.Recipients.Select(r => r.Address).ToArray(),
+                Subject = message.Subject,
+                Size = message.Size,
+                ReceivedAt = DateTime.UtcNow,
+                SessionId = session.Id,
+                RemoteEndPoint = session.RemoteEndPoint?.ToString(),
+                IsAuthenticated = session.IsAuthenticated,
+                AuthenticatedUser = session.AuthenticatedIdentity
+            };
+            
+            var jsonFile = Path.Combine(_directory, $"{message.Id}.json");
+            var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions 
+            { 
+                WriteIndented = true 
+            });
+            await File.WriteAllTextAsync(jsonFile, json, cancellationToken);
+            
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }`;
 

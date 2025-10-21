@@ -14,6 +14,13 @@ interface SearchItem {
 }
 
 const searchData: SearchItem[] = [
+  // Main Pages
+  { title: 'Home', description: 'Modern and scalable SMTP server library for .NET', path: '/', category: 'Main' },
+  { title: 'Documentation', description: 'Complete documentation and guides', path: '/docs', category: 'Main' },
+  { title: 'API Reference', description: 'Complete API documentation', path: '/api', category: 'Main' },
+  { title: 'Examples', description: 'Code examples and use cases', path: '/examples', category: 'Main' },
+  { title: 'Changelog', description: 'Version history and release notes', path: '/changelog', category: 'Main' },
+  
   // Docs
   { title: 'Getting Started', description: 'Quick setup and first steps', path: '/docs/getting-started', category: 'Documentation' },
   { title: 'Configuration', description: 'Server settings and configuration', path: '/docs/configuration', category: 'Documentation' },
@@ -30,12 +37,12 @@ const searchData: SearchItem[] = [
   { title: 'IMailboxFilter', description: 'Mailbox filtering interface', path: '/api#interfaces', category: 'API' },
   
   // Examples
-  { title: 'Basic SMTP Server', description: 'A simple SMTP server in its most basic form', path: '/examples#basic', category: 'Examples' },
-  { title: 'Authenticated Server', description: 'Secure server with username and password', path: '/examples#authenticated', category: 'Examples' },
-  { title: 'TLS/SSL Secured Server', description: 'Encrypted connections with STARTTLS', path: '/examples#secure', category: 'Examples' },
-  { title: 'Rate Limiting', description: 'Speed limiting for spam protection', path: '/examples#rate-limited', category: 'Examples' },
-  { title: 'Message Filtering', description: 'Domain and content-based filtering', path: '/examples#filtered', category: 'Examples' },
-  { title: 'Message Storage', description: 'Saving messages to file system or database', path: '/examples#storage', category: 'Examples' },
+  { title: 'Basic Example', description: 'A simple SMTP server in its most basic form', path: '/examples#basic', category: 'Examples' },
+  { title: 'Authenticated Example', description: 'Secure server with username and password', path: '/examples#authenticated', category: 'Examples' },
+  { title: 'Secure Example', description: 'Encrypted connections with STARTTLS', path: '/examples#secure', category: 'Examples' },
+  { title: 'Rate Limited Example', description: 'Speed limiting for spam protection', path: '/examples#rate-limited', category: 'Examples' },
+  { title: 'Custom Processing Example', description: 'Domain and content-based filtering', path: '/examples#filtered', category: 'Examples' },
+  { title: 'Message Storage Example', description: 'Saving messages to file system or database', path: '/examples#storage', category: 'Examples' },
 ];
 
 // Fuse instance'ını component dışında oluştur

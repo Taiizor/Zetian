@@ -136,6 +136,7 @@ const authMechanismsExample = `// Different authentication mechanisms
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication() // Allow auth without TLS
     // Add authentication mechanisms
     .AddAuthenticationMechanism("PLAIN")   // Default
     .AddAuthenticationMechanism("LOGIN")   // Legacy support
@@ -164,15 +165,6 @@ server.MessageReceived += (sender, e) =>
     {
         var user = e.Session.AuthenticatedIdentity;
         Console.WriteLine($"Message from authenticated user: {user}");
-        // Failed login record, security alert
-    }
-};
-
-server.SessionCreated += (sender, e) =>
-{
-    if (e.Session.AuthenticatedUser != null)
-    {
-        Console.WriteLine($"Authenticated session: {e.Session.AuthenticatedUser}");
     }
 };`;
 

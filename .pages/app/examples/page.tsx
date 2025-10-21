@@ -213,53 +213,71 @@ await server.StartAsync();`
     difficulty: 'Advanced',
     code: `using Zetian;
 using Zetian.Storage;
+using System.Text.Json;
 
-// Custom message store implementation
-public class MongoMessageStore : IMessageStore
+// SMTP server with built-in file storage
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    // Save messages to file system automatically
+    .WithFileMessageStore(@"C:\\smtp_messages", createDateFolders: true)
+    .Build();
+
+// Log when messages are received and stored
+server.MessageReceived += (sender, e) => {
+    Console.WriteLine($"Message {e.Message.Id} saved");
+    Console.WriteLine($"From: {e.Message.From?.Address}");
+    Console.WriteLine($"Subject: {e.Message.Subject}");
+};
+
+// Custom JSON-based message store
+public class JsonMessageStore : IMessageStore
 {
-    private readonly IMongoCollection<EmailDocument> _collection;
+    private readonly string _directory;
     
-    public async Task<bool> SaveAsync(ISmtpSession session, ISmtpMessage message, CancellationToken ct)
+    public JsonMessageStore(string directory)
     {
-        var document = new EmailDocument
-        {
+        _directory = directory;
+        Directory.CreateDirectory(directory);
+    }
+    
+    public async Task<bool> SaveAsync(
+        ISmtpSession session, 
+        ISmtpMessage message, 
+        CancellationToken ct)
+    {
+        var dateFolder = Path.Combine(_directory, DateTime.Now.ToString("yyyy-MM-dd"));
+        Directory.CreateDirectory(dateFolder);
+        
+        // Save raw message
+        var emlFile = Path.Combine(dateFolder, $"{message.Id}.eml");
+        await message.SaveToFileAsync(emlFile);
+        
+        // Save metadata as JSON
+        var metadata = new {
             Id = message.Id,
             From = message.From?.Address,
-            Recipients = message.Recipients.ToList(),
+            To = message.Recipients.Select(r => r.Address),
             Subject = message.Subject,
-            TextBody = message.TextBody,
-            HtmlBody = message.HtmlBody,
-            ReceivedDate = DateTime.UtcNow,
-            RemoteIp = session.RemoteEndPoint?.Address.ToString()
+            Size = message.Size,
+            ReceivedAt = DateTime.UtcNow,
+            RemoteIp = (session.RemoteEndPoint as IPEndPoint)?.Address?.ToString()
         };
         
-        await _collection.InsertOneAsync(document, cancellationToken: ct);
+        var jsonFile = Path.Combine(dateFolder, $"{message.Id}.json");
+        await File.WriteAllTextAsync(jsonFile, 
+            JsonSerializer.Serialize(metadata, 
+                new JsonSerializerOptions { WriteIndented = true }), ct);
+        
         return true;
     }
 }
 
-// SMTP server with message store
-using var server = new SmtpServerBuilder()
-    .Port(25)
-    // Save to file system
-    .WithFileMessageStore(@"C:\\smtp_messages", createDateFolders: true)
-    // OR use custom store
-    //.MessageStore(new MongoMessageStore(mongoDatabase))
-    .Build();
-
-server.MessageStored += (sender, e) => {
-    Console.WriteLine($"Message {e.Message.Id} stored successfully");
-};
-
+// Use custom store: .MessageStore(new JsonMessageStore(@"C:\\emails"))
 await server.StartAsync();`
   }
 ];
 
 export default function ExamplesPage() {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
     <div className="min-h-screen py-12 bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4">

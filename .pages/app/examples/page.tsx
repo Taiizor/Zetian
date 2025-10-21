@@ -222,12 +222,22 @@ using var server = new SmtpServerBuilder()
     .WithFileMessageStore(@"C:\\smtp_messages", createDateFolders: true)
     .Build();
 
+// Using custom message store
+// var customStore = new JsonMessageStore(@"C:\\email_storage");
+// var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .MessageStore(customStore)
+//     .Build();
+
 // Log when messages are received and stored
 server.MessageReceived += (sender, e) => {
     Console.WriteLine($"Message {e.Message.Id} saved");
     Console.WriteLine($"From: {e.Message.From?.Address}");
     Console.WriteLine($"Subject: {e.Message.Subject}");
 };
+
+// Use custom store: .MessageStore(new JsonMessageStore(@"C:\\email_storage"))
+await server.StartAsync();
 
 // Custom JSON-based message store
 public class JsonMessageStore : IMessageStore
@@ -254,13 +264,18 @@ public class JsonMessageStore : IMessageStore
         
         // Save metadata as JSON
         var metadata = new {
-            Id = message.Id,
-            From = message.From?.Address,
-            To = message.Recipients.Select(r => r.Address),
-            Subject = message.Subject,
-            Size = message.Size,
-            ReceivedAt = DateTime.UtcNow,
-            RemoteIp = (session.RemoteEndPoint as IPEndPoint)?.Address?.ToString()
+          Id = message.Id,
+          From = message.From?.Address,
+          Recipients = message.Recipients.Select(r => r.Address).ToArray(),
+          Subject = message.Subject,
+          TextBody = message.TextBody,
+          HtmlBody = message.HtmlBody,
+          Size = message.Size,
+          ReceivedDate = DateTime.UtcNow,
+          SessionId = session.Id,
+          RemoteEndPoint = (session.RemoteEndPoint as IPEndPoint)?.Address?.ToString(),
+          IsAuthenticated = session.IsAuthenticated,
+          AuthenticatedUser = session.AuthenticatedIdentity
         };
         
         var jsonFile = Path.Combine(dateFolder, $"{message.Id}.json");
@@ -270,10 +285,7 @@ public class JsonMessageStore : IMessageStore
         
         return true;
     }
-}
-
-// Use custom store: .MessageStore(new JsonMessageStore(@"C:\\emails"))
-await server.StartAsync();`
+}`
   }
 ];
 

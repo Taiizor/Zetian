@@ -6,40 +6,131 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Light mode Prism styles */
+/* Light mode Prism styles - GitHub inspired */
 @layer prism-light {
   :root:not(.dark) code[class*="language-"],
   :root:not(.dark) pre[class*="language-"] {
     color: #24292e;
-    background: #f6f8fa;
+    background: #ffffff;
     text-shadow: none;
   }
+  
+  :root:not(.dark) .token.comment { color: #6a737d; }
+  :root:not(.dark) .token.keyword { color: #d73a49; font-weight: 600; }
+  :root:not(.dark) .token.string { color: #032f62; }
+  :root:not(.dark) .token.function { color: #6f42c1; }
+  :root:not(.dark) .token.class-name { color: #6f42c1; }
+  :root:not(.dark) .token.number { color: #005cc5; }
+  :root:not(.dark) .token.boolean { color: #005cc5; }
+  :root:not(.dark) .token.variable { color: #e36209; }
 }
 
-/* Dark mode Prism styles */
+/* Dark mode Prism styles - VS Code Dark+ inspired */
 @layer prism-dark {
   :root.dark code[class*="language-"],
   :root.dark pre[class*="language-"] {
-    color: #f8f8f2;
+    color: #d4d4d4;
     background: #1e1e1e;
   }
+  
+  /* Keywords: using, var, await, async, class, public, etc. */
+  :root.dark .token.keyword { color: #569cd6; font-weight: 600; }
+  
+  /* Strings */
+  :root.dark .token.string { color: #ce9178; }
+  
+  /* Comments */
+  :root.dark .token.comment { color: #6a9955; font-style: italic; }
+  
+  /* Function/Method names */
+  :root.dark .token.function { color: #dcdcaa; }
+  
+  /* Class names */
+  :root.dark .token.class-name { color: #4ec9b0; }
+  
+  /* Variables */
+  :root.dark .token.variable { color: #9cdcfe; }
+  
+  /* Numbers and booleans */
+  :root.dark .token.number,
+  :root.dark .token.boolean { color: #b5cea8; }
+  
+  /* Properties */
+  :root.dark .token.property { color: #9cdcfe; }
+  
+  /* Namespace */
+  :root.dark .token.namespace { color: #4ec9b0; }
 }
 
 /* Line numbers styling for light/dark mode */
+pre[class*="language-"] {
+  line-height: 1.5;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+pre[class*="language-"].line-numbers {
+  position: relative;
+  padding-left: 3.8em;
+  counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+  position: relative;
+  white-space: inherit;
+  line-height: 1.5;
+}
+
+.line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 100%;
+  left: -3.8em;
+  width: 3em;
+  letter-spacing: -1px;
+  user-select: none;
+  line-height: 1.5;
+}
+
+.line-numbers-rows > span {
+  display: block;
+  counter-increment: linenumber;
+  line-height: 1.5;
+}
+
+.line-numbers-rows > span:before {
+  content: counter(linenumber);
+  display: block;
+  padding-right: 0.8em;
+  text-align: right;
+  line-height: 1.5;
+}
+
 :root:not(.dark) .line-numbers .line-numbers-rows {
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #d7dce0;
 }
 
 :root:not(.dark) .line-numbers-rows > span:before {
-  color: #6b7280;
+  color: #858585;
 }
 
 :root.dark .line-numbers .line-numbers-rows {
-  border-right: 1px solid #374151;
+  border-right: 1px solid #3e3e42;
 }
 
 :root.dark .line-numbers-rows > span:before {
-  color: #9ca3af;
+  color: #858585;
+}
+
+/* Line highlight styling */
+:root:not(.dark) .line-highlight {
+  background: rgba(107, 114, 128, 0.1);
+  border-left: 3px solid #3b82f6;
+}
+
+:root.dark .line-highlight {
+  background: rgba(86, 156, 214, 0.15);
+  border-left: 3px solid #569cd6;
 }
 
 /* Prism operator & punctuation pill overrides (light/dark) */

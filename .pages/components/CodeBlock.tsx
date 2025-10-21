@@ -49,34 +49,48 @@ export default function CodeBlock({
 
   return (
     <div className={`relative group ${className}`}>
-      {/* Header */}
-      {filename && (
-        <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{filename}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-500 uppercase">{language}</span>
+      {/* macOS Window Header */}
+      <div className="relative flex items-center justify-between bg-gray-200 dark:bg-gray-800 px-4 py-3 rounded-t-lg border-b border-gray-300 dark:border-gray-700">
+        {/* Left side: macOS Traffic Lights */}
+        <div className="flex items-center gap-2 z-10">
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <div className="w-3 h-3 rounded-full bg-yellow-500" />
+          <div className="w-3 h-3 rounded-full bg-green-500" />
         </div>
-      )}
 
-      {/* Code Block */}
-      <div className={`relative bg-gray-50 dark:bg-gray-900 ${filename ? '' : 'rounded-t-lg'} rounded-b-lg overflow-hidden border border-gray-200 dark:border-gray-800`}>
-        {/* Copy Button */}
+        {/* Center: Filename with background */}
+        {filename && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="px-3 py-1 rounded-md bg-gray-300 dark:bg-gray-700 border border-gray-400 dark:border-gray-600">
+              <span className="text-sm text-gray-800 dark:text-gray-200 font-mono font-medium whitespace-nowrap">
+                {filename}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Right side: Copy button */}
         <button
           onClick={handleCopy}
-          className="absolute top-3 right-3 p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+          className="p-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-all z-10"
           aria-label={copied ? 'Copied!' : 'Copy code'}
         >
           {copied ? (
             <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
           ) : (
-            <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <Copy className="h-4 w-4 text-gray-700 dark:text-gray-300" />
           )}
         </button>
+      </div>
+
+      {/* Code Block */}
+      <div className="relative bg-white dark:bg-[#1e1e1e] rounded-b-lg overflow-hidden border border-gray-300 dark:border-gray-700 border-t-0">
 
         {/* Code Content */}
         <div className="overflow-x-auto">
           <pre 
             className={[
-              'p-4',
+              showLineNumbers ? 'py-4 pr-4' : 'p-4',
               'text-sm',
               showLineNumbers && 'line-numbers',
               `language-${language}`

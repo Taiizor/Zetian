@@ -119,6 +119,7 @@ export default function GettingStartedPage() {
             <CodeBlock 
               code={installCommand}
               language="bash"
+              showLineNumbers={false}
             />
             
             <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -156,7 +157,7 @@ export default function GettingStartedPage() {
               code={basicExample}
               language="csharp"
               filename="Program.cs"
-              showLineNumbers={false}
+              showLineNumbers={true}
             />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">

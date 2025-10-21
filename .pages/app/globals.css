@@ -1,9 +1,46 @@
 @import "tailwindcss";
-@import "prismjs/themes/prism-twilight.css";
+@import "prismjs/themes/prism.css" layer(prism-light);
+@import "prismjs/themes/prism-twilight.css" layer(prism-dark);
 @import "prismjs/plugins/line-numbers/prism-line-numbers.css";
 @import "prismjs/plugins/line-highlight/prism-line-highlight.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Light mode Prism styles */
+@layer prism-light {
+  :root:not(.dark) code[class*="language-"],
+  :root:not(.dark) pre[class*="language-"] {
+    color: #24292e;
+    background: #f6f8fa;
+    text-shadow: none;
+  }
+}
+
+/* Dark mode Prism styles */
+@layer prism-dark {
+  :root.dark code[class*="language-"],
+  :root.dark pre[class*="language-"] {
+    color: #f8f8f2;
+    background: #1e1e1e;
+  }
+}
+
+/* Line numbers styling for light/dark mode */
+:root:not(.dark) .line-numbers .line-numbers-rows {
+  border-right: 1px solid #e5e7eb;
+}
+
+:root:not(.dark) .line-numbers-rows > span:before {
+  color: #6b7280;
+}
+
+:root.dark .line-numbers .line-numbers-rows {
+  border-right: 1px solid #374151;
+}
+
+:root.dark .line-numbers-rows > span:before {
+  color: #9ca3af;
+}
 
 @layer base {
   :root {

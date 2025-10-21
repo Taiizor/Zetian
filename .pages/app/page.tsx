@@ -15,6 +15,7 @@ import {
   Layers,
   Calendar
 } from 'lucide-react';
+import CodeBlock from '@/components/CodeBlock';
 
 const features = [
   {

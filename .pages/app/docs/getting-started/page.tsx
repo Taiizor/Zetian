@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { 
-  Download, 
   Terminal, 
   CheckCircle, 
   ArrowRight,
@@ -11,6 +10,7 @@ import {
   Zap,
   AlertCircle
 } from 'lucide-react';
+import CodeBlock from '@/components/CodeBlock';
 
 const installCommand = 'dotnet add package Zetian';
 const basicExample = `using Zetian;
@@ -116,20 +116,10 @@ export default function GettingStartedPage() {
               Add Zetian to your project using NuGet Package Manager:
             </p>
             
-            <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between">
-                <code className="text-gray-100 text-sm">
-                  {installCommand}
-                </code>
-                <button
-                  onClick={() => navigator.clipboard.writeText(installCommand)}
-                  className="p-2 hover:bg-gray-700 rounded transition-colors"
-                  aria-label="Copy"
-                >
-                  <Copy className="h-4 w-4 text-gray-400" />
-                </button>
-              </div>
-            </div>
+            <CodeBlock 
+              code={installCommand}
+              language="powershell"
+            />
             
             <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
               <Package className="h-4 w-4 mt-0.5" />
@@ -162,18 +152,12 @@ export default function GettingStartedPage() {
               Create a simple SMTP server:
             </p>
             
-            <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-4 overflow-x-auto">
-              <pre className="text-gray-100 text-sm">
-                <code>{basicExample}</code>
-              </pre>
-              <button
-                onClick={() => navigator.clipboard.writeText(basicExample)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-                aria-label="Copy"
-              >
-                <Copy className="h-4 w-4 text-gray-400" />
-              </button>
-            </div>
+            <CodeBlock 
+              code={basicExample}
+              language="csharp"
+              filename="Program.cs"
+              showLineNumbers={false}
+            />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               <div className="flex items-start gap-2">
@@ -215,18 +199,11 @@ export default function GettingStartedPage() {
               Add authentication mechanism for security:
             </p>
             
-            <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-4 overflow-x-auto">
-              <pre className="text-gray-100 text-sm">
-                <code>{authExample}</code>
-              </pre>
-              <button
-                onClick={() => navigator.clipboard.writeText(authExample)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-                aria-label="Copy"
-              >
-                <Copy className="h-4 w-4 text-gray-400" />
-              </button>
-            </div>
+            <CodeBlock 
+              code={authExample}
+              language="csharp"
+              filename="Program.cs"
+            />
           </div>
 
           {/* Step 4: TLS/SSL */}
@@ -244,18 +221,11 @@ export default function GettingStartedPage() {
               Add encrypted connection support with STARTTLS:
             </p>
             
-            <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-4 overflow-x-auto">
-              <pre className="text-gray-100 text-sm">
-                <code>{tlsExample}</code>
-              </pre>
-              <button
-                onClick={() => navigator.clipboard.writeText(tlsExample)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-                aria-label="Copy"
-              >
-                <Copy className="h-4 w-4 text-gray-400" />
-              </button>
-            </div>
+            <CodeBlock 
+              code={tlsExample}
+              language="csharp"
+              filename="Program.cs"
+            />
           </div>
         </div>
 

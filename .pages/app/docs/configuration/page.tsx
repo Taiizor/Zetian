@@ -57,8 +57,8 @@ const authConfigExample = `// Simple authentication
 })
 
 // Multiple authentication mechanisms
-.AddAuthenticator(new PlainAuthenticator(authHandler))
-.AddAuthenticator(new LoginAuthenticator(authHandler))`;
+.AddAuthenticationMechanism("PLAIN")
+.AddAuthenticationMechanism("LOGIN")`;
 
 const filterConfigExample = `// Protocol-Level Filtering (at SMTP command level)
 var server = new SmtpServerBuilder()

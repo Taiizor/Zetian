@@ -231,42 +231,45 @@ public class JsonMessageStore : IMessageStore
     }
 }`;
 
-const messageForwardingExample = `// Message forwarding
+const messageForwardingExample = `// Simple message forwarding
 server.MessageReceived += async (sender, e) =>
 {
     var message = e.Message;
     
-    // Forward to another SMTP server
-    using var client = new SmtpClient("relay.example.com", 587);
-    client.EnableSsl = true;
-    client.Credentials = new NetworkCredential("relay_user", "relay_password");
-    
-    var mailMessage = new MailMessage
+    try
     {
-        From = new MailAddress(message.From?.Address ?? "noreply@example.com"),
-        Subject = message.Subject,
-        Body = message.TextBody,
-        IsBodyHtml = false
-    };
-    
-    foreach (var recipient in message.Recipients)
-    {
-        mailMessage.To.Add(recipient);
+        // Forward to another SMTP server
+        using var client = new SmtpClient("relay.example.com", 587);
+        client.EnableSsl = true;
+        client.Credentials = new NetworkCredential("relay_user", "relay_password");
+        
+        var mailMessage = new MailMessage
+        {
+            From = new MailAddress(message.From?.Address ?? "noreply@example.com"),
+            Subject = message.Subject ?? "(No Subject)",
+            Body = message.TextBody ?? string.Empty,
+            IsBodyHtml = false
+        };
+        
+        foreach (var recipient in message.Recipients)
+        {
+            mailMessage.To.Add(recipient.Address);
+        }
+        
+        // Note: To handle attachments, parse the raw message with MimeKit:
+        // var mimeMessage = MimeMessage.Load(new MemoryStream(message.GetRawData()));
+        // foreach (var attachment in mimeMessage.Attachments) { ... }
+        
+        await client.SendMailAsync(mailMessage);
+        Console.WriteLine($"Message {message.Id} forwarded to relay server");
     }
-    
-    // Add attachments
-    foreach (var attachment in message.Attachments)
+    catch (Exception ex)
     {
-        var stream = new MemoryStream(attachment.GetData());
-        mailMessage.Attachments.Add(new Attachment(stream, attachment.FileName));
+        Console.WriteLine($"Failed to forward message: {ex.Message}");
     }
-    
-    await client.SendMailAsync(mailMessage);
-    
-    Console.WriteLine($"Message {message.Id} forwarded to relay server");
 };
 
-// Conditional forwarding
+// Conditional forwarding based on recipient domains
 server.MessageReceived += async (sender, e) =>
 {
     var message = e.Message;
@@ -275,7 +278,7 @@ server.MessageReceived += async (sender, e) =>
     var forwardDomains = new[] { "external.com", "partner.org" };
     
     var recipientsToForward = message.Recipients
-        .Where(r => forwardDomains.Any(d => r.EndsWith($"@{d}")))
+        .Where(r => forwardDomains.Any(d => r.Address.EndsWith($"@{d}", StringComparison.OrdinalIgnoreCase)))
         .ToList();
     
     if (recipientsToForward.Any())
@@ -292,7 +295,46 @@ server.MessageReceived += async (sender, e) =>
     {
         await ProcessLocally(message, localRecipients);
     }
-};`;
+};
+
+// Helper method to forward messages to external server
+private static async Task ForwardToExternalServer(ISmtpMessage message, List<MailAddress> recipients)
+{
+    using var client = new SmtpClient("external-relay.example.com", 587);
+    client.EnableSsl = true;
+    client.Credentials = new NetworkCredential("external_user", "external_password");
+
+    var mailMessage = new MailMessage
+    {
+        From = new MailAddress(message.From?.Address ?? "noreply@example.com"),
+        Subject = message.Subject ?? "(No Subject)",
+        Body = message.TextBody ?? string.Empty,
+        IsBodyHtml = false
+    };
+
+    foreach (var recipient in recipients)
+    {
+        mailMessage.To.Add(recipient.Address);
+    }
+
+    await client.SendMailAsync(mailMessage);
+    Console.WriteLine($"Forwarded to external server for {recipients.Count} recipient(s)");
+}
+
+// Helper method to process messages locally  
+private static async Task ProcessLocally(ISmtpMessage message, List<MailAddress> recipients)
+{
+    foreach (var recipient in recipients)
+    {
+        var mailboxDir = $"mailboxes/{recipient.Address.Replace("@", "_at_")}";
+        Directory.CreateDirectory(mailboxDir);
+        
+        var fileName = Path.Combine(mailboxDir, $"{message.Id}.eml");
+        await message.SaveToFileAsync(fileName);
+        
+        Console.WriteLine($"Message saved to local mailbox: {recipient.Address}");
+    }
+}`;
 
 const messageParsingExample = `// Parsing message content with MimeKit
 // Install-Package MimeKit
@@ -303,7 +345,7 @@ server.MessageReceived += (sender, e) =>
     var message = e.Message;
     
     // Parse raw message with MimeKit
-    using var stream = new MemoryStream(message.RawData);
+    using var stream = new MemoryStream(message.GetRawData());
     var mimeMessage = MimeMessage.Load(stream);
     
     // Headers

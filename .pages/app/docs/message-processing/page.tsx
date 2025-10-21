@@ -28,33 +28,27 @@ server.MessageReceived += async (sender, e) =>
     
     // Message information
     Console.WriteLine($"Message ID: {message.Id}");
-    Console.WriteLine($"From: {message.From?.Address}");
+    Console.WriteLine($"From: {message.From}");
     Console.WriteLine($"To: {string.Join(", ", message.Recipients)}");
-    Console.WriteLine($"Subject: {message.Subject}");
     Console.WriteLine($"Size: {message.Size} bytes");
-    Console.WriteLine($"Date: {message.Date}");
+    Console.WriteLine($"Subject: {message.Subject}");
     
-    // Message content
-    var textBody = message.TextBody;
-    var htmlBody = message.HtmlBody;
+    // Session information
+    Console.WriteLine($"Session: {e.Session.Id}");
+    Console.WriteLine($"From IP: {e.Session.RemoteEndPoint}");
+    Console.WriteLine($"Is authenticated: {e.Session.IsAuthenticated}");
     
-    // Attachments
-    foreach (var attachment in message.Attachments)
-    {
-        Console.WriteLine($"Attachment: {attachment.FileName} ({attachment.Size} bytes)");
-    }
-    
-    // Save the message
+    // Save the raw message
     var fileName = $"messages/{message.Id}.eml";
+    Directory.CreateDirectory("messages");
     await message.SaveToFileAsync(fileName);
-};
-
-// When message is rejected
-server.MessageRejected += (sender, e) =>
-{
-    Console.WriteLine($"Message rejected: {e.Reason}");
-    Console.WriteLine($"From: {e.From}");
-    Console.WriteLine($"Recipients: {string.Join(", ", e.Recipients)}");
+    
+    // Reject message if needed
+    if (message.From?.Address?.Contains("spam") == true)
+    {
+        e.Cancel = true;
+        e.Response = new SmtpResponse(554, "Message rejected as spam");
+    }
 };
 
 // When session is created
@@ -68,30 +62,22 @@ server.SessionCreated += (sender, e) =>
 server.SessionCompleted += (sender, e) =>
 {
     Console.WriteLine($"Session completed: {e.Session.Id}");
-    Console.WriteLine($"Messages received: {e.Session.MessagesReceived}");
-    Console.WriteLine($"Duration: {e.Session.Duration}");
+    Console.WriteLine($"Messages received: {e.Session.MessageCount}");
+    
+    // Calculate duration
+    var duration = DateTime.UtcNow - e.Session.StartTime;
+    Console.WriteLine($"Duration: {duration.TotalSeconds:F2} seconds");
+    
+    if (e.Session.IsAuthenticated)
+    {
+        Console.WriteLine($"Authenticated as: {e.Session.AuthenticatedIdentity}");
+    }
 };`;
 
 const messageValidationExample = `// Message validation and filtering
 server.MessageReceived += (sender, e) =>
 {
     var message = e.Message;
-    
-    // Spam check
-    if (IsSpam(message))
-    {
-        e.Cancel = true;
-        e.Response = new SmtpResponse(550, "Message rejected: Spam detected");
-        return;
-    }
-    
-    // Virus scan
-    if (ContainsVirus(message))
-    {
-        e.Cancel = true;
-        e.Response = new SmtpResponse(550, "Message rejected: Virus detected");
-        return;
-    }
     
     // Size check
     if (message.Size > 10_000_000) // 10MB
@@ -101,21 +87,41 @@ server.MessageReceived += (sender, e) =>
         return;
     }
     
+    // Check sender domain
+    if (message.From?.Address?.Contains("@spammer.com") == true)
+    {
+        e.Cancel = true;
+        e.Response = new SmtpResponse(550, "Sender domain blocked");
+        return;
+    }
+    
     // SPF/DKIM validation
-    if (!ValidateSPF(e.Session.RemoteEndPoint, message.From))
+    if (!ValidateSPF(e.Session.RemoteEndPoint, message.From?.Address))
     {
         e.Cancel = true;
         e.Response = new SmtpResponse(550, "SPF validation failed");
         return;
     }
     
+    // Parse with MimeKit for content filtering
+    using var stream = new MemoryStream(message.GetRawData());
+    var mimeMessage = MimeMessage.Load(stream);
+    
     // Content filtering
     var blockedWords = new[] { "viagra", "lottery", "winner" };
     if (blockedWords.Any(word => 
-        message.Subject?.Contains(word, StringComparison.OrdinalIgnoreCase) ?? false))
+        mimeMessage.Subject?.Contains(word, StringComparison.OrdinalIgnoreCase) ?? false))
     {
         e.Cancel = true;
         e.Response = new SmtpResponse(550, "Content policy violation");
+        return;
+    }
+    
+    // Virus scan (example with external service)
+    if (await ScanForVirus(message.GetRawData()))
+    {
+        e.Cancel = true;
+        e.Response = new SmtpResponse(550, "Message rejected: Virus detected");
         return;
     }
 };
@@ -125,7 +131,7 @@ server.MessageReceived += async (sender, e) =>
 {
     var blacklist = await GetBlacklistAsync();
     
-    if (blacklist.Contains(e.Message.From?.Address))
+    if (blacklist.Contains(e.Message.From))
     {
         e.Cancel = true;
         e.Response = new SmtpResponse(550, "Sender blacklisted");
@@ -157,32 +163,17 @@ server.MessageReceived += async (sender, e) =>
     {
         Id = message.Id,
         From = message.From?.Address,
-        To = string.Join(";", message.Recipients),
-        Subject = message.Subject,
-        TextBody = message.TextBody,
-        HtmlBody = message.HtmlBody,
+        To = string.Join(";", message.Recipients.Select(r => r.Address)),
         Size = message.Size,
         ReceivedDate = DateTime.UtcNow,
-        RemoteIp = e.Session.RemoteEndPoint?.Address.ToString(),
-        RawMessage = message.GetRawMessage()
+        RemoteIp = e.Session.RemoteEndPoint?.ToString(),
+        RawMessage = message.GetRawData()
     };
     
     db.Emails.Add(emailEntity);
     
-    // Save attachments
-    foreach (var attachment in message.Attachments)
-    {
-        var attachmentEntity = new EmailAttachment
-        {
-            EmailId = message.Id,
-            FileName = attachment.FileName,
-            ContentType = attachment.ContentType,
-            Size = attachment.Size,
-            Data = attachment.GetData()
-        };
-        
-        db.EmailAttachments.Add(attachmentEntity);
-    }
+    // To parse attachments, you would need to use a MIME parser library like MimeKit
+    // Example: var mimeMessage = MimeMessage.Load(new MemoryStream(message.GetRawData()));
     
     await db.SaveChangesAsync();
 };
@@ -278,49 +269,53 @@ server.MessageReceived += async (sender, e) =>
     }
 };`;
 
-const messageParsingExample = `// Parsing message content
+const messageParsingExample = `// Parsing message content with MimeKit
+// Install-Package MimeKit
+using MimeKit;
+
 server.MessageReceived += (sender, e) =>
 {
     var message = e.Message;
     
+    // Parse raw message with MimeKit
+    using var stream = new MemoryStream(message.RawData);
+    var mimeMessage = MimeMessage.Load(stream);
+    
     // Headers
-    foreach (var header in message.Headers)
+    foreach (var header in mimeMessage.Headers)
     {
-        Console.WriteLine($"{header.Key}: {header.Value}");
+        Console.WriteLine($"{header.Field}: {header.Value}");
     }
     
-    // MIME parts
-    foreach (var part in message.Parts)
-    {
-        Console.WriteLine($"Part: {part.ContentType}");
-        
-        if (part.IsText)
-        {
-            var text = part.GetText();
-            Console.WriteLine($"Text content: {text.Substring(0, Math.Min(100, text.Length))}...");
-        }
-        else if (part.IsAttachment)
-        {
-            Console.WriteLine($"Attachment: {part.FileName} ({part.Size} bytes)");
-        }
-    }
+    // Basic properties
+    Console.WriteLine($"Subject: {mimeMessage.Subject}");
+    Console.WriteLine($"From: {mimeMessage.From}");
+    Console.WriteLine($"To: {mimeMessage.To}");
+    Console.WriteLine($"Date: {mimeMessage.Date}");
     
-    // Check custom headers
-    if (message.Headers.ContainsKey("X-Priority"))
+    // Text and HTML body
+    var textBody = mimeMessage.TextBody;
+    var htmlBody = mimeMessage.HtmlBody;
+    
+    // Attachments
+    foreach (var attachment in mimeMessage.Attachments)
     {
-        var priority = message.Headers["X-Priority"];
-        if (priority == "1" || priority == "High")
+        if (attachment is MimePart part)
         {
-            // High priority message
-            ProcessHighPriorityMessage(message);
+            Console.WriteLine($"Attachment: {part.FileName} ({part.ContentType})");
+            
+            // Save attachment
+            using var attachmentStream = File.Create($"attachments/{part.FileName}");
+            part.Content.DecodeTo(attachmentStream);
         }
     }
     
-    // Reply-To address
-    var replyTo = message.Headers.GetValueOrDefault("Reply-To", message.From?.Address);
-    
-    // Message-ID
-    var messageId = message.Headers.GetValueOrDefault("Message-ID", message.Id);
+    // Priority header
+    if (mimeMessage.Headers.Contains(HeaderId.XPriority))
+    {
+        var priority = mimeMessage.Headers[HeaderId.XPriority];
+        Console.WriteLine($"Priority: {priority}");
+    }
 };`;
 
 export default function MessageProcessingPage() {

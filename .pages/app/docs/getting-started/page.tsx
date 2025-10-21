@@ -38,13 +38,18 @@ const authExample = `using Zetian;
 using var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication() // For testing without TLS
     .SimpleAuthentication("admin", "password123")
     .Build();
 
-// When user is authenticated
-server.Authentication += (sender, e) =>
+// When a message is received from an authenticated user
+server.MessageReceived += (sender, e) =>
 {
-    Console.WriteLine($"User authenticated: {e.Username}");
+    if (e.Session.IsAuthenticated)
+    {
+        Console.WriteLine($"Authenticated user: {e.Session.AuthenticatedIdentity}");
+        Console.WriteLine($"Subject: {e.Message.Subject}");
+    }
 };
 
 await server.StartAsync();`;
@@ -90,8 +95,8 @@ export default function GettingStartedPage() {
             <div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Requirements</h3>
               <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
-                <li>• .NET 6.0, 7.0, 8.0, 9.0, or 10.0</li>
                 <li>• Windows, Linux, or macOS</li>
+                <li>• .NET 6.0, 7.0, 8.0, 9.0, or 10.0</li>
                 <li>• Administrator/root privileges (for low port numbers)</li>
               </ul>
             </div>

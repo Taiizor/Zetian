@@ -37,7 +37,7 @@ const searchData: SearchItem[] = [
   { title: 'Documentation', description: 'Complete documentation and guides', path: '/docs', category: 'Main', tags: ['docs', 'guides', 'manual'] },
   { title: 'API Reference', description: 'Complete API documentation', path: '/api', category: 'Main', tags: ['api', 'reference', 'classes'] },
   { title: 'Examples', description: 'Code examples and use cases', path: '/examples', category: 'Main', tags: ['examples', 'code', 'samples'] },
-  { title: 'Changelog', description: 'Version history and release notes', path: '/changelog', category: 'Main', tags: ['changelog', 'versions', 'releases'] },
+  { title: 'Changelog', description: 'Version history and release notes', path: '/changelog', category: 'Main', tags: ['changelog', 'versions', 'releases', 'updates', 'history'] },
   
   // Documentation
   { 
@@ -281,7 +281,7 @@ const fuse = new Fuse(searchData, {
     { name: 'content', weight: 0.05 },
     { name: 'code', weight: 0.05 }
   ],
-  threshold: 0.4,
+  threshold: 0.2,
   includeScore: true,
   includeMatches: true,
   minMatchCharLength: 1,
@@ -346,7 +346,7 @@ export function Search() {
       return (scoreA + popularA) - (scoreB + popularB);
     });
     
-    const newResults = searchResults.map(r => r.item).slice(0, 12);
+    const newResults = searchResults.map(r => r.item).slice(0, 50);
     setResults(newResults);
     setSelectedIndex(0);
   }, [selectedCategory]);

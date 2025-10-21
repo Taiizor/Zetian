@@ -154,7 +154,6 @@ server.SessionCompleted += (sender, e) =>
     if (e.Session.IsAuthenticated)
     {
         Console.WriteLine($"User session completed: {e.Session.AuthenticatedIdentity}");
-        // Log successful authentication, audit trail, etc.
     }
 };
 
@@ -163,8 +162,7 @@ server.MessageReceived += (sender, e) =>
 {
     if (e.Session.IsAuthenticated)
     {
-        var user = e.Session.AuthenticatedIdentity;
-        Console.WriteLine($"Message from authenticated user: {user}");
+        Console.WriteLine($"Message from authenticated user: {e.Session.AuthenticatedIdentity}");
     }
 };`;
 

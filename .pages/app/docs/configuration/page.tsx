@@ -81,22 +81,22 @@ server.AddSizeFilter(10 * 1024 * 1024); // 10MB
 server.AddAllowedDomains("example.com");`;
 
 const rateLimitExample = `using Zetian.Extensions;
+using Zetian.Extensions.RateLimiting;
 
 // Rate limiting configuration
 var rateLimitConfig = new RateLimitConfiguration
 {
-    MessagesPerHour = 100,
-    MessagesPerMinute = 10,
-    MessagesPerSecond = 2,
-    EnableIpBasedLimiting = true,
-    ResetPeriod = TimeSpan.FromHours(1)
+    MaxRequests = 100,             // Maximum number of requests
+    UseSlidingWindow = false,      // Fixed or sliding window
+    Window = TimeSpan.FromHours(1) // Time window
 };
 
 server.AddRateLimiting(rateLimitConfig);
 
 // Alternative: Ready-made configurations
-server.AddRateLimiting(RateLimitConfiguration.PerHour(100));
-server.AddRateLimiting(RateLimitConfiguration.PerMinute(10));`;
+server.AddRateLimiting(RateLimitConfiguration.PerDay(1000));  // 1000 per day
+server.AddRateLimiting(RateLimitConfiguration.PerHour(100));  // 100 per hour
+server.AddRateLimiting(RateLimitConfiguration.PerMinute(10)); // 10 per minute`;
 
 export default function ConfigurationPage() {
   return (

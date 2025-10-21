@@ -63,9 +63,12 @@
 }
 
 /* Line numbers styling for light/dark mode */
-pre[class*="language-"] {
+pre[class*="language-"],
+code[class*="language-"] {
   line-height: 1.5;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 pre[class*="language-"].line-numbers {

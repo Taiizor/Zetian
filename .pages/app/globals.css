@@ -238,22 +238,117 @@ pre[class*="language-"].line-numbers > code {
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Custom Scrollbar */
+  /* Modern Custom Scrollbar Design */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-800;
+    @apply bg-gray-50 dark:bg-gray-900;
+    border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 dark:bg-gray-600 rounded-md;
+    @apply bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gradient-to-b from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-500;
+  }
+  
+  ::-webkit-scrollbar-thumb:active {
+    @apply bg-gradient-to-b from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600;
+  }
+  
+  ::-webkit-scrollbar-corner {
+    @apply bg-gray-50 dark:bg-gray-900;
+  }
+  
+  /* Thin scrollbar for specific containers */
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .thin-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-700;
+    border-radius: 8px;
+    border: 1px solid transparent;
+  }
+  
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-600;
+  }
+  
+  /* Firefox scrollbar support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(156, 163, 175) rgb(249, 250, 251);
+  }
+  
+  .dark * {
+    scrollbar-color: rgb(75, 85, 99) rgb(17, 24, 39);
+  }
+  
+  /* Minimal scrollbar for code blocks */
+  pre::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  pre::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+    border-radius: 3px;
+  }
+  
+  pre::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-gray-600;
+    border-radius: 3px;
+  }
+  
+  pre::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-500 dark:bg-gray-500;
+  }
+  
+  /* Hide scrollbar for specific elements */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Overlay scrollbar (appears only on hover) */
+  .overlay-scrollbar {
+    overflow: overlay;
+  }
+  
+  .overlay-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .overlay-scrollbar:not(:hover)::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+  
+  .overlay-scrollbar:hover::-webkit-scrollbar-thumb {
+    @apply bg-gray-400/50 dark:bg-gray-600/50;
+    border-radius: 10px;
+  }
+  
+  /* Custom animation for smooth scrollbar appearance */
+  ::-webkit-scrollbar-thumb {
+    transition: background-color 0.2s ease;
   }
 
   /* Code blocks */

@@ -15,11 +15,13 @@ import {
 import CodeBlock from '@/components/CodeBlock';
 
 const basicAuthExample = `using Zetian;
+using Zetian.Authentication;
 
 // Simple username/password authentication
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication()
     .SimpleAuthentication("admin", "password123")
     .Build();
 
@@ -34,6 +36,7 @@ var users = new Dictionary<string, string>
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication()
     .AuthenticationHandler(async (username, password) =>
     {
         if (users.TryGetValue(username, out var correctPassword) && 

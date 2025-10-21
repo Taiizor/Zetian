@@ -6,23 +6,42 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Light mode Prism styles - GitHub inspired */
+/* Light mode Prism styles - VS Code Light+ inspired */
 @layer prism-light {
   :root:not(.dark) code[class*="language-"],
   :root:not(.dark) pre[class*="language-"] {
-    color: #24292e;
+    color: #000000;
     background: #ffffff;
     text-shadow: none;
   }
   
-  :root:not(.dark) .token.comment { color: #6a737d; }
-  :root:not(.dark) .token.keyword { color: #d73a49; font-weight: 600; }
-  :root:not(.dark) .token.string { color: #032f62; }
-  :root:not(.dark) .token.function { color: #6f42c1; }
-  :root:not(.dark) .token.class-name { color: #6f42c1; }
-  :root:not(.dark) .token.number { color: #005cc5; }
-  :root:not(.dark) .token.boolean { color: #005cc5; }
-  :root:not(.dark) .token.variable { color: #e36209; }
+  /* Keywords: using, var, await, async, class, public, etc. */
+  :root:not(.dark) .token.keyword { color: #0000ff; font-weight: 600; }
+  
+  /* Strings */
+  :root:not(.dark) .token.string { color: #a31515; }
+  
+  /* Comments */
+  :root:not(.dark) .token.comment { color: #008000; font-style: italic; }
+  
+  /* Function/Method names */
+  :root:not(.dark) .token.function { color: #795e26; }
+  
+  /* Class names */
+  :root:not(.dark) .token.class-name { color: #267f99; }
+  
+  /* Variables */
+  :root:not(.dark) .token.variable { color: #001080; }
+  
+  /* Numbers and booleans */
+  :root:not(.dark) .token.number,
+  :root:not(.dark) .token.boolean { color: #098658; }
+  
+  /* Properties */
+  :root:not(.dark) .token.property { color: #001080; }
+  
+  /* Namespace */
+  :root:not(.dark) .token.namespace { color: #267f99; }
 }
 
 /* Dark mode Prism styles - VS Code Dark+ inspired */
@@ -31,6 +50,7 @@
   :root.dark pre[class*="language-"] {
     color: #d4d4d4;
     background: #1e1e1e;
+    text-shadow: none;
   }
   
   /* Keywords: using, var, await, async, class, public, etc. */

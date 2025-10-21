@@ -26,7 +26,7 @@ const features = [
   {
     icon: Zap,
     title: 'High Performance',
-    description: 'Optimized I/O operations and minimal memory usage with System.IO.Pipelines integration.',
+    description: 'Efficient async/await patterns, optimized network I/O operations and minimal memory allocations.',
     color: 'from-yellow-500 to-orange-600'
   },
   {

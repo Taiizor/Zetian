@@ -48,8 +48,8 @@ var server = new SmtpServerBuilder()
     })
     .Build();`;
 
-const customAuthExample = `// Database authentication
-public class DatabaseAuthHandler : IAuthenticationHandler
+const customAuthExample = `// Custom authentication handler with database
+public class DatabaseAuthHandler
 {
     private readonly IUserRepository _userRepository;
     
@@ -58,11 +58,16 @@ public class DatabaseAuthHandler : IAuthenticationHandler
         _userRepository = userRepository;
     }
     
+    // AuthenticationHandler delegate signature: (string?, string?) => Task<AuthenticationResult>
     public async Task<AuthenticationResult> AuthenticateAsync(
-        string username, 
-        string password,
-        CancellationToken cancellationToken = default)
+        string? username, 
+        string? password)
     {
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            return AuthenticationResult.Fail("Username and password required");
+        }
+        
         // Get user from database
         var user = await _userRepository.GetByUsernameAsync(username);
         
@@ -71,8 +76,10 @@ public class DatabaseAuthHandler : IAuthenticationHandler
             return AuthenticationResult.Fail("User not found");
         }
         
-        // Check password hash
-        if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+        // Check password hash (use BCrypt in production)
+        // Install: dotnet add package BCrypt.Net-Next
+        // if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+        if (password != user.PasswordHash) // Don't use plain text in production!
         {
             return AuthenticationResult.Fail("Invalid password");
         }
@@ -84,20 +91,19 @@ public class DatabaseAuthHandler : IAuthenticationHandler
         }
         
         // Successful authentication
-        return AuthenticationResult.Succeed(username, new
-        {
-            UserId = user.Id,
-            Email = user.Email,
-            Roles = user.Roles
-        });
+        // Note: AuthenticationResult.Succeed only takes username
+        return AuthenticationResult.Succeed(username);
     }
 }
 
 // Usage
+var userRepository = new YourUserRepository(); // Your database implementation
 var authHandler = new DatabaseAuthHandler(userRepository);
+
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication() // For testing without TLS
     .AuthenticationHandler(authHandler.AuthenticateAsync)
     .Build();`;
 
@@ -109,44 +115,55 @@ var server = new SmtpServerBuilder()
     .RequireAuthentication()   // Auth required
     .Build();
 
-// STARTTLS support (optional TLS)
-var server = new SmtpServerBuilder()
+// Allow plain text authentication (for testing without TLS)
+var testServer = new SmtpServerBuilder()
     .Port(587)
-    .Certificate("certificate.pfx", "password")
-    .EnableStartTls()  // STARTTLS enabled but not required
+    .RequireAuthentication()
+    .AllowPlainTextAuthentication() // Allow auth without TLS
+    .SimpleAuthentication("admin", "password")
     .Build();
 
-// SSL/TLS port (465) - Implicit TLS
+// SSL/TLS with certificate object
+var cert = new X509Certificate2("certificate.pfx", "password");
 var server = new SmtpServerBuilder()
     .Port(465)
-    .Certificate("certificate.pfx", "password")
+    .Certificate(cert)
     .RequireSecureConnection()
-    .ImplicitTls() // Encrypted from the beginning of connection
+    .RequireAuthentication()
     .Build();`;
 
 const authMechanismsExample = `// Different authentication mechanisms
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
-    // PLAIN mechanism (default)
-    .AddAuthenticator(new PlainAuthenticator(authHandler))
-    // LOGIN mechanism (legacy)
-    .AddAuthenticator(new LoginAuthenticator(authHandler))
-    // CRAM-MD5 (optional)
-    .AddAuthenticator(new CramMd5Authenticator(authHandler))
+    // Add authentication mechanisms
+    .AddAuthenticationMechanism("PLAIN")   // Default
+    .AddAuthenticationMechanism("LOGIN")   // Legacy support
+    // Custom authentication handler for all mechanisms
+    .AuthenticationHandler(async (username, password) =>
+    {
+        // Your authentication logic here
+        return AuthenticationResult.Succeed(username);
+    })
     .Build();
 
-// Auth events
-server.Authentication += (sender, e) =>
+// Authentication tracking via session events
+server.SessionCompleted += (sender, e) =>
 {
-    if (e.IsAuthenticated)
+    if (e.Session.IsAuthenticated)
     {
-        Console.WriteLine($"User authenticated: {e.Username}");
-        // Login record, audit log, etc.
+        Console.WriteLine($"User session completed: {e.Session.AuthenticatedIdentity}");
+        // Log successful authentication, audit trail, etc.
     }
-    else
+};
+
+// Message from authenticated user
+server.MessageReceived += (sender, e) =>
+{
+    if (e.Session.IsAuthenticated)
     {
-        Console.WriteLine($"Authentication failed for: {e.Username}");
+        var user = e.Session.AuthenticatedIdentity;
+        Console.WriteLine($"Message from authenticated user: {user}");
         // Failed login record, security alert
     }
 };

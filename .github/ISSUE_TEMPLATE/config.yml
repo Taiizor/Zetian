@@ -3,8 +3,8 @@ contact_links:
   - name: 💬 Zetian Discussions
     url: https://github.com/Taiizor/Zetian/discussions
     about: Ask questions, share ideas, and discuss Zetian features
-  - name: 📚 Documentation Wiki
-    url: https://github.com/Taiizor/Zetian/wiki
+  - name: 📚 Zetian Documentation
+    url: https://zetian.soferity.com
     about: Comprehensive guides, API reference, and tutorials
   - name: 🔒 Security Issues
     url: mailto:taiizor@vegalya.com

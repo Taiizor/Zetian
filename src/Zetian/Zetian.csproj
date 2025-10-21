@@ -25,7 +25,7 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageReleaseNotes>All changes are detailed at https://github.com/Taiizor/UUID/wiki/Changelog.</PackageReleaseNotes>
+        <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
         <PackageTags>smtp;email;mail;server;smtp-server;mail-server;email-server;tcp;network;protocol</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->

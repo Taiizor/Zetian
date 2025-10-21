@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Production Service
+  app:
+    container_name: zetian-docs
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6745:6745"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    restart: unless-stopped
+    networks:
+      - zetian-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:6745/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (optional - for production with SSL)
+  nginx:
+    image: nginx:alpine
+    container_name: zetian-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - zetian-network
+    profiles:
+      - with-nginx
+    restart: unless-stopped
+
+networks:
+  zetian-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+  next_cache:

@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Need help with Zetian? We're here to assist! Please check our [documentation](https://github.com/Taiizor/Zetian/wiki) and [discussions](https://github.com/Taiizor/Zetian/discussions) first.
+        Need help with Zetian? We're here to assist! Please check our [documentation](https://zetian.soferity.com) and [discussions](https://github.com/Taiizor/Zetian/discussions) first.
   
   - type: dropdown
     id: question-type

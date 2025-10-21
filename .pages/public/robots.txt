@@ -1,0 +1,11 @@
+# Robots.txt for Zetian Documentation
+# https://zetian.soferity.com
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://zetian.soferity.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

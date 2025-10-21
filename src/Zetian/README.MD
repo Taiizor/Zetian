@@ -63,12 +63,12 @@ await server.StartAsync();
 - **Rate Limiting** - Built-in protection against abuse
 - **Multi-Framework** - Supports .NET 6.0, 7.0, 8.0, 9.0, 10.0
 - **Event-Driven** - Rich event system for message processing
-- **Authentication** - PLAIN, LOGIN mechanisms + custom auth support
-- **High Performance** - System.IO.Pipelines integration for optimized I/O
-- **Message Storage** - Flexible message store abstraction with file system support
-- **Mailbox Filtering** - Advanced sender/recipient filtering with domain rules
-- **SMTPUTF8** - Full UTF-8 support for international email addresses
 - **Composite Filters** - Chain multiple filters with AND/OR logic
+- **SMTPUTF8** - Full UTF-8 support for international email addresses
+- **Authentication** - PLAIN, LOGIN mechanisms + custom auth support
+- **High Performance** - Efficient async/await patterns and optimized I/O
+- **Mailbox Filtering** - Advanced sender/recipient filtering with domain rules
+- **Message Storage** - Flexible message store abstraction with file system support
 
 ## 🔧 Advanced Configuration
 
@@ -263,8 +263,8 @@ var server = new SmtpServerBuilder()
 
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
 - **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
-- **Documentation**: [GitHub Wiki](https://github.com/Taiizor/Zetian/wiki)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 
 ## 🔒 Security
 

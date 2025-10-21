@@ -386,10 +386,6 @@ server.MessageReceived += (sender, e) =>
 };`;
 
 export default function MessageProcessingPage() {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
     <div className="min-h-screen py-12 bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4 max-w-5xl">

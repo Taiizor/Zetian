@@ -19,7 +19,7 @@ This folder contains the modern, SEO-optimized documentation site for Zetian SMT
 1. **Install dependencies:**
 
 ```bash
-cd pages
+cd .pages
 npm install
 ```
 

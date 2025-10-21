@@ -42,6 +42,31 @@
   color: #9ca3af;
 }
 
+/* Prism operator & punctuation pill overrides (light/dark) */
+:root:not(.dark) code[class*="language-"] .token.operator,
+:root:not(.dark) pre[class*="language-"] .token.operator,
+:root:not(.dark) code[class*="language-"] .token.punctuation,
+:root:not(.dark) pre[class*="language-"] .token.punctuation {
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+
+:root.dark code[class*="language-"] .token.operator,
+:root.dark pre[class*="language-"] .token.operator,
+:root.dark code[class*="language-"] .token.punctuation,
+:root.dark pre[class*="language-"] .token.punctuation {
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

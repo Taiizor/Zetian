@@ -69,6 +69,7 @@ await server.StopAsync();
 using var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
+    .AllowPlainTextAuthentication()
     .SimpleAuthentication("user", "password")
     .Build();
 
@@ -274,21 +275,44 @@ server.ErrorOccurred += (s, e) =>
 ## Custom Authentication
 
 ```csharp
+// Option 1: Create a custom authenticator class
+public class CustomAuthenticator : IAuthenticator
+{
+    public string Mechanism => "CUSTOM";
+    
+    public async Task<AuthenticationResult> AuthenticateAsync(
+        ISmtpSession session,
+        string? initialResponse,
+        StreamReader reader,
+        StreamWriter writer,
+        CancellationToken cancellationToken)
+    {
+        // Implement your custom authentication logic here
+        // ...
+    }
+}
+
 // Register custom authenticator
 AuthenticatorFactory.Register("CUSTOM", () => 
     new CustomAuthenticator());
 
-// Or use the authentication handler
-server.AuthenticationHandler(async (username, password) =>
-{
-    // Check against database
-    var user = await db.GetUser(username);
-    if (user != null && VerifyPassword(password, user.PasswordHash))
+// Option 2: Use the authentication handler with builder
+var server = new SmtpServerBuilder()
+    .Port(587)
+    .RequireAuthentication()
+    .AuthenticationHandler(async (username, password) =>
     {
-        return AuthenticationResult.Succeed(username);
-    }
-    return AuthenticationResult.Fail();
-});
+        // Check against database
+        var user = await db.GetUser(username);
+        if (user != null && VerifyPassword(password, user.PasswordHash))
+        {
+            return AuthenticationResult.Succeed(username);
+        }
+        return AuthenticationResult.Fail();
+    })
+    .AddAuthenticationMechanism("PLAIN")
+    .AddAuthenticationMechanism("LOGIN")
+    .Build();
 ```
 
 ## Message Processing

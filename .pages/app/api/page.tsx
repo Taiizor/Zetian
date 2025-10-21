@@ -3,13 +3,16 @@ import Link from 'next/link';
 import { 
   Code2, 
   FileCode, 
-  Calendar,
   Shield,
   Database,
   Filter,
   ChevronRight,
   Hash,
-  Box
+  Box,
+  Zap,
+  Lock,
+  Mail,
+  Settings
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -24,74 +27,145 @@ const apiCategories = [
     items: [
       {
         name: 'SmtpServer',
-        description: 'Main SMTP server class',
-        properties: ['Port', 'IsRunning', 'Endpoint', 'Configuration'],
+        description: 'Main SMTP server class that handles connections and messages',
+        properties: ['Configuration', 'IsRunning', 'Endpoint'],
         methods: ['StartAsync()', 'StopAsync()', 'Dispose()'],
         events: ['MessageReceived', 'SessionCreated', 'SessionCompleted', 'ErrorOccurred']
       },
       {
         name: 'SmtpServerBuilder',
-        description: 'Server configuration with fluent builder pattern',
+        description: 'Fluent builder for configuring SMTP servers',
         properties: [],
         methods: [
           'Port(int)', 
+          'BindTo(IPAddress)',
           'ServerName(string)', 
+          'MaxMessageSize(long)',
           'MaxMessageSizeMB(int)',
-          'RequireAuthentication()',
+          'MaxRecipients(int)',
+          'MaxConnections(int)',
+          'MaxConnectionsPerIP(int)',
+          'EnablePipelining(bool)',
+          'Enable8BitMime(bool)',
+          'EnableSmtpUtf8(bool)',
+          'Certificate(X509Certificate2)',
           'Certificate(string, string)',
+          'SslProtocols(SslProtocols)',
+          'RequireAuthentication(bool)',
+          'RequireSecureConnection(bool)',
+          'AllowPlainTextAuthentication(bool)',
+          'AddAuthenticationMechanism(string)',
+          'AuthenticationHandler(handler)',
+          'SimpleAuthentication(user, pass)',
+          'ConnectionTimeout(TimeSpan)',
+          'CommandTimeout(TimeSpan)',
+          'DataTimeout(TimeSpan)',
+          'LoggerFactory(ILoggerFactory)',
+          'EnableVerboseLogging(bool)',
+          'Banner(string)',
+          'Greeting(string)',
+          'BufferSize(read, write)',
+          'MessageStore(IMessageStore)',
+          'WithFileMessageStore(dir, createFolders)',
+          'MailboxFilter(IMailboxFilter)',
+          'WithSenderDomainWhitelist(domains)',
+          'WithSenderDomainBlacklist(domains)',
+          'WithRecipientDomainWhitelist(domains)',
+          'WithRecipientDomainBlacklist(domains)',
           'Build()'
         ],
         events: []
       },
       {
         name: 'SmtpServerConfiguration',
-        description: 'Server configuration settings',
+        description: 'Configuration settings for SMTP server',
         properties: [
           'Port',
+          'IpAddress',
           'ServerName',
           'MaxMessageSize',
           'MaxRecipients',
           'MaxConnections',
           'MaxConnectionsPerIp',
+          'EnablePipelining',
+          'Enable8BitMime',
+          'EnableSmtpUtf8',
+          'Certificate',
+          'SslProtocols',
           'RequireAuthentication',
           'RequireSecureConnection',
-          'EnableSmtpUtf8'
+          'AllowPlainTextAuthentication',
+          'AuthenticationMechanisms',
+          'ConnectionTimeout',
+          'CommandTimeout',
+          'DataTimeout',
+          'ReadBufferSize',
+          'WriteBufferSize',
+          'Banner',
+          'Greeting',
+          'LoggerFactory',
+          'EnableVerboseLogging',
+          'MessageStore',
+          'MailboxFilter'
         ],
-        methods: [],
+        methods: ['Validate()'],
         events: []
       }
     ]
   },
   {
-    title: 'Interfaces',
+    title: 'Core Interfaces',
     icon: FileCode,
     items: [
       {
         name: 'ISmtpMessage',
-        description: 'SMTP message interface',
+        description: 'Represents an SMTP message',
         properties: [
           'Id',
-          'From',
-          'Recipients',
+          'From (MailAddress?)',
+          'Recipients (IReadOnlyList<MailAddress>)',
           'Subject',
           'TextBody',
           'HtmlBody',
           'Headers',
           'Size',
-          'RawData'
+          'Date',
+          'Priority',
+          'HasAttachments',
+          'AttachmentCount'
         ],
-        methods: ['SaveToFileAsync(string)', 'GetRawMessage()'],
+        methods: [
+          'GetRawData()',
+          'GetRawDataAsync()',
+          'GetRawDataStream()',
+          'GetHeader(string)',
+          'GetHeaders(string)',
+          'SaveToFile(string)',
+          'SaveToFileAsync(string)',
+          'SaveToStream(Stream)',
+          'SaveToStreamAsync(Stream)'
+        ],
         events: []
       },
       {
         name: 'ISmtpSession',
-        description: 'SMTP session interface',
+        description: 'Represents an SMTP session',
         properties: [
           'Id',
           'RemoteEndPoint',
+          'LocalEndPoint',
           'IsSecure',
-          'AuthenticatedUser',
-          'StartTime'
+          'IsAuthenticated',
+          'AuthenticatedIdentity',
+          'ClientDomain',
+          'StartTime',
+          'Properties',
+          'ClientCertificate',
+          'MessageCount',
+          'PipeliningEnabled',
+          'EightBitMimeEnabled',
+          'BinaryMimeEnabled',
+          'MaxMessageSize'
         ],
         methods: [],
         events: []
@@ -121,15 +195,15 @@ const apiCategories = [
     items: [
       {
         name: 'IAuthenticator',
-        description: 'Authentication interface',
+        description: 'Authentication mechanism interface',
         properties: ['Mechanism'],
-        methods: ['AuthenticateAsync(PipeReader, PipeWriter, CancellationToken)'],
+        methods: ['AuthenticateAsync(session, initialResponse, reader, writer, ct)'],
         events: []
       },
       {
         name: 'AuthenticationResult',
         description: 'Authentication result',
-        properties: ['IsAuthenticated', 'Username', 'FailureReason'],
+        properties: ['Success', 'Identity', 'ErrorMessage'],
         methods: ['Succeed(string)', 'Fail(string?)'],
         events: []
       },
@@ -197,34 +271,124 @@ const apiCategories = [
     ]
   },
   {
-    title: 'Events',
-    icon: Calendar,
+    title: 'Event Arguments',
+    icon: Zap,
     items: [
       {
-        name: 'MessageReceivedEventArgs',
-        description: 'Event triggered when message is received',
+        name: 'MessageEventArgs',
+        description: 'Event args for message events',
         properties: ['Message', 'Session', 'Cancel', 'Response'],
         methods: [],
         events: []
       },
       {
         name: 'SessionEventArgs',
-        description: 'Base class for session events',
+        description: 'Event args for session events',
         properties: ['Session'],
         methods: [],
         events: []
       },
       {
         name: 'AuthenticationEventArgs',
-        description: 'Authentication event',
-        properties: ['Username', 'IsAuthenticated', 'Session'],
+        description: 'Event args for authentication events',
+        properties: ['Mechanism', 'Username', 'Password', 'Session', 'IsAuthenticated', 'AuthenticatedIdentity'],
         methods: [],
         events: []
       },
       {
         name: 'ErrorEventArgs',
-        description: 'Error event',
-        properties: ['Exception', 'Session', 'IsFatal'],
+        description: 'Event args for error events',
+        properties: ['Exception', 'Session'],
+        methods: [],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Protocol',
+    icon: Mail,
+    items: [
+      {
+        name: 'SmtpResponse',
+        description: 'SMTP protocol response',
+        properties: ['Code', 'Lines', 'Message', 'IsPositive', 'IsError', 'IsSuccess'],
+        methods: ['ToString()'],
+        events: [],
+        staticMembers: [
+          'Ok (250)',
+          'ServiceReady (220)',
+          'ServiceClosing (221)',
+          'StartMailInput (354)',
+          'AuthenticationRequired (530)',
+          'AuthenticationSuccessful (235)',
+          'AuthenticationFailed (535)',
+          'ServiceNotAvailable (421)',
+          'SyntaxError (500)',
+          'BadSequence (503)',
+          'TransactionFailed (554)'
+        ]
+      },
+      {
+        name: 'SmtpCommand',
+        description: 'SMTP protocol command',
+        properties: ['Name', 'Parameters'],
+        methods: ['Parse(string)', 'IsValid()'],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Extensions',
+    icon: Zap,
+    items: [
+      {
+        name: 'SmtpServerExtensions',
+        description: 'Extension methods for SMTP server',
+        properties: [],
+        methods: [
+          'AddRateLimiting(IRateLimiter)',
+          'AddRateLimiting(RateLimitConfiguration)',
+          'AddMessageFilter(Func<ISmtpMessage, bool>)',
+          'AddSpamFilter(blacklistedDomains)',
+          'AddSizeFilter(maxSizeBytes)',
+          'SaveMessagesToDirectory(directory)',
+          'LogMessages(logger)',
+          'ForwardMessages(forwarder)',
+          'AddRecipientValidation(validator)',
+          'AddAllowedDomains(domains)',
+          'AddStatistics(collector)'
+        ],
+        events: []
+      },
+      {
+        name: 'RateLimitConfiguration',
+        description: 'Rate limiting configuration',
+        properties: ['MaxRequests', 'Window', 'UseSlidingWindow'],
+        methods: [
+          'PerMinute(maxRequests)',
+          'PerHour(maxRequests)',
+          'PerDay(maxRequests)'
+        ],
+        events: []
+      },
+      {
+        name: 'IRateLimiter',
+        description: 'Rate limiting interface',
+        properties: [],
+        methods: [
+          'IsAllowedAsync(key)',
+          'IsAllowedAsync(IPAddress)',
+          'RecordRequestAsync(key)',
+          'RecordRequestAsync(IPAddress)',
+          'ResetAsync(key)',
+          'GetRemainingAsync(key)'
+        ],
+        events: []
+      },
+      {
+        name: 'InMemoryRateLimiter',
+        description: 'In-memory rate limiter implementation',
+        properties: ['Configuration'],
         methods: [],
         events: []
       }
@@ -344,6 +508,28 @@ export default function ApiReferencePage() {
                         </div>
                       )}
 
+                      {/* Static Members */}
+                      {'staticMembers' in item && item.staticMembers && item.staticMembers.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                            Static Members
+                          </h4>
+                          <div className="space-y-2">
+                            {item.staticMembers.map((member: string) => (
+                              <div 
+                                key={member}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <Hash className="h-3 w-3 text-gray-400" />
+                                <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-indigo-600 dark:text-indigo-400">
+                                  {member}
+                                </code>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Events */}
                       {item.events.length > 0 && (
                         <div>
@@ -356,7 +542,7 @@ export default function ApiReferencePage() {
                                 key={event}
                                 className="flex items-center gap-2 text-sm"
                               >
-                                <Calendar className="h-3 w-3 text-gray-400" />
+                                <Zap className="h-3 w-3 text-gray-400" />
                                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-purple-600 dark:text-purple-400">
                                   {event}
                                 </code>

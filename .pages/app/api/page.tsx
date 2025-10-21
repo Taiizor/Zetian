@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { 
   Code2, 
   FileCode, 
-  Settings, 
   Calendar,
   Shield,
   Database,

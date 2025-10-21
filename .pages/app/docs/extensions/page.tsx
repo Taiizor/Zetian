@@ -11,11 +11,11 @@ import {
   Settings,
   AlertCircle,
   CheckCircle,
-  Copy,
   Layers,
   Github,
   Zap
 } from 'lucide-react';
+import CodeBlock from '@/components/CodeBlock';
 
 const customFilterExample = `using System.Net;
 using Zetian.Core;
@@ -451,6 +451,9 @@ var server = new SmtpServerBuilder()
     .AddPrometheusMetrics()
     .AddElasticsearchLogging("http://localhost:9200");
 
+// Initialize plugins
+await pluginManager.InitializePluginsAsync(server);
+
 // Start server
 await server.StartAsync();`;
 
@@ -578,16 +581,13 @@ var server = new SmtpServerBuilder()
     .Port(25)
     .Build();
 
+// Initialize plugins
 await pluginManager.InitializePluginsAsync(server);
 
 // Start server
 await server.StartAsync();`;
 
 export default function ExtensionsPage() {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
     <div className="min-h-screen py-12 bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4 max-w-5xl">
@@ -634,20 +634,13 @@ export default function ExtensionsPage() {
             Create custom filters by implementing the IMailboxFilter interface:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(customFilterExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{customFilterExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={customFilterExample}
+            language="csharp"
+            filename="CustomSpamFilter.cs"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
               <div>
@@ -689,20 +682,13 @@ export default function ExtensionsPage() {
             Create custom storage solutions by implementing the IMessageStore interface:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(customStoreExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{customStoreExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={customStoreExample}
+            language="csharp"
+            filename="CustomMessageStore.cs"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Cloud Storage</h4>
               <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
@@ -736,18 +722,11 @@ export default function ExtensionsPage() {
             Combine multiple filters with AND/OR logic:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(compositeFilterExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{compositeFilterExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={compositeFilterExample}
+            language="csharp"
+            filename="CompositeFilter.cs"
+          />
         </section>
 
         {/* Extension Methods */}
@@ -761,20 +740,13 @@ export default function ExtensionsPage() {
             Extension methods that add new features to SmtpServer:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(extensionMethodsExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{extensionMethodsExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={extensionMethodsExample}
+            language="csharp"
+            filename="ExtensionMethods.cs"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <Zap className="h-5 w-5 text-yellow-500 mb-2" />
               <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Webhook</h4>
@@ -812,20 +784,13 @@ export default function ExtensionsPage() {
             Create a modular plugin system:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(pluginSystemExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{pluginSystemExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={pluginSystemExample}
+            language="csharp"
+            filename="PluginSystem.cs"
+          />
 
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mt-6">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
               <div>

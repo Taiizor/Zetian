@@ -5,15 +5,15 @@ import {
   Settings, 
   Server, 
   Shield, 
-  Gauge, 
-  Database,
   Filter,
-  Globe,
-  Lock,
-  AlertCircle,
+  Gauge,
   Copy,
-  CheckCircle
+  AlertCircle,
+  CheckCircle,
+  FileCode,
+  Lock
 } from 'lucide-react';
+import CodeBlock from '@/components/CodeBlock';
 
 const configExample = `using Zetian;
 
@@ -99,10 +99,6 @@ server.AddRateLimiting(RateLimitConfiguration.PerHour(100));
 server.AddRateLimiting(RateLimitConfiguration.PerMinute(10));`;
 
 export default function ConfigurationPage() {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
     <div className="min-h-screen py-12 bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4 max-w-5xl">
@@ -149,21 +145,14 @@ export default function ConfigurationPage() {
             Configure your server with SmtpServerBuilder:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(configExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{configExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={configExample}
+            language="csharp"
+            filename="ServerConfiguration.cs"
+          />
 
           {/* Configuration Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Basic Settings</h4>
               <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
@@ -197,20 +186,13 @@ export default function ConfigurationPage() {
             Configure different authentication methods:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(authConfigExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{authConfigExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={authConfigExample}
+            language="csharp"
+            filename="AuthConfiguration.cs"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
               <div>
@@ -246,20 +228,13 @@ export default function ConfigurationPage() {
             Two different filtering approaches:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(filterConfigExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{filterConfigExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={filterConfigExample}
+            language="csharp"
+            filename="FilterConfiguration.cs"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Protocol-Level Filtering</h4>
               <p className="text-sm text-green-800 dark:text-green-200 mb-2">
@@ -297,20 +272,13 @@ export default function ConfigurationPage() {
             Speed limiting for spam protection:
           </p>
           
-          <div className="relative bg-gray-900 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => copyToClipboard(rateLimitExample)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-700 rounded transition-colors"
-              aria-label="Copy"
-            >
-              <Copy className="h-4 w-4 text-gray-400" />
-            </button>
-            <pre className="text-gray-100 text-sm overflow-x-auto">
-              <code>{rateLimitExample}</code>
-            </pre>
-          </div>
+          <CodeBlock 
+            code={rateLimitExample}
+            language="csharp"
+            filename="RateLimiting.cs"
+          />
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 mt-6">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
               <div>

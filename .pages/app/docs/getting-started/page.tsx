@@ -5,7 +5,6 @@ import {
   Terminal, 
   CheckCircle, 
   ArrowRight,
-  Copy,
   Package,
   Zap,
   AlertCircle
@@ -122,7 +121,7 @@ export default function GettingStartedPage() {
               showLineNumbers={false}
             />
             
-            <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 mt-4">
               <Package className="h-4 w-4 mt-0.5" />
               <p>
                 Alternatively, you can use Package Manager Console in Visual Studio or .NET CLI.

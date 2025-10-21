@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "prismjs/themes/prism-twilight.css";
+@import "prismjs/plugins/line-numbers/prism-line-numbers.css";
+@import "prismjs/plugins/line-highlight/prism-line-highlight.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

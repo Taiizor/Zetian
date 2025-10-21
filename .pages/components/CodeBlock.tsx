@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import Prism from 'prismjs';
 
+// Import Prism plugins
+import 'prismjs/plugins/line-numbers/prism-line-numbers';
+import 'prismjs/plugins/line-highlight/prism-line-highlight';
+
 // Import Prism languages
 import 'prismjs/components/prism-csharp';
 import 'prismjs/components/prism-bash';
@@ -43,8 +47,6 @@ export default function CodeBlock({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const lines = code.split('\n');
-
   return (
     <div className={`relative group ${className}`}>
       {/* Header */}
@@ -72,33 +74,19 @@ export default function CodeBlock({
 
         {/* Code Content */}
         <div className="overflow-x-auto">
-          <pre className={`p-4 text-sm ${showLineNumbers ? 'pl-12' : ''}`}>
-            {showLineNumbers ? (
-              <code className={`language-${language}`}>
-                {lines.map((line, index) => {
-                  const lineNumber = index + 1;
-                  const isHighlighted = highlightLines.includes(lineNumber);
-                  return (
-                    <div
-                      key={index}
-                      className={`table-row ${isHighlighted ? 'bg-blue-500/10' : ''}`}
-                    >
-                      <span className="table-cell text-right pr-4 select-none text-gray-600 dark:text-gray-500 w-8">
-                        {lineNumber}
-                      </span>
-                      <span className="table-cell">
-                        {line}
-                        {'\n'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </code>
-            ) : (
-              <code ref={codeRef} className={`language-${language}`}>
-                {code}
-              </code>
-            )}
+          <pre 
+            className={[
+              'p-4',
+              'text-sm',
+              showLineNumbers && 'line-numbers',
+              `language-${language}`
+            ].filter(Boolean).join(' ')}
+            tabIndex={0}
+            {...(highlightLines.length > 0 && { 'data-line': highlightLines.join(',') })}
+          >
+            <code ref={codeRef} className={`language-${language}`}>
+              {code}
+            </code>
           </pre>
         </div>
       </div>

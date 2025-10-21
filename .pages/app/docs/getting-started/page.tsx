@@ -118,7 +118,7 @@ export default function GettingStartedPage() {
             
             <CodeBlock 
               code={installCommand}
-              language="powershell"
+              language="bash"
             />
             
             <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">

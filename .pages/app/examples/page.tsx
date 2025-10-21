@@ -127,8 +127,8 @@ Console.WriteLine("Secure SMTP Server running with STARTTLS support on port 587"
     icon: Gauge,
     color: 'from-yellow-500 to-orange-600',
     difficulty: 'Intermediate',
-    code: `using Zetian;
-using Zetian.Extensions;
+    code: `using Zetian.Extensions;
+using Zetian.Extensions.RateLimiting;
 
 // SMTP server protected with rate limiting
 using var server = new SmtpServerBuilder()
@@ -138,23 +138,25 @@ using var server = new SmtpServerBuilder()
     .Build();
 
 // Add rate limiting - 100 messages per hour per IP
-server.AddRateLimiting(new RateLimitConfiguration
-{
-    MessagesPerHour = 100,
-    MessagesPerMinute = 10,
-    EnableIpBasedLimiting = true
-});
+server.AddRateLimiting(RateLimitConfiguration.PerHour(100));
+
+// Alternative configurations:
+// server.AddRateLimiting(RateLimitConfiguration.PerMinute(10));
+// server.AddRateLimiting(RateLimitConfiguration.PerDay(1000));
 
 server.MessageReceived += (sender, e) => {
-    var remainingQuota = GetRemainingQuota(e.Session.RemoteEndPoint);
-    Console.WriteLine($"Message received. Remaining quota: {remainingQuota}");
+    Console.WriteLine($"Message from {e.Session.RemoteEndPoint}");
+    // Rate limiting is handled automatically
+    // Messages exceeding limit get SMTP error 421
 };
 
-server.RateLimitExceeded += (sender, e) => {
-    Console.WriteLine($"Rate limit exceeded for {e.RemoteEndPoint}");
+server.ErrorOccurred += (sender, e) => {
+    if (e.Exception.Message.Contains("rate limit"))
+        Console.WriteLine($"Rate limit exceeded: {e.Session?.RemoteEndPoint}");
 };
 
-await server.StartAsync();`
+await server.StartAsync();
+Console.WriteLine("Rate-limited server on port 25");`
   },
   {
     id: 'filtered',

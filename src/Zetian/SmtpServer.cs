@@ -330,9 +330,16 @@ namespace Zetian
                 {
                     _sessions.TryRemove(session.Id, out _);
 
-                    if (client.Client.RemoteEndPoint is IPEndPoint remoteEndPoint)
+                    try
                     {
-                        _connectionsPerIp.AddOrUpdate(remoteEndPoint.Address, 0, (_, count) => Math.Max(0, count - 1));
+                        if (client?.Client?.RemoteEndPoint is IPEndPoint remoteEndPoint)
+                        {
+                            _connectionsPerIp.AddOrUpdate(remoteEndPoint.Address, 0, (_, count) => Math.Max(0, count - 1));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug("Error accessing RemoteEndPoint in finally: {Message}", ex.Message);
                     }
 
                     OnSessionCompleted(new SessionEventArgs(session));
@@ -346,7 +353,7 @@ namespace Zetian
 
                 try
                 {
-                    client.Close();
+                    client?.Close();
                 }
                 catch
                 {

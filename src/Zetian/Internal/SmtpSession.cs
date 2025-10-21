@@ -99,9 +99,17 @@ namespace Zetian.Internal
                         }
 
                         await ProcessCommandAsync(line, cancellationToken).ConfigureAwait(false);
+
+                        // Check if QUIT was processed
+                        if (_state == SmtpSessionState.Quit)
+                        {
+                            _logger.LogDebug("Session {SessionId}: QUIT processed, breaking loop", Id);
+                            break;
+                        }
                     }
-                    catch (IOException)
+                    catch (IOException ex)
                     {
+                        _logger.LogDebug("Session {SessionId}: Connection lost - {Message}", Id, ex.Message);
                         // Connection lost
                         break;
                     }
@@ -501,6 +509,12 @@ namespace Zetian.Internal
         {
             _state = SmtpSessionState.Quit;
             await SendResponseAsync(SmtpResponse.ServiceClosing).ConfigureAwait(false);
+
+            // Flush the writer to ensure response is sent
+            if (_writer != null)
+            {
+                await _writer.FlushAsync().ConfigureAwait(false);
+            }
         }
 
         private async Task ProcessStartTlsAsync(CancellationToken cancellationToken)

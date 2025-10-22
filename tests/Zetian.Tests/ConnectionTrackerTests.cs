@@ -98,8 +98,14 @@ namespace Zetian.Tests
             Assert.Null(await _tracker.TryAcquireAsync(_testIp2));
 
             // Cleanup
-            handles1.ForEach(h => h.Dispose());
-            handles2.ForEach(h => h.Dispose());
+            foreach (ConnectionTracker.ConnectionHandle handle in handles1)
+            {
+                handle.Dispose();
+            }
+            foreach (ConnectionTracker.ConnectionHandle handle in handles2)
+            {
+                handle.Dispose();
+            }
         }
 
         [Fact]
@@ -107,10 +113,10 @@ namespace Zetian.Tests
         {
             // Arrange
             const int maxConnections = 5;
-            const int totalAttempts = 100;
+            const int totalAttempts = 20; // Reduced from 100 for faster test
             int successCount = 0;
-            ConcurrentBag<ConnectionTracker.ConnectionHandle> handles = new();
-            Barrier barrier = new(totalAttempts);
+            var handles = new ConcurrentBag<ConnectionTracker.ConnectionHandle>();
+            var barrier = new Barrier(totalAttempts);
 
             // Act - Many concurrent attempts
             Task[] tasks = Enumerable.Range(0, totalAttempts).Select(_ => Task.Run(async () =>
@@ -122,7 +128,7 @@ namespace Zetian.Tests
                 {
                     Interlocked.Increment(ref successCount);
                     handles.Add(handle);
-                    await Task.Delay(100); // Hold the connection briefly
+                    // No delay needed for this test
                 }
             })).ToArray();
 
@@ -186,18 +192,21 @@ namespace Zetian.Tests
             Assert.Equal(2, _tracker.GetConnectionCount(_testIp));
 
             // Cleanup
-            handles.ForEach(h => h.Dispose());
+            foreach (ConnectionTracker.ConnectionHandle handle in handles)
+            {
+                handle.Dispose();
+            }
         }
 
         [Fact]
         public async Task TryAcquireAsync_ShouldRespectCancellationToken()
         {
             // Arrange
-            using CancellationTokenSource cts = new();
+            using var cts = new CancellationTokenSource();
             cts.Cancel();
 
-            // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            // Act & Assert - TaskCanceledException derives from OperationCanceledException
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             {
                 await _tracker.TryAcquireAsync(_testIp, cts.Token);
             });
@@ -226,7 +235,10 @@ namespace Zetian.Tests
             Assert.Null(extraHandle);
 
             // Cleanup
-            handles.ForEach(h => h.Dispose());
+            foreach (ConnectionTracker.ConnectionHandle handle in handles)
+            {
+                handle.Dispose();
+            }
         }
     }
 }

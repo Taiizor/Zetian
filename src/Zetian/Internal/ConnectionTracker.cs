@@ -72,6 +72,14 @@ namespace Zetian.Internal
             return 0;
         }
 
+        /// <summary>
+        /// Releases a connection associated with the specified IP address and updates the connection count.
+        /// </summary>
+        /// <remarks>Connection removal is deferred and handled by a cleanup timer to avoid race
+        /// conditions when multiple threads interact with connection state. Immediate removal is not performed to
+        /// ensure thread safety and prevent premature deletion of connection information.</remarks>
+        /// <param name="ipAddress">The IP address for which the connection is being released.</param>
+        /// <param name="info">The connection information object that manages the state and count for the specified IP address.</param>
         private void ReleaseConnection(IPAddress ipAddress, ConnectionInfo info)
         {
             try
@@ -96,6 +104,13 @@ namespace Zetian.Internal
             }
         }
 
+        /// <summary>
+        /// Removes expired connection entries from the internal collection.
+        /// </summary>
+        /// <remarks>This method is intended to be used as a callback for timer-based cleanup operations.
+        /// It safely disposes of expired connections and logs any errors encountered during the cleanup process. The
+        /// method is thread-safe and can be invoked concurrently.</remarks>
+        /// <param name="state">An optional state object provided by the timer or scheduling mechanism. This parameter is not used.</param>
         private void CleanupExpired(object? state)
         {
             try
@@ -130,6 +145,12 @@ namespace Zetian.Internal
             }
         }
 
+        /// <summary>
+        /// Releases all resources used by the instance and disposes of managed connections and timers.
+        /// </summary>
+        /// <remarks>Call this method when the instance is no longer needed to free associated resources
+        /// promptly. After calling <see cref="Dispose"/>, the instance should not be used. This method is safe to call
+        /// multiple times; subsequent calls have no effect.</remarks>
         public void Dispose()
         {
             if (_disposed)
@@ -166,20 +187,13 @@ namespace Zetian.Internal
         /// <summary>
         /// Per-IP connection tracking information
         /// </summary>
-        internal sealed class ConnectionInfo : IDisposable
+        internal sealed class ConnectionInfo(int maxConnections) : IDisposable
         {
-            private readonly int _maxConnections;
-            private readonly SemaphoreSlim _semaphore;
+            private readonly SemaphoreSlim _semaphore = new(maxConnections, maxConnections);
             private readonly ReaderWriterLockSlim _lock = new();
             private int _activeConnections = 0;
             private DateTime _lastAccess = DateTime.UtcNow;
             private bool _markedForRemoval = false;
-
-            public ConnectionInfo(int maxConnections)
-            {
-                _maxConnections = maxConnections;
-                _semaphore = new SemaphoreSlim(maxConnections, maxConnections);
-            }
 
             public int CurrentCount
             {
@@ -301,6 +315,11 @@ namespace Zetian.Internal
                 }
             }
 
+            /// <summary>
+            /// Releases all resources used by the current instance.
+            /// </summary>
+            /// <remarks>Call this method when you are finished using the instance to free unmanaged
+            /// resources. After calling Dispose, the instance should not be used.</remarks>
             public void Dispose()
             {
                 _semaphore?.Dispose();

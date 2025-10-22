@@ -21,15 +21,9 @@ namespace Zetian.Extensions
         /// </summary>
         public static ISmtpServer AddRateLimiting(this ISmtpServer server, IRateLimiter rateLimiter)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (rateLimiter == null)
-            {
-                throw new ArgumentNullException(nameof(rateLimiter));
-            }
+            ArgumentNullException.ThrowIfNull(rateLimiter);
 
             server.SessionCreated += async (sender, e) =>
             {
@@ -77,15 +71,9 @@ namespace Zetian.Extensions
         /// </summary>
         public static ISmtpServer AddMessageFilter(this ISmtpServer server, Func<ISmtpMessage, bool> filter)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (filter == null)
-            {
-                throw new ArgumentNullException(nameof(filter));
-            }
+            ArgumentNullException.ThrowIfNull(filter);
 
             server.MessageReceived += (sender, e) =>
             {
@@ -130,10 +118,7 @@ namespace Zetian.Extensions
         /// </summary>
         public static ISmtpServer SaveMessagesToDirectory(this ISmtpServer server, string directory)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
             if (string.IsNullOrEmpty(directory))
             {
@@ -158,15 +143,9 @@ namespace Zetian.Extensions
         /// </summary>
         public static ISmtpServer LogMessages(this ISmtpServer server, Action<ISmtpMessage> logger)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (logger == null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
+            ArgumentNullException.ThrowIfNull(logger);
 
             server.MessageReceived += (sender, e) => logger(e.Message);
 
@@ -179,15 +158,9 @@ namespace Zetian.Extensions
         public static ISmtpServer ForwardMessages(this ISmtpServer server,
             Func<ISmtpMessage, Task<bool>> forwarder)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (forwarder == null)
-            {
-                throw new ArgumentNullException(nameof(forwarder));
-            }
+            ArgumentNullException.ThrowIfNull(forwarder);
 
             server.MessageReceived += async (sender, e) =>
             {
@@ -215,15 +188,9 @@ namespace Zetian.Extensions
         public static ISmtpServer AddRecipientValidation(this ISmtpServer server,
             Func<MailAddress, bool> validator)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (validator == null)
-            {
-                throw new ArgumentNullException(nameof(validator));
-            }
+            ArgumentNullException.ThrowIfNull(validator);
 
             server.MessageReceived += (sender, e) =>
             {
@@ -259,15 +226,9 @@ namespace Zetian.Extensions
         /// </summary>
         public static ISmtpServer AddStatistics(this ISmtpServer server, IStatisticsCollector collector)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (collector == null)
-            {
-                throw new ArgumentNullException(nameof(collector));
-            }
+            ArgumentNullException.ThrowIfNull(collector);
 
             server.SessionCreated += (sender, e) => collector.RecordSession();
             server.MessageReceived += (sender, e) => collector.RecordMessage(e.Message);

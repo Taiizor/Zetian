@@ -10,15 +10,8 @@ namespace Zetian.Authentication
     /// <summary>
     /// Implements LOGIN authentication mechanism
     /// </summary>
-    public class LoginAuthenticator : IAuthenticator
+    public class LoginAuthenticator(AuthenticationHandler? handler = null) : IAuthenticator
     {
-        private readonly AuthenticationHandler? _handler;
-
-        public LoginAuthenticator(AuthenticationHandler? handler = null)
-        {
-            _handler = handler;
-        }
-
         public string Mechanism => "LOGIN";
 
         public async Task<AuthenticationResult> AuthenticateAsync(
@@ -84,9 +77,9 @@ namespace Zetian.Authentication
                     return AuthenticationResult.Fail("Invalid password encoding");
                 }
 
-                if (_handler != null)
+                if (handler != null)
                 {
-                    return await _handler(username, password).ConfigureAwait(false);
+                    return await handler(username, password).ConfigureAwait(false);
                 }
 
                 // Default: accept any non-empty credentials

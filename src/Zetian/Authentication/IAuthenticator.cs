@@ -29,32 +29,25 @@ namespace Zetian.Authentication
     /// <summary>
     /// Authentication result
     /// </summary>
-    public class AuthenticationResult
+    /// <remarks>
+    /// Initializes a new authentication result
+    /// </remarks>
+    public class AuthenticationResult(bool success, string? identity = null, string? errorMessage = null)
     {
-        /// <summary>
-        /// Initializes a new authentication result
-        /// </summary>
-        public AuthenticationResult(bool success, string? identity = null, string? errorMessage = null)
-        {
-            Success = success;
-            Identity = identity;
-            ErrorMessage = errorMessage;
-        }
-
         /// <summary>
         /// Gets whether authentication succeeded
         /// </summary>
-        public bool Success { get; }
+        public bool Success { get; } = success;
 
         /// <summary>
         /// Gets the authenticated identity
         /// </summary>
-        public string? Identity { get; }
+        public string? Identity { get; } = identity;
 
         /// <summary>
         /// Gets the error message if failed
         /// </summary>
-        public string? ErrorMessage { get; }
+        public string? ErrorMessage { get; } = errorMessage;
 
         /// <summary>
         /// Creates a successful result

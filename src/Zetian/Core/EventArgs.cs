@@ -6,113 +6,85 @@ namespace Zetian.Core
     /// <summary>
     /// Event arguments for session events
     /// </summary>
-    public class SessionEventArgs : EventArgs
+    public class SessionEventArgs(ISmtpSession session) : EventArgs
     {
-        public SessionEventArgs(ISmtpSession session)
-        {
-            Session = session ?? throw new ArgumentNullException(nameof(session));
-        }
-
         /// <summary>
         /// Gets the SMTP session
         /// </summary>
-        public ISmtpSession Session { get; }
+        public ISmtpSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
     }
 
     /// <summary>
     /// Event arguments for message events
     /// </summary>
-    public class MessageEventArgs : EventArgs
+    public class MessageEventArgs(ISmtpMessage message, ISmtpSession session) : EventArgs
     {
-        public MessageEventArgs(ISmtpMessage message, ISmtpSession session)
-        {
-            Message = message ?? throw new ArgumentNullException(nameof(message));
-            Session = session ?? throw new ArgumentNullException(nameof(session));
-            Cancel = false;
-            Response = SmtpResponse.Ok;
-        }
-
         /// <summary>
         /// Gets the received message
         /// </summary>
-        public ISmtpMessage Message { get; }
+        public ISmtpMessage Message { get; } = message ?? throw new ArgumentNullException(nameof(message));
 
         /// <summary>
         /// Gets the session that received the message
         /// </summary>
-        public ISmtpSession Session { get; }
+        public ISmtpSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
 
         /// <summary>
         /// Gets or sets whether to cancel/reject the message
         /// </summary>
-        public bool Cancel { get; set; }
+        public bool Cancel { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the response to send to the client
         /// </summary>
-        public SmtpResponse Response { get; set; }
+        public SmtpResponse Response { get; set; } = SmtpResponse.Ok;
     }
 
     /// <summary>
     /// Event arguments for error events
     /// </summary>
-    public class ErrorEventArgs : EventArgs
+    public class ErrorEventArgs(Exception exception, ISmtpSession? session = null) : EventArgs
     {
-        public ErrorEventArgs(Exception exception, ISmtpSession? session = null)
-        {
-            Exception = exception ?? throw new ArgumentNullException(nameof(exception));
-            Session = session;
-        }
-
         /// <summary>
         /// Gets the exception that occurred
         /// </summary>
-        public Exception Exception { get; }
+        public Exception Exception { get; } = exception ?? throw new ArgumentNullException(nameof(exception));
 
         /// <summary>
         /// Gets the session where the error occurred (if any)
         /// </summary>
-        public ISmtpSession? Session { get; }
+        public ISmtpSession? Session { get; } = session;
     }
 
     /// <summary>
     /// Event arguments for authentication events
     /// </summary>
-    public class AuthenticationEventArgs : EventArgs
+    public class AuthenticationEventArgs(string mechanism, string? username, string? password, ISmtpSession session) : EventArgs
     {
-        public AuthenticationEventArgs(string mechanism, string? username, string? password, ISmtpSession session)
-        {
-            Mechanism = mechanism ?? throw new ArgumentNullException(nameof(mechanism));
-            Username = username;
-            Password = password;
-            Session = session ?? throw new ArgumentNullException(nameof(session));
-            IsAuthenticated = false;
-        }
-
         /// <summary>
         /// Gets the authentication mechanism
         /// </summary>
-        public string Mechanism { get; }
+        public string Mechanism { get; } = mechanism ?? throw new ArgumentNullException(nameof(mechanism));
 
         /// <summary>
         /// Gets the username
         /// </summary>
-        public string? Username { get; }
+        public string? Username { get; } = username;
 
         /// <summary>
         /// Gets the password
         /// </summary>
-        public string? Password { get; }
+        public string? Password { get; } = password;
 
         /// <summary>
         /// Gets the session
         /// </summary>
-        public ISmtpSession Session { get; }
+        public ISmtpSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
 
         /// <summary>
         /// Gets or sets whether the authentication succeeded
         /// </summary>
-        public bool IsAuthenticated { get; set; }
+        public bool IsAuthenticated { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the authenticated identity

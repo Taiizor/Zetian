@@ -9,26 +9,16 @@ namespace Zetian.Storage
     /// <summary>
     /// Filters mailboxes based on allowed/blocked domains
     /// </summary>
-    public class DomainMailboxFilter : IMailboxFilter
+    /// <remarks>
+    /// Initializes a new instance of DomainMailboxFilter
+    /// </remarks>
+    /// <param name="allowByDefault">Whether to allow domains by default if not in any list</param>
+    public class DomainMailboxFilter(bool allowByDefault = true) : IMailboxFilter
     {
-        private readonly HashSet<string> _allowedFromDomains;
-        private readonly HashSet<string> _blockedFromDomains;
-        private readonly HashSet<string> _allowedToDomains;
-        private readonly HashSet<string> _blockedToDomains;
-        private readonly bool _allowByDefault;
-
-        /// <summary>
-        /// Initializes a new instance of DomainMailboxFilter
-        /// </summary>
-        /// <param name="allowByDefault">Whether to allow domains by default if not in any list</param>
-        public DomainMailboxFilter(bool allowByDefault = true)
-        {
-            _allowByDefault = allowByDefault;
-            _allowedFromDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            _blockedFromDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            _allowedToDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            _blockedToDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        }
+        private readonly HashSet<string> _allowedFromDomains = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _blockedFromDomains = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _allowedToDomains = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _blockedToDomains = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Add allowed sender domains
@@ -94,7 +84,7 @@ namespace Zetian.Storage
             string domain = GetDomain(from);
             if (string.IsNullOrEmpty(domain))
             {
-                return Task.FromResult(_allowByDefault);
+                return Task.FromResult(allowByDefault);
             }
 
             // Check blocked list first
@@ -120,7 +110,7 @@ namespace Zetian.Storage
             }
 
             // No specific rules or mixed mode with domain not in any list, use default
-            return Task.FromResult(_allowByDefault);
+            return Task.FromResult(allowByDefault);
         }
 
         /// <inheritdoc />
@@ -138,7 +128,7 @@ namespace Zetian.Storage
             string domain = GetDomain(to);
             if (string.IsNullOrEmpty(domain))
             {
-                return Task.FromResult(_allowByDefault);
+                return Task.FromResult(allowByDefault);
             }
 
             // Check blocked list first
@@ -164,7 +154,7 @@ namespace Zetian.Storage
             }
 
             // No specific rules or mixed mode with domain not in any list, use default
-            return Task.FromResult(_allowByDefault);
+            return Task.FromResult(allowByDefault);
         }
 
         private static string GetDomain(string email)

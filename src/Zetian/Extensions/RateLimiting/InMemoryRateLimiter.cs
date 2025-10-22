@@ -41,10 +41,7 @@ namespace Zetian.Extensions.RateLimiting
 
         public Task<bool> IsAllowedAsync(IPAddress ipAddress)
         {
-            if (ipAddress == null)
-            {
-                throw new ArgumentNullException(nameof(ipAddress));
-            }
+            ArgumentNullException.ThrowIfNull(ipAddress);
 
             return IsAllowedAsync(ipAddress.ToString());
         }
@@ -63,10 +60,7 @@ namespace Zetian.Extensions.RateLimiting
 
         public Task RecordRequestAsync(IPAddress ipAddress)
         {
-            if (ipAddress == null)
-            {
-                throw new ArgumentNullException(nameof(ipAddress));
-            }
+            ArgumentNullException.ThrowIfNull(ipAddress);
 
             return RecordRequestAsync(ipAddress.ToString());
         }

@@ -23,7 +23,7 @@ namespace Zetian.Protocol
             }
 
             Code = code;
-            _lines = new List<string>();
+            _lines = new();
 
             if (!string.IsNullOrEmpty(message))
             {
@@ -48,7 +48,7 @@ namespace Zetian.Protocol
             }
 
             Code = code;
-            _lines = new List<string>();
+            _lines = new();
 
             if (lines != null && lines.Length > 0)
             {

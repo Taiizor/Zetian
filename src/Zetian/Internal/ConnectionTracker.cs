@@ -35,10 +35,7 @@ namespace Zetian.Internal
         /// <returns>A connection handle if successful, null if limit exceeded</returns>
         public async Task<ConnectionHandle?> TryAcquireAsync(IPAddress ipAddress, CancellationToken cancellationToken = default)
         {
-            if (ipAddress == null)
-            {
-                throw new ArgumentNullException(nameof(ipAddress));
-            }
+            ArgumentNullException.ThrowIfNull(ipAddress);
 
             // Get or create connection info atomically
             ConnectionInfo info = _connections.GetOrAdd(ipAddress, _ => new ConnectionInfo(_maxConnectionsPerIp));

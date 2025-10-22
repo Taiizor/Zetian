@@ -10,15 +10,8 @@ namespace Zetian.Authentication
     /// <summary>
     /// Implements PLAIN authentication mechanism
     /// </summary>
-    public class PlainAuthenticator : IAuthenticator
+    public class PlainAuthenticator(AuthenticationHandler? handler = null) : IAuthenticator
     {
-        private readonly AuthenticationHandler? _handler;
-
-        public PlainAuthenticator(AuthenticationHandler? handler = null)
-        {
-            _handler = handler;
-        }
-
         public string Mechanism => "PLAIN";
 
         public async Task<AuthenticationResult> AuthenticateAsync(
@@ -79,9 +72,9 @@ namespace Zetian.Authentication
                     password = parts[2];
                 }
 
-                if (_handler != null)
+                if (handler != null)
                 {
-                    return await _handler(username, password).ConfigureAwait(false);
+                    return await handler(username, password).ConfigureAwait(false);
                 }
 
                 // Default: accept any non-empty credentials

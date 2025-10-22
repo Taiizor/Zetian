@@ -108,12 +108,12 @@ namespace Zetian.Internal
                 string? priority = GetHeader("X-Priority") ?? GetHeader("Priority");
                 if (priority != null)
                 {
-                    if (priority.Contains("1") || priority.Contains("High", StringComparison.OrdinalIgnoreCase))
+                    if (priority.Contains('1') || priority.Contains("High", StringComparison.OrdinalIgnoreCase))
                     {
                         return MailPriority.High;
                     }
 
-                    if (priority.Contains("5") || priority.Contains("Low", StringComparison.OrdinalIgnoreCase))
+                    if (priority.Contains('5') || priority.Contains("Low", StringComparison.OrdinalIgnoreCase))
                     {
                         return MailPriority.Low;
                     }
@@ -187,7 +187,7 @@ namespace Zetian.Internal
 
         public async Task SaveToStreamAsync(Stream stream)
         {
-            await stream.WriteAsync(_rawData, 0, _rawData.Length).ConfigureAwait(false);
+            await stream.WriteAsync(_rawData).ConfigureAwait(false);
         }
 
         private void ParseHeaders()
@@ -208,11 +208,11 @@ namespace Zetian.Internal
                 }
 
                 // Continuation of previous header
-                if (line.StartsWith(" ") || line.StartsWith("\t"))
+                if (line.StartsWith(' ') || line.StartsWith('\t'))
                 {
                     if (currentHeader != null)
                     {
-                        currentValue.Append(" ");
+                        currentValue.Append(' ');
                         currentValue.Append(line.Trim());
                     }
                 }

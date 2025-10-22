@@ -45,8 +45,8 @@ namespace Zetian.Internal
             RemoteEndPoint = _client.Client.RemoteEndPoint ?? new IPEndPoint(IPAddress.None, 0);
             LocalEndPoint = _client.Client.LocalEndPoint ?? new IPEndPoint(IPAddress.None, 0);
 
-            _properties = new Dictionary<string, object>();
-            _recipients = new List<string>();
+            _properties = new();
+            _recipients = new();
             _state = SmtpSessionState.Connected;
 
             MaxMessageSize = _configuration.MaxMessageSize;

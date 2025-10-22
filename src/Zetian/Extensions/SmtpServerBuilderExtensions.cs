@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
 using Zetian.Authentication;
 using Zetian.Storage;
 
@@ -14,10 +15,7 @@ namespace Zetian.Extensions
         /// </summary>
         public static SmtpServerBuilder AddSpamFilter(this SmtpServerBuilder builder, params string[] spamDomains)
         {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
+            ArgumentNullException.ThrowIfNull(builder);
 
             return builder.WithSenderDomainBlacklist(spamDomains);
         }
@@ -27,10 +25,7 @@ namespace Zetian.Extensions
         /// </summary>
         public static SmtpServerBuilder AddAllowedDomains(this SmtpServerBuilder builder, params string[] domains)
         {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
+            ArgumentNullException.ThrowIfNull(builder);
 
             return builder.WithRecipientDomainWhitelist(domains);
         }
@@ -40,10 +35,7 @@ namespace Zetian.Extensions
         /// </summary>
         public static SmtpServerBuilder AddSizeFilter(this SmtpServerBuilder builder, long maxSizeInBytes)
         {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
+            ArgumentNullException.ThrowIfNull(builder);
 
             return builder.MaxMessageSize(maxSizeInBytes);
         }
@@ -75,7 +67,7 @@ namespace Zetian.Extensions
         public static SmtpServer CreateProduction(
             this SmtpServerBuilder _,
             int port,
-            System.Security.Cryptography.X509Certificates.X509Certificate2 certificate,
+            X509Certificate2 certificate,
             AuthenticationHandler authHandler,
             IMessageStore? messageStore = null,
             IMailboxFilter? mailboxFilter = null)

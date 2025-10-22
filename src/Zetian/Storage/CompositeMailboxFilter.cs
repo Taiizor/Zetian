@@ -10,10 +10,14 @@ namespace Zetian.Storage
     /// <summary>
     /// Combines multiple mailbox filters into one
     /// </summary>
-    public class CompositeMailboxFilter : IMailboxFilter
+    /// <remarks>
+    /// Initializes a new instance of CompositeMailboxFilter
+    /// </remarks>
+    /// <param name="mode">The composite mode (All or Any)</param>
+    /// <param name="filters">Initial filters to add</param>
+    public class CompositeMailboxFilter(CompositeMailboxFilter.CompositeMode mode = CompositeMailboxFilter.CompositeMode.All, params IMailboxFilter[] filters) : IMailboxFilter
     {
-        private readonly List<IMailboxFilter> _filters;
-        private readonly CompositeMode _mode;
+        private readonly List<IMailboxFilter> _filters = new(filters ?? Array.Empty<IMailboxFilter>());
 
         /// <summary>
         /// Composite filter mode
@@ -32,25 +36,11 @@ namespace Zetian.Storage
         }
 
         /// <summary>
-        /// Initializes a new instance of CompositeMailboxFilter
-        /// </summary>
-        /// <param name="mode">The composite mode (All or Any)</param>
-        /// <param name="filters">Initial filters to add</param>
-        public CompositeMailboxFilter(CompositeMode mode = CompositeMode.All, params IMailboxFilter[] filters)
-        {
-            _mode = mode;
-            _filters = new List<IMailboxFilter>(filters ?? Array.Empty<IMailboxFilter>());
-        }
-
-        /// <summary>
         /// Add a filter to the composite
         /// </summary>
         public CompositeMailboxFilter AddFilter(IMailboxFilter filter)
         {
-            if (filter == null)
-            {
-                throw new ArgumentNullException(nameof(filter));
-            }
+            ArgumentNullException.ThrowIfNull(filter);
 
             _filters.Add(filter);
             return this;
@@ -80,7 +70,7 @@ namespace Zetian.Storage
             IEnumerable<Task<bool>> tasks = _filters.Select(f => f.CanAcceptFromAsync(session, from, size, cancellationToken));
             bool[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            return _mode == CompositeMode.All
+            return mode == CompositeMode.All
                 ? results.All(r => r)
                 : results.Any(r => r);
         }
@@ -100,7 +90,7 @@ namespace Zetian.Storage
             IEnumerable<Task<bool>> tasks = _filters.Select(f => f.CanDeliverToAsync(session, to, from, cancellationToken));
             bool[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            return _mode == CompositeMode.All
+            return mode == CompositeMode.All
                 ? results.All(r => r)
                 : results.Any(r => r);
         }

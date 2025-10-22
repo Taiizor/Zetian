@@ -286,7 +286,7 @@ namespace Zetian
                 // Try to acquire a connection slot for this IP
                 IPAddress ipAddress = remoteEndPoint.Address;
                 connectionHandle = await _connectionTracker.TryAcquireAsync(ipAddress, cancellationToken).ConfigureAwait(false);
-                
+
                 if (connectionHandle == null)
                 {
                     _logger.LogWarning("Connection limit exceeded for IP {IPAddress}", ipAddress);

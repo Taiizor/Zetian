@@ -1,9 +1,10 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Zetian.Internal
 {
@@ -23,7 +24,7 @@ namespace Zetian.Internal
             _maxConnectionsPerIp = maxConnectionsPerIp;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _connections = new ConcurrentDictionary<IPAddress, ConnectionInfo>();
-            
+
             // Cleanup expired connection infos every 5 minutes
             _cleanupTimer = new Timer(CleanupExpired, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
         }
@@ -35,27 +36,29 @@ namespace Zetian.Internal
         public async Task<ConnectionHandle?> TryAcquireAsync(IPAddress ipAddress, CancellationToken cancellationToken = default)
         {
             if (ipAddress == null)
+            {
                 throw new ArgumentNullException(nameof(ipAddress));
+            }
 
-            var info = _connections.GetOrAdd(ipAddress, _ => new ConnectionInfo(_maxConnectionsPerIp));
-            
+            ConnectionInfo info = _connections.GetOrAdd(ipAddress, _ => new ConnectionInfo(_maxConnectionsPerIp));
+
             // Try to acquire the semaphore
-            var acquired = await info.Semaphore.WaitAsync(0, cancellationToken).ConfigureAwait(false);
-            
+            bool acquired = await info.Semaphore.WaitAsync(0, cancellationToken).ConfigureAwait(false);
+
             if (acquired)
             {
                 info.UpdateLastAccess();
-                var currentCount = info.IncrementCount();
-                
-                _logger.LogDebug("Connection acquired for {IPAddress}. Current count: {Count}/{Max}", 
+                int currentCount = info.IncrementCount();
+
+                _logger.LogDebug("Connection acquired for {IPAddress}. Current count: {Count}/{Max}",
                     ipAddress, currentCount, _maxConnectionsPerIp);
-                
+
                 return new ConnectionHandle(ipAddress, info, this);
             }
-            
-            _logger.LogWarning("Connection limit exceeded for {IPAddress}. Max: {Max}", 
+
+            _logger.LogWarning("Connection limit exceeded for {IPAddress}. Max: {Max}",
                 ipAddress, _maxConnectionsPerIp);
-            
+
             return null;
         }
 
@@ -64,7 +67,7 @@ namespace Zetian.Internal
         /// </summary>
         public int GetConnectionCount(IPAddress ipAddress)
         {
-            if (_connections.TryGetValue(ipAddress, out var info))
+            if (_connections.TryGetValue(ipAddress, out ConnectionInfo? info))
             {
                 return info.CurrentCount;
             }
@@ -75,16 +78,16 @@ namespace Zetian.Internal
         {
             try
             {
-                var currentCount = info.DecrementCount();
+                int currentCount = info.DecrementCount();
                 info.Semaphore.Release();
-                
-                _logger.LogDebug("Connection released for {IPAddress}. Current count: {Count}", 
+
+                _logger.LogDebug("Connection released for {IPAddress}. Current count: {Count}",
                     ipAddress, currentCount);
-                
+
                 // If no more connections, consider removing the entry
                 if (currentCount == 0 && info.CanBeRemoved())
                 {
-                    if (_connections.TryRemove(ipAddress, out var removed))
+                    if (_connections.TryRemove(ipAddress, out ConnectionInfo? removed))
                     {
                         removed.Dispose();
                     }
@@ -100,11 +103,11 @@ namespace Zetian.Internal
         {
             try
             {
-                foreach (var kvp in _connections)
+                foreach (KeyValuePair<IPAddress, ConnectionInfo> kvp in _connections)
                 {
                     if (kvp.Value.CanBeRemoved() && kvp.Value.CurrentCount == 0)
                     {
-                        if (_connections.TryRemove(kvp.Key, out var removed))
+                        if (_connections.TryRemove(kvp.Key, out ConnectionInfo? removed))
                         {
                             removed.Dispose();
                         }
@@ -120,12 +123,14 @@ namespace Zetian.Internal
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             _disposed = true;
             _cleanupTimer?.Dispose();
 
-            foreach (var kvp in _connections)
+            foreach (KeyValuePair<IPAddress, ConnectionInfo> kvp in _connections)
             {
                 kvp.Value.Dispose();
             }
@@ -163,46 +168,35 @@ namespace Zetian.Internal
         /// </summary>
         internal sealed class ConnectionInfo : IDisposable
         {
-            private readonly SemaphoreSlim _semaphore;
-            private int _currentCount;
             private DateTime _lastAccess;
             private readonly object _lock = new();
 
             public ConnectionInfo(int maxConnections)
             {
-                _semaphore = new SemaphoreSlim(maxConnections, maxConnections);
-                _currentCount = 0;
+                CurrentCount = maxConnections;
+                Semaphore = new SemaphoreSlim(maxConnections, maxConnections);
                 _lastAccess = DateTime.UtcNow;
             }
 
-            public SemaphoreSlim Semaphore => _semaphore;
+            public SemaphoreSlim Semaphore { get; }
 
-            public int CurrentCount
-            {
-                get
-                {
-                    lock (_lock)
-                    {
-                        return _currentCount;
-                    }
-                }
-            }
+            public int CurrentCount =>
+                    // SemaphoreSlim.CurrentCount shows available slots
+                    // So active connections = max - available
+                    field - Semaphore.CurrentCount;
 
             public int IncrementCount()
             {
-                lock (_lock)
-                {
-                    return ++_currentCount;
-                }
+                // Just return the current count after semaphore acquire
+                // No need for separate tracking
+                return CurrentCount;
             }
 
             public int DecrementCount()
             {
-                lock (_lock)
-                {
-                    _currentCount = Math.Max(0, _currentCount - 1);
-                    return _currentCount;
-                }
+                // Just return the current count after semaphore release
+                // No need for separate tracking
+                return CurrentCount;
             }
 
             public void UpdateLastAccess()
@@ -218,14 +212,14 @@ namespace Zetian.Internal
                 lock (_lock)
                 {
                     // Remove if not accessed for 10 minutes and no active connections
-                    return _currentCount == 0 && 
+                    return CurrentCount == 0 &&
                            (DateTime.UtcNow - _lastAccess) > TimeSpan.FromMinutes(10);
                 }
             }
 
             public void Dispose()
             {
-                _semaphore?.Dispose();
+                Semaphore?.Dispose();
             }
         }
     }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Net;
 using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
 
@@ -114,8 +115,28 @@ namespace Zetian.HealthCheck.Examples
                 }
             });
 
-            await healthCheckService.StartAsync();
-            Console.WriteLine("Health check service started\n");
+            try
+            {
+                await healthCheckService.StartAsync();
+                Console.WriteLine("✓ Health check service started successfully\n");
+            }
+            catch (HttpListenerException ex) when (ex.ErrorCode == 5)
+            {
+                Console.WriteLine("\n❌ Access Denied: Cannot start health check service!");
+                Console.WriteLine("\nSolution: Run this application as Administrator");
+                Console.WriteLine("\nPress any key to exit...");
+                Console.ReadKey();
+                await smtpServer.StopAsync();
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n❌ Failed to start health check: {ex.Message}");
+                Console.WriteLine("\nPress any key to exit...");
+                Console.ReadKey();
+                await smtpServer.StopAsync();
+                return;
+            }
 
             // Print health check endpoints
             Console.WriteLine("Available health check endpoints:");

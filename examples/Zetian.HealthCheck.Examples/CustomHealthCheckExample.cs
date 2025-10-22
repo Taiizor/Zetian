@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
 
@@ -36,8 +37,7 @@ namespace Zetian.HealthCheck.Examples
             {
                 Prefixes = new()
                 {
-                    "http://localhost:8080/health/",
-                    "http://+:8080/health/"  // Listen on all interfaces
+                    "http://localhost:8080/health/"
                 },
                 DegradedStatusCode = 218  // "This is fine" status code
             };
@@ -50,6 +50,34 @@ namespace Zetian.HealthCheck.Examples
             Console.WriteLine();
 
             HealthCheckService healthCheckService = smtpServer.EnableHealthCheck(serviceOptions, healthCheckOptions);
+
+            try
+            {
+                await healthCheckService.StartAsync();
+                Console.WriteLine("Health check service started with custom configuration");
+                Console.WriteLine("Health check available on localhost at port 8080");
+                Console.WriteLine();
+            }
+            catch (HttpListenerException ex) when (ex.ErrorCode == 5)
+            {
+                Console.WriteLine("\n❌ Access Denied: Administrator privileges required!");
+                Console.WriteLine("\nTo fix this, run one of the following:");
+                Console.WriteLine("1. Run this application as Administrator");
+                Console.WriteLine("2. Or add URL reservation (run as admin):");
+                Console.WriteLine("   netsh http add urlacl url=http://+:8080/health/ user=Everyone");
+                Console.WriteLine("\nPress any key to exit...");
+                Console.ReadKey();
+                await smtpServer.StopAsync();
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n❌ Failed to start health check: {ex.Message}");
+                Console.WriteLine("\nPress any key to exit...");
+                Console.ReadKey();
+                await smtpServer.StopAsync();
+                return;
+            }
 
             // Add custom health checks
             healthCheckService.AddHealthCheck("system_resources", async (ct) =>
@@ -115,11 +143,7 @@ namespace Zetian.HealthCheck.Examples
                 }
             });
 
-            await healthCheckService.StartAsync();
-
-            Console.WriteLine("Health check service started with custom configuration");
-            Console.WriteLine("Health check available on all interfaces at port 8080");
-            Console.WriteLine();
+            // Health check already started above
             Console.WriteLine("Available endpoints:");
             Console.WriteLine("  - http://localhost:8080/health/");
             Console.WriteLine("  - http://localhost:8080/health/livez");

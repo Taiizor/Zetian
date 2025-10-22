@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Zetian.HealthCheck
+namespace Zetian.HealthCheck.Models
 {
     /// <summary>
     /// Represents the result of a health check
@@ -54,26 +54,5 @@ namespace Zetian.HealthCheck
         {
             return new HealthCheckResult(HealthStatus.Unhealthy, description, exception, data);
         }
-    }
-
-    /// <summary>
-    /// Health status
-    /// </summary>
-    public enum HealthStatus
-    {
-        /// <summary>
-        /// The component is healthy
-        /// </summary>
-        Healthy = 0,
-
-        /// <summary>
-        /// The component is degraded but still functional
-        /// </summary>
-        Degraded = 1,
-
-        /// <summary>
-        /// The component is unhealthy
-        /// </summary>
-        Unhealthy = 2
     }
 }

@@ -6,8 +6,11 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Core;
+using Zetian.HealthCheck.Abstractions;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Options;
 
-namespace Zetian.HealthCheck
+namespace Zetian.HealthCheck.Checks
 {
     /// <summary>
     /// Health check for SMTP server
@@ -126,26 +129,5 @@ namespace Zetian.HealthCheck
                 ["gcTotalMemory"] = GC.GetTotalMemory(false)
             };
         }
-    }
-
-    /// <summary>
-    /// Options for SMTP server health check
-    /// </summary>
-    public class SmtpHealthCheckOptions
-    {
-        /// <summary>
-        /// Gets or sets the threshold percentage for degraded status
-        /// </summary>
-        public double DegradedThresholdPercent { get; set; } = 70;
-
-        /// <summary>
-        /// Gets or sets the threshold percentage for unhealthy status
-        /// </summary>
-        public double UnhealthyThresholdPercent { get; set; } = 90;
-
-        /// <summary>
-        /// Gets or sets whether to check memory usage
-        /// </summary>
-        public bool CheckMemoryUsage { get; set; } = true;
     }
 }

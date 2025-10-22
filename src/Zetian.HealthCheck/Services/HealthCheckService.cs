@@ -7,8 +7,11 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.HealthCheck.Abstractions;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Options;
 
-namespace Zetian.HealthCheck
+namespace Zetian.HealthCheck.Services
 {
     /// <summary>
     /// HTTP endpoint service for health checks
@@ -341,21 +344,5 @@ namespace Zetian.HealthCheck
 
             _disposed = true;
         }
-    }
-
-    /// <summary>
-    /// Options for health check service
-    /// </summary>
-    public class HealthCheckServiceOptions
-    {
-        /// <summary>
-        /// Gets or sets the HTTP prefixes to listen on
-        /// </summary>
-        public List<string> Prefixes { get; set; } = new() { "http://localhost:8080/health/" };
-
-        /// <summary>
-        /// Gets or sets the status code for degraded health
-        /// </summary>
-        public int DegradedStatusCode { get; set; } = 200; // Some prefer 200, others 218
     }
 }

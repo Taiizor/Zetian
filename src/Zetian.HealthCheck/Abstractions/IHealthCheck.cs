@@ -1,7 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.HealthCheck.Models;
 
-namespace Zetian.HealthCheck
+namespace Zetian.HealthCheck.Abstractions
 {
     /// <summary>
     /// Represents a health check

@@ -1,6 +1,7 @@
 using System.Net;
 using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
+using Zetian.HealthCheck.Services;
 
 namespace Zetian.HealthCheck.Examples
 {

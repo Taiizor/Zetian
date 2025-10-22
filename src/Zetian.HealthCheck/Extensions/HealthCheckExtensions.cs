@@ -4,6 +4,11 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Core;
+using Zetian.HealthCheck.Abstractions;
+using Zetian.HealthCheck.Checks;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Options;
+using Zetian.HealthCheck.Services;
 
 namespace Zetian.HealthCheck.Extensions
 {

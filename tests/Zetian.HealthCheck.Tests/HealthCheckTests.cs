@@ -3,6 +3,8 @@ using System.Text.Json;
 using Xunit;
 using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Services;
 
 namespace Zetian.HealthCheck.Tests
 {

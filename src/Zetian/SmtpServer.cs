@@ -20,7 +20,7 @@ namespace Zetian
         private readonly ILogger<SmtpServer> _logger;
         private readonly ConcurrentDictionary<string, SmtpSession> _sessions;
         private readonly SemaphoreSlim _connectionSemaphore;
-        private readonly ConcurrentDictionary<IPAddress, int> _connectionsPerIp;
+        private readonly ConnectionTracker _connectionTracker;
 
         private TcpListener? _listener;
         private CancellationTokenSource? _cancellationTokenSource;
@@ -39,7 +39,7 @@ namespace Zetian
             _logger = loggerFactory.CreateLogger<SmtpServer>();
 
             _sessions = new ConcurrentDictionary<string, SmtpSession>();
-            _connectionsPerIp = new ConcurrentDictionary<IPAddress, int>();
+            _connectionTracker = new ConnectionTracker(Configuration.MaxConnectionsPerIp, _logger);
             _connectionSemaphore = new SemaphoreSlim(Configuration.MaxConnections, Configuration.MaxConnections);
         }
 
@@ -180,7 +180,6 @@ namespace Zetian
                 }
 
                 _sessions.Clear();
-                _connectionsPerIp.Clear();
 
                 IsRunning = false;
                 _logger.LogInformation("SMTP server stopped");
@@ -273,6 +272,7 @@ namespace Zetian
         {
             SmtpSession? session = null;
             bool acquired = false;
+            ConnectionTracker.ConnectionHandle? connectionHandle = null;
 
             try
             {
@@ -283,23 +283,21 @@ namespace Zetian
                     return;
                 }
 
-                // Check per-IP connection limit
+                // Try to acquire a connection slot for this IP
                 IPAddress ipAddress = remoteEndPoint.Address;
-                int currentConnections = _connectionsPerIp.AddOrUpdate(ipAddress, 1, (_, count) => count + 1);
-
-                if (currentConnections > Configuration.MaxConnectionsPerIp)
+                connectionHandle = await _connectionTracker.TryAcquireAsync(ipAddress, cancellationToken).ConfigureAwait(false);
+                
+                if (connectionHandle == null)
                 {
-                    _connectionsPerIp.AddOrUpdate(ipAddress, 0, (_, count) => Math.Max(0, count - 1));
                     _logger.LogWarning("Connection limit exceeded for IP {IPAddress}", ipAddress);
                     client.Close();
                     return;
                 }
 
-                // Acquire connection semaphore
+                // Acquire global connection semaphore
                 acquired = await _connectionSemaphore.WaitAsync(0, cancellationToken).ConfigureAwait(false);
                 if (!acquired)
                 {
-                    _connectionsPerIp.AddOrUpdate(ipAddress, 0, (_, count) => Math.Max(0, count - 1));
                     _logger.LogWarning("Maximum connection limit reached");
                     client.Close();
                     return;
@@ -329,22 +327,12 @@ namespace Zetian
                 if (session != null)
                 {
                     _sessions.TryRemove(session.Id, out _);
-
-                    try
-                    {
-                        if (client?.Client?.RemoteEndPoint is IPEndPoint remoteEndPoint)
-                        {
-                            _connectionsPerIp.AddOrUpdate(remoteEndPoint.Address, 0, (_, count) => Math.Max(0, count - 1));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogDebug("Error accessing RemoteEndPoint in finally: {Message}", ex.Message);
-                    }
-
                     OnSessionCompleted(new SessionEventArgs(session));
                     _logger.LogInformation("Session {SessionId} completed", session.Id);
                 }
+
+                // Release connection handle (this handles IP-specific connection tracking)
+                connectionHandle?.Dispose();
 
                 if (acquired)
                 {
@@ -450,6 +438,7 @@ namespace Zetian
                 }
 
                 _connectionSemaphore?.Dispose();
+                _connectionTracker?.Dispose();
                 _cancellationTokenSource?.Dispose();
             }
 

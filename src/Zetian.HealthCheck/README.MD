@@ -417,8 +417,8 @@ else
 ## 📋 Requirements
 
 - Windows, Linux, or macOS
-- Zetian SMTP Server package
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- Zetian SMTP Server package
 - Administrator privileges for non-localhost binding (Windows)
 
 ## 📚 Documentation & Support

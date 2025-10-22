@@ -400,10 +400,14 @@ namespace Zetian
 
         private void ThrowIfDisposed()
         {
+#if NET6_0
             if (_disposed)
             {
                 throw new ObjectDisposedException(GetType().FullName);
             }
+#elif NET7_0_OR_GREATER
+            ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
         }
 
         /// <inheritdoc />

@@ -59,6 +59,11 @@ namespace Zetian
         /// <inheritdoc />
         public IPEndPoint? Endpoint => _listener?.LocalEndpoint as IPEndPoint;
 
+        /// <summary>
+        /// Gets the server start time
+        /// </summary>
+        public DateTime? StartTime { get; private set; }
+
         /// <inheritdoc />
         public event EventHandler<SessionEventArgs>? SessionCreated;
 
@@ -99,6 +104,7 @@ namespace Zetian
 
                 _listener.Start();
                 IsRunning = true;
+                StartTime = DateTime.UtcNow;
 
                 _logger.LogInformation("SMTP server started on {Endpoint}", Endpoint);
 
@@ -182,6 +188,7 @@ namespace Zetian
                 _sessions.Clear();
 
                 IsRunning = false;
+                StartTime = null;
                 _logger.LogInformation("SMTP server stopped");
             }
             catch (Exception ex)
@@ -195,6 +202,7 @@ namespace Zetian
                 _cancellationTokenSource = null;
                 _listener = null;
                 _acceptTask = null;
+                StartTime = null;
             }
         }
 

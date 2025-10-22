@@ -29,7 +29,7 @@ namespace Zetian.Tests
             {
                 tasks.Add(Task.Run(async () =>
                 {
-                    var handle = await _tracker.TryAcquireAsync(_testIp);
+                    ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp);
                     if (handle != null)
                     {
                         Interlocked.Increment(ref successCount);
@@ -54,21 +54,21 @@ namespace Zetian.Tests
             List<ConnectionTracker.ConnectionHandle?> handles = new();
             for (int i = 0; i < 5; i++)
             {
-                var handle = await _tracker.TryAcquireAsync(_testIp);
+                ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp);
                 Assert.NotNull(handle);
                 handles.Add(handle);
             }
 
             // Verify we can't acquire more
-            var extraHandle = await _tracker.TryAcquireAsync(_testIp);
+            ConnectionTracker.ConnectionHandle? extraHandle = await _tracker.TryAcquireAsync(_testIp);
             Assert.Null(extraHandle);
 
             // Release all connections concurrently
-            var releaseTasks = handles.Select(h => Task.Run(() => h?.Dispose())).ToArray();
+            Task[] releaseTasks = handles.Select(h => Task.Run(() => h?.Dispose())).ToArray();
             await Task.WhenAll(releaseTasks);
 
             // Now we should be able to acquire again
-            var newHandle = await _tracker.TryAcquireAsync(_testIp);
+            ConnectionTracker.ConnectionHandle? newHandle = await _tracker.TryAcquireAsync(_testIp);
             Assert.NotNull(newHandle);
             newHandle?.Dispose();
         }
@@ -109,16 +109,16 @@ namespace Zetian.Tests
             // Acquire max connections for first IP
             for (int i = 0; i < 5; i++)
             {
-                var handle = await _tracker.TryAcquireAsync(_testIp);
+                ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp);
                 Assert.NotNull(handle);
             }
 
             // Should fail for first IP
-            var extraHandle = await _tracker.TryAcquireAsync(_testIp);
+            ConnectionTracker.ConnectionHandle? extraHandle = await _tracker.TryAcquireAsync(_testIp);
             Assert.Null(extraHandle);
 
             // But should work for second IP
-            var handle2 = await _tracker.TryAcquireAsync(_testIp2);
+            ConnectionTracker.ConnectionHandle? handle2 = await _tracker.TryAcquireAsync(_testIp2);
             Assert.NotNull(handle2);
             handle2?.Dispose();
         }
@@ -131,13 +131,13 @@ namespace Zetian.Tests
             int operations = 0;
 
             // Multiple threads continuously acquiring and releasing
-            var tasks = Enumerable.Range(0, 10).Select(_ => Task.Run(async () =>
+            Task[] tasks = Enumerable.Range(0, 10).Select(_ => Task.Run(async () =>
             {
                 while (!cts.Token.IsCancellationRequested)
                 {
                     try
                     {
-                        var handle = await _tracker.TryAcquireAsync(_testIp, cts.Token);
+                        ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp, cts.Token);
                         if (handle != null)
                         {
                             Interlocked.Increment(ref operations);
@@ -187,7 +187,7 @@ namespace Zetian.Tests
         [Fact]
         public async Task ConnectionHandle_DisposeShouldBeIdempotent()
         {
-            var handle = await _tracker.TryAcquireAsync(_testIp);
+            ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp);
             Assert.NotNull(handle);
 
             // Multiple dispose calls should not throw or cause issues

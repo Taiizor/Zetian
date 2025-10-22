@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Nullable>enable</Nullable>
@@ -7,11 +7,12 @@
         <AnalysisLevel>preview</AnalysisLevel>
         <ImplicitUsings>enable</ImplicitUsings>
         <TargetFramework>net10.0</TargetFramework>
-        <RootNamespace>Zetian.TestExamples</RootNamespace>
+        <RootNamespace>Zetian.HealthCheck.Examples</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Zetian\Zetian.csproj" />
+        <ProjectReference Include="..\..\src\Zetian.HealthCheck\Zetian.HealthCheck.csproj" />
     </ItemGroup>
 
     <ItemGroup>

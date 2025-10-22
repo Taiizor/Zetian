@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11116.177 d18.0
+VisualStudioVersion = 18.0.11116.177
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zetian", "src\Zetian\Zetian.csproj", "{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}"
 EndProject
@@ -26,6 +26,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.TestExamples", "examples\Zetian.TestExamples\Zetian.TestExamples.csproj", "{5645B999-435A-CB2F-BD03-97D3D8650756}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.HealthCheck", "src\Zetian.HealthCheck\Zetian.HealthCheck.csproj", "{0C69FB50-DDB3-929E-F54E-54E2F1E8FCFE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.HealthCheck.Tests", "tests\Zetian.HealthCheck.Tests\Zetian.HealthCheck.Tests.csproj", "{52CC353C-642C-34DE-86DF-4CCBBB686977}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.HealthCheck.Examples", "examples\Zetian.HealthCheck.Examples\Zetian.HealthCheck.Examples.csproj", "{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +59,18 @@ Global
 		{5645B999-435A-CB2F-BD03-97D3D8650756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5645B999-435A-CB2F-BD03-97D3D8650756}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5645B999-435A-CB2F-BD03-97D3D8650756}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C69FB50-DDB3-929E-F54E-54E2F1E8FCFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C69FB50-DDB3-929E-F54E-54E2F1E8FCFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C69FB50-DDB3-929E-F54E-54E2F1E8FCFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C69FB50-DDB3-929E-F54E-54E2F1E8FCFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52CC353C-642C-34DE-86DF-4CCBBB686977}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52CC353C-642C-34DE-86DF-4CCBBB686977}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52CC353C-642C-34DE-86DF-4CCBBB686977}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52CC353C-642C-34DE-86DF-4CCBBB686977}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -63,6 +81,9 @@ Global
 		{D1C2B3A4-5E6F-8901-2345-678901234567} = {7A6B5C4D-3E2F-1098-7654-321098765432}
 		{E2D3C4F5-B6A7-0981-5432-109876543210} = {8B7C6D5E-4F3A-2109-8765-432101234567}
 		{5645B999-435A-CB2F-BD03-97D3D8650756} = {7A6B5C4D-3E2F-1098-7654-321098765432}
+		{0C69FB50-DDB3-929E-F54E-54E2F1E8FCFE} = {1A2B3C4D-5E6F-7890-AB12-CD34567890EF}
+		{52CC353C-642C-34DE-86DF-4CCBBB686977} = {9A8B7C6D-5E4F-3210-FE21-0987654321DC}
+		{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7} = {7A6B5C4D-3E2F-1098-7654-321098765432}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1A2C3D4-5E6F-7890-1234-567890FEDCBA}

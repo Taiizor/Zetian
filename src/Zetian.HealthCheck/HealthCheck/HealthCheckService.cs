@@ -167,21 +167,42 @@ namespace Zetian.HealthCheck
                     return;
                 }
 
-                string path = request.Url?.AbsolutePath ?? "/";
+                string fullPath = request.Url?.AbsolutePath ?? "/";
+
+                // Extract the path after the prefix by checking what prefix was matched
+                string effectivePath = fullPath;
+
+                // Try to match against registered prefixes to extract the actual health check path
+                foreach (string prefix in _options.Prefixes)
+                {
+                    Uri prefixUri = new(prefix);
+                    string prefixPath = prefixUri.AbsolutePath.TrimEnd('/');
+
+                    if (fullPath.StartsWith(prefixPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Extract the path after the prefix
+                        effectivePath = fullPath[prefixPath.Length..];
+                        if (!effectivePath.StartsWith("/"))
+                        {
+                            effectivePath = "/" + effectivePath;
+                        }
+                        break;
+                    }
+                }
 
                 // Normalize path - remove trailing slash for comparison
-                string normalizedPath = path.TrimEnd('/');
+                string normalizedPath = effectivePath.TrimEnd('/');
 
                 // Route handling - support various path formats
-                if (normalizedPath is "" or "/health" or "/healthz")
+                if (normalizedPath is "" or "/" or "/health" or "/healthz")
                 {
                     await HandleHealthCheckAsync(response, cancellationToken);
                 }
-                else if (normalizedPath is "/health/readyz" or "/health/ready" or "/readyz" or "/ready")
+                else if (normalizedPath is "/readyz" or "/ready" or "/health/readyz" or "/health/ready")
                 {
                     await HandleReadinessCheckAsync(response, cancellationToken);
                 }
-                else if (normalizedPath is "/health/livez" or "/health/live" or "/livez" or "/live")
+                else if (normalizedPath is "/livez" or "/live" or "/health/livez" or "/health/live")
                 {
                     await HandleLivenessCheckAsync(response, cancellationToken);
                 }

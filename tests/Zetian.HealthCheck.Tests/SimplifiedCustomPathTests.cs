@@ -45,19 +45,26 @@ namespace Zetian.HealthCheck.Tests
             // Act & Assert
             await Task.Delay(500);
 
-            // Test standard paths
+            // Test standard paths - all should work
             HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
             HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health");
             Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
-            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/healthz");
+            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/healthz");
             Assert.Equal(HttpStatusCode.OK, response3.StatusCode);
+
+            // Test liveness and readiness
+            HttpResponseMessage response4 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/livez");
+            Assert.Equal(HttpStatusCode.OK, response4.StatusCode);
+
+            HttpResponseMessage response5 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/readyz");
+            Assert.Equal(HttpStatusCode.OK, response5.StatusCode);
         }
 
         [Fact]
-        public async Task CustomPrefix_StillUsesStandardPaths()
+        public async Task CustomPrefix_WorksCorrectly()
         {
             // Arrange
             SmtpServerConfiguration config = new()
@@ -69,25 +76,32 @@ namespace Zetian.HealthCheck.Tests
 
             int healthCheckPort = GetNextPort();
 
-            // Use the overload that takes port and path
+            // Use custom path /api/
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort, "/api/");
             await _healthCheckService.StartAsync();
 
             // Act & Assert
             await Task.Delay(500);
 
-            // The health check should be available at /api/health (combining prefix and standard path)
-            HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/health");
+            // Health check should be available at /api/ (root)
+            HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/");
             Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
-            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/healthz");
+            // Also at /api/health
+            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/health");
             Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
-            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/livez");
+            // And at /api/healthz
+            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/healthz");
             Assert.Equal(HttpStatusCode.OK, response3.StatusCode);
 
-            HttpResponseMessage response4 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/readyz");
+            // Liveness check at /api/livez
+            HttpResponseMessage response4 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/livez");
             Assert.Equal(HttpStatusCode.OK, response4.StatusCode);
+
+            // Readiness check at /api/readyz
+            HttpResponseMessage response5 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/readyz");
+            Assert.Equal(HttpStatusCode.OK, response5.StatusCode);
         }
 
         [Fact]
@@ -119,14 +133,20 @@ namespace Zetian.HealthCheck.Tests
             await Task.Delay(500);
 
             // Each prefix should respond to the standard paths
-            HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/v1/health");
+            HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/v1/");
             Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
-            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/v1/healthz");
+            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/v1/health");
             Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
-            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://127.0.0.1:{healthCheckPort}/status/livez");
+            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/v1/healthz");
             Assert.Equal(HttpStatusCode.OK, response3.StatusCode);
+
+            HttpResponseMessage response4 = await _httpClient.GetAsync($"http://127.0.0.1:{healthCheckPort}/status/livez");
+            Assert.Equal(HttpStatusCode.OK, response4.StatusCode);
+
+            HttpResponseMessage response5 = await _httpClient.GetAsync($"http://127.0.0.1:{healthCheckPort}/status/readyz");
+            Assert.Equal(HttpStatusCode.OK, response5.StatusCode);
         }
     }
 }

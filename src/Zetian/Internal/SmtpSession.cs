@@ -9,10 +9,14 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.Abstractions;
 using Zetian.Authentication;
 using Zetian.Configuration;
-using Zetian.Core;
+using Zetian.Enums;
+using Zetian.Models;
+using Zetian.Models.EventArgs;
 using Zetian.Protocol;
+using Zetian.Server;
 
 namespace Zetian.Internal
 {
@@ -712,15 +716,5 @@ namespace Zetian.Internal
 
             await Task.CompletedTask;
         }
-    }
-
-    internal enum SmtpSessionState
-    {
-        Connected,
-        Hello,
-        Mail,
-        Recipient,
-        Data,
-        Quit
     }
 }

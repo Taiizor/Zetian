@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.Extensions.RateLimiting;
 using Zetian.Protocol;
 
@@ -236,19 +236,5 @@ namespace Zetian.Extensions
 
             return server;
         }
-    }
-
-    /// <summary>
-    /// Interface for statistics collection
-    /// </summary>
-    public interface IStatisticsCollector
-    {
-        void RecordSession();
-        void RecordMessage(ISmtpMessage message);
-        void RecordError(Exception exception);
-        long TotalSessions { get; }
-        long TotalMessages { get; }
-        long TotalErrors { get; }
-        long TotalBytes { get; }
     }
 }

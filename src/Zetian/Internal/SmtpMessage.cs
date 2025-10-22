@@ -6,7 +6,7 @@ using System.Net.Mail;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
 
 namespace Zetian.Internal
 {

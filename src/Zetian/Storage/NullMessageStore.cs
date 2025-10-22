@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
 
 namespace Zetian.Storage
 {

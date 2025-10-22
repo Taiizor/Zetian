@@ -3,7 +3,8 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
+using Zetian.Models;
 
 namespace Zetian.Authentication
 {

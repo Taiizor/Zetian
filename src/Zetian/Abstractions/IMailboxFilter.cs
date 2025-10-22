@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Zetian.Core;
 
-namespace Zetian.Storage
+namespace Zetian.Abstractions
 {
     /// <summary>
     /// Interface for filtering mailboxes (senders and recipients)

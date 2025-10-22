@@ -1,6 +1,6 @@
 using System;
 
-namespace Zetian.Extensions.RateLimiting
+namespace Zetian.Models
 {
     /// <summary>
     /// Rate limit configuration

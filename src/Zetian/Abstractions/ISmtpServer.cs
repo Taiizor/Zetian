@@ -3,8 +3,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Configuration;
+using Zetian.Models.EventArgs;
 
-namespace Zetian.Core
+namespace Zetian.Abstractions
 {
     /// <summary>
     /// Represents the main SMTP server interface

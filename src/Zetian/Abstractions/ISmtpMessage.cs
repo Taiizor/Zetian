@@ -4,7 +4,7 @@ using System.IO;
 using System.Net.Mail;
 using System.Threading.Tasks;
 
-namespace Zetian.Core
+namespace Zetian.Abstractions
 {
     /// <summary>
     /// Represents an SMTP message

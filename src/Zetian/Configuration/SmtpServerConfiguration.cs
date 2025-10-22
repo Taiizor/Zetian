@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using Zetian.Storage;
+using Zetian.Abstractions;
 
 namespace Zetian.Configuration
 {

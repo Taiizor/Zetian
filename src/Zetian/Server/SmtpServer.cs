@@ -6,11 +6,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.Abstractions;
 using Zetian.Configuration;
-using Zetian.Core;
 using Zetian.Internal;
+using Zetian.Models.EventArgs;
 
-namespace Zetian
+namespace Zetian.Server
 {
     /// <summary>
     /// The main SMTP server implementation

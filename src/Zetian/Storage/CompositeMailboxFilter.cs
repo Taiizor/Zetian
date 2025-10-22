@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
+using Zetian.Enums;
 
 namespace Zetian.Storage
 {
@@ -15,25 +16,9 @@ namespace Zetian.Storage
     /// </remarks>
     /// <param name="mode">The composite mode (All or Any)</param>
     /// <param name="filters">Initial filters to add</param>
-    public class CompositeMailboxFilter(CompositeMailboxFilter.CompositeMode mode = CompositeMailboxFilter.CompositeMode.All, params IMailboxFilter[] filters) : IMailboxFilter
+    public class CompositeMailboxFilter(CompositeMode mode = CompositeMode.All, params IMailboxFilter[] filters) : IMailboxFilter
     {
         private readonly List<IMailboxFilter> _filters = new(filters ?? Array.Empty<IMailboxFilter>());
-
-        /// <summary>
-        /// Composite filter mode
-        /// </summary>
-        public enum CompositeMode
-        {
-            /// <summary>
-            /// All filters must accept (AND logic)
-            /// </summary>
-            All,
-
-            /// <summary>
-            /// At least one filter must accept (OR logic)
-            /// </summary>
-            Any
-        }
 
         /// <summary>
         /// Add a filter to the composite

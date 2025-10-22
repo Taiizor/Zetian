@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Zetian.Core
+namespace Zetian.Abstractions
 {
     /// <summary>
     /// Represents an SMTP session

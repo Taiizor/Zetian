@@ -3,11 +3,13 @@ using System;
 using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using Zetian.Abstractions;
 using Zetian.Authentication;
 using Zetian.Configuration;
+using Zetian.Models;
 using Zetian.Storage;
 
-namespace Zetian
+namespace Zetian.Server
 {
     /// <summary>
     /// Builder for creating SMTP server instances

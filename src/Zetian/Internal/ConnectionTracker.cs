@@ -60,13 +60,21 @@ namespace Zetian.Internal
         /// <summary>
         /// Gets the current connection count for an IP
         /// </summary>
-        public int GetConnectionCount(IPAddress ipAddress)
+        public async Task<int> GetConnectionCountAsync(IPAddress ipAddress)
         {
             if (_connections.TryGetValue(ipAddress, out ConnectionInfo? info))
             {
-                return info.CurrentCount;
+                return await info.GetCurrentCountAsync().ConfigureAwait(false);
             }
             return 0;
+        }
+
+        /// <summary>
+        /// Gets the current connection count for an IP (synchronous version)
+        /// </summary>
+        public int GetConnectionCount(IPAddress ipAddress)
+        {
+            return GetConnectionCountAsync(ipAddress).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -184,30 +192,15 @@ namespace Zetian.Internal
         /// <summary>
         /// Per-IP connection tracking information with proper synchronization
         /// </summary>
-        internal sealed class ConnectionInfo : IDisposable
+        internal sealed class ConnectionInfo(int maxConnections) : IDisposable
         {
             private readonly SemaphoreSlim _syncLock = new(1, 1);
-            private readonly int _maxConnections;
             private int _activeConnections = 0;
             private DateTime _lastAccess = DateTime.UtcNow;
             private bool _markedForRemoval = false;
             private bool _disposed = false;
 
-            public ConnectionInfo(int maxConnections)
-            {
-                _maxConnections = maxConnections;
-            }
-
-            public int CurrentCount
-            {
-                get
-                {
-                    lock (_syncLock)
-                    {
-                        return _activeConnections;
-                    }
-                }
-            }
+            public int CurrentCount => Volatile.Read(ref _activeConnections);
 
             /// <summary>
             /// Atomically tries to acquire a connection
@@ -219,7 +212,7 @@ namespace Zetian.Internal
                 try
                 {
                     // Check if we can accept more connections
-                    if (_disposed || _markedForRemoval || _activeConnections >= _maxConnections)
+                    if (_disposed || _markedForRemoval || _activeConnections >= maxConnections)
                     {
                         return false;
                     }
@@ -247,6 +240,22 @@ namespace Zetian.Internal
                         _activeConnections--;
                         _lastAccess = DateTime.UtcNow;
                     }
+                    return _activeConnections;
+                }
+                finally
+                {
+                    _syncLock.Release();
+                }
+            }
+
+            /// <summary>
+            /// Gets the current connection count thread-safely
+            /// </summary>
+            public async Task<int> GetCurrentCountAsync()
+            {
+                await _syncLock.WaitAsync().ConfigureAwait(false);
+                try
+                {
                     return _activeConnections;
                 }
                 finally
@@ -299,7 +308,7 @@ namespace Zetian.Internal
             }
 
             /// <summary>
-            /// Releases all resources used by the current instance.
+            /// Releases resources
             /// </summary>
             public void Dispose()
             {

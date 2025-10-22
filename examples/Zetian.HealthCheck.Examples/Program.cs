@@ -9,10 +9,12 @@ namespace Zetian.HealthCheck.Examples
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("Zetian SMTP Server Examples");
-            Console.WriteLine("============================");
+            Console.WriteLine("Zetian Health Check Examples");
+            Console.WriteLine("=============================");
             Console.WriteLine();
-            Console.WriteLine("1. SMTP Server Health Check");
+            Console.WriteLine("1. Basic Health Check");
+            Console.WriteLine("2. Health Check with Custom Options");
+            Console.WriteLine("3. Health Check with IP/Hostname Binding");
             Console.WriteLine();
             Console.Write("Select an example (1-3): ");
 
@@ -23,7 +25,13 @@ namespace Zetian.HealthCheck.Examples
                 switch (choice)
                 {
                     case "1":
-                        await HealthCheckExample.RunAsync();
+                        await BasicHealthCheckExample.RunAsync();
+                        break;
+                    case "2":
+                        await CustomHealthCheckExample.RunAsync();
+                        break;
+                    case "3":
+                        await HealthCheckWithBindingExample.RunAsync();
                         break;
                     default:
                         Console.WriteLine("Invalid choice");

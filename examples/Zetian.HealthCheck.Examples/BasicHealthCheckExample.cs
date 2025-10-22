@@ -1,18 +1,17 @@
 using Microsoft.Extensions.Logging;
-using System.Net;
 using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
 
 namespace Zetian.HealthCheck.Examples
 {
     /// <summary>
-    /// Example of using the health check feature with SMTP server
+    /// Basic health check example
     /// </summary>
-    public class HealthCheckExample
+    public class BasicHealthCheckExample
     {
         public static async Task RunAsync()
         {
-            Console.WriteLine("=== SMTP Server with Health Check Example ===\n");
+            Console.WriteLine("=== SMTP Server with Basic Health Check ===\n");
 
             // Create logger factory for better visibility
             using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
@@ -42,14 +41,14 @@ namespace Zetian.HealthCheck.Examples
                 Console.WriteLine($"  Recipients: {string.Join(", ", e.Message.Recipients)}");
             };
 
-            // Method 1: Start server and health check separately
+            // Start server and health check separately
             Console.WriteLine("Starting SMTP server on port 2525...");
             await smtpServer.StartAsync();
             Console.WriteLine($"SMTP server running on {smtpServer.Endpoint}\n");
 
             // Enable health check on port 8080
             Console.WriteLine("Enabling health check on http://localhost:8080/health/");
-            HealthCheckService healthCheckService = smtpServer.EnableHealthCheck(8080, "/status/");
+            HealthCheckService healthCheckService = smtpServer.EnableHealthCheck(8080);
 
             // Add custom health checks
             healthCheckService.AddHealthCheck("disk_space", async (ct) =>
@@ -125,9 +124,6 @@ namespace Zetian.HealthCheck.Examples
             Console.WriteLine("  - http://localhost:8080/health/readyz  (Readiness probe)");
             Console.WriteLine();
 
-            // Method 2: Alternative - Start both together
-            // var healthCheckService = await smtpServer.StartWithHealthCheckAsync(8080);
-
             Console.WriteLine("Server is running. Health check endpoints are available.");
             Console.WriteLine("You can test with: curl http://localhost:8080/health/");
             Console.WriteLine("\nPress any key to stop...");
@@ -141,118 +137,6 @@ namespace Zetian.HealthCheck.Examples
             await smtpServer.StopAsync();
 
             Console.WriteLine("Example completed.");
-        }
-
-        /// <summary>
-        /// Example with specific IP/Hostname binding
-        /// </summary>
-        public static async Task RunWithSpecificBindingAsync()
-        {
-            Console.WriteLine("=== SMTP Server with Health Check on Specific IP/Hostname ===");
-
-            SmtpServerConfiguration config = new()
-            {
-                Port = 2525,
-                IpAddress = IPAddress.Any, // SMTP listens on all interfaces
-                ServerName = "Zetian IP Binding Example",
-                MaxConnections = 100
-            };
-
-            using SmtpServer smtpServer = new(config);
-            await smtpServer.StartAsync();
-            Console.WriteLine($"SMTP server running on {smtpServer.Endpoint}\n");
-
-            // Example 1: Bind health check to specific IP
-            IPAddress specificIP = IPAddress.Parse("127.0.0.1");
-            Console.WriteLine($"Starting health check on IP: {specificIP}");
-            HealthCheckService healthCheckOnIP = smtpServer.EnableHealthCheck(specificIP, 8081);
-            await healthCheckOnIP.StartAsync();
-            Console.WriteLine("Health check available at: http://127.0.0.1:8081/health/\n");
-
-            // Example 2: Bind health check to all interfaces
-            Console.WriteLine("Starting health check on all interfaces");
-            HealthCheckService healthCheckOnAll = smtpServer.EnableHealthCheck("0.0.0.0", 8082);
-            await healthCheckOnAll.StartAsync();
-            Console.WriteLine("Health check available at: http://0.0.0.0:8082/health/");
-            Console.WriteLine("                      and: http://localhost:8082/health/");
-            Console.WriteLine("                      and: http://[your-ip]:8082/health/\n");
-            Console.ReadKey();
-
-            // Example 3: Bind to specific hostname
-            Console.WriteLine("Starting health check with hostname");
-            HealthCheckService healthCheckWithHost = smtpServer.EnableHealthCheck("localhost", 8083);
-            await healthCheckWithHost.StartAsync();
-            Console.WriteLine("Health check available at: http://localhost:8083/health/\n");
-
-            // Example 4: IPv6 binding (if supported)
-            try
-            {
-                IPAddress ipv6Address = IPAddress.IPv6Loopback;
-                Console.WriteLine($"Starting health check on IPv6: {ipv6Address}");
-                HealthCheckService healthCheckIPv6 = smtpServer.EnableHealthCheck(ipv6Address, 8084);
-                await healthCheckIPv6.StartAsync();
-                Console.WriteLine("Health check available at: http://[::1]:8084/health/\n");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"IPv6 not supported: {ex.Message}\n");
-            }
-
-            Console.WriteLine("\nPress any key to stop...");
-            Console.ReadKey();
-
-            // Stop all health check services
-            await healthCheckOnIP.StopAsync();
-            await healthCheckOnAll.StopAsync();
-            await healthCheckWithHost.StopAsync();
-            await smtpServer.StopAsync();
-        }
-
-        /// <summary>
-        /// Example with custom health check options
-        /// </summary>
-        public static async Task RunWithCustomOptionsAsync()
-        {
-            Console.WriteLine("=== SMTP Server with Custom Health Check Options ===\n");
-
-            SmtpServerConfiguration config = new()
-            {
-                Port = 2525,
-                ServerName = "Zetian Custom Health Check",
-                MaxConnections = 100
-            };
-
-            using SmtpServer smtpServer = new(config);
-            await smtpServer.StartAsync();
-
-            // Custom health check options
-            SmtpHealthCheckOptions healthCheckOptions = new()
-            {
-                DegradedThresholdPercent = 60,  // Mark as degraded at 60% utilization
-                UnhealthyThresholdPercent = 85, // Mark as unhealthy at 85% utilization
-                CheckMemoryUsage = true
-            };
-
-            HealthCheckServiceOptions serviceOptions = new()
-            {
-                Prefixes = new()
-                {
-                    "http://localhost:8080/health/",
-                    "http://+:8080/health/"  // Listen on all interfaces
-                },
-                DegradedStatusCode = 218  // "This is fine" status code
-            };
-
-            HealthCheckService healthCheckService = smtpServer.EnableHealthCheck(serviceOptions, healthCheckOptions);
-            await healthCheckService.StartAsync();
-
-            Console.WriteLine("Server running with custom health check configuration");
-            Console.WriteLine("Health check available on all interfaces at port 8080");
-            Console.WriteLine("\nPress any key to stop...");
-            Console.ReadKey();
-
-            await healthCheckService.StopAsync();
-            await smtpServer.StopAsync();
         }
     }
 }

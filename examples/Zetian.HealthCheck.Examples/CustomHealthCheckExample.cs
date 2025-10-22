@@ -85,7 +85,7 @@ namespace Zetian.HealthCheck.Examples
                 try
                 {
                     // Get system memory info
-                    Process process = System.Diagnostics.Process.GetCurrentProcess();
+                    Process process = Process.GetCurrentProcess();
                     long memoryMB = process.WorkingSet64 / (1024 * 1024);
 
                     Dictionary<string, object> data = new()

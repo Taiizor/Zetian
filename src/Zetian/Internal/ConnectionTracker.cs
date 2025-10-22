@@ -77,12 +77,12 @@ namespace Zetian.Internal
         /// ensure thread safety and prevent premature deletion of connection information.</remarks>
         /// <param name="ipAddress">The IP address for which the connection is being released.</param>
         /// <param name="info">The connection information object that manages the state and count for the specified IP address.</param>
-        private void ReleaseConnection(IPAddress ipAddress, ConnectionInfo info)
+        private async Task ReleaseConnectionAsync(IPAddress ipAddress, ConnectionInfo info)
         {
             try
             {
                 // Release connection atomically
-                int currentCount = info.Release();
+                int currentCount = await info.ReleaseAsync().ConfigureAwait(false);
 
                 _logger.LogDebug("Connection released for {IPAddress}. Current count: {Count}",
                     ipAddress, currentCount);
@@ -176,34 +176,35 @@ namespace Zetian.Internal
             {
                 if (Interlocked.Exchange(ref _disposed, 1) == 0)
                 {
-                    tracker.ReleaseConnection(ipAddress, info);
+                    tracker.ReleaseConnectionAsync(ipAddress, info).GetAwaiter().GetResult();
                 }
             }
         }
 
         /// <summary>
-        /// Per-IP connection tracking information
+        /// Per-IP connection tracking information with proper synchronization
         /// </summary>
-        internal sealed class ConnectionInfo(int maxConnections) : IDisposable
+        internal sealed class ConnectionInfo : IDisposable
         {
-            private readonly SemaphoreSlim _semaphore = new(maxConnections, maxConnections);
-            private readonly ReaderWriterLockSlim _lock = new();
+            private readonly SemaphoreSlim _syncLock = new(1, 1);
+            private readonly int _maxConnections;
             private int _activeConnections = 0;
             private DateTime _lastAccess = DateTime.UtcNow;
             private bool _markedForRemoval = false;
+            private bool _disposed = false;
+
+            public ConnectionInfo(int maxConnections)
+            {
+                _maxConnections = maxConnections;
+            }
 
             public int CurrentCount
             {
                 get
                 {
-                    _lock.EnterReadLock();
-                    try
+                    lock (_syncLock)
                     {
                         return _activeConnections;
-                    }
-                    finally
-                    {
-                        _lock.ExitReadLock();
                     }
                 }
             }
@@ -213,37 +214,13 @@ namespace Zetian.Internal
             /// </summary>
             public async Task<bool> TryAcquireAsync(CancellationToken cancellationToken)
             {
-                // First check if marked for removal
-                _lock.EnterReadLock();
+                // Use semaphore for async-safe locking
+                await _syncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    if (_markedForRemoval)
+                    // Check if we can accept more connections
+                    if (_disposed || _markedForRemoval || _activeConnections >= _maxConnections)
                     {
-                        return false;
-                    }
-                }
-                finally
-                {
-                    _lock.ExitReadLock();
-                }
-
-                // Try to acquire semaphore
-                bool acquired = await _semaphore.WaitAsync(0, cancellationToken).ConfigureAwait(false);
-
-                if (!acquired)
-                {
-                    return false;
-                }
-
-                // We have the semaphore, now update count atomically
-                _lock.EnterWriteLock();
-                try
-                {
-                    // Double-check removal flag
-                    if (_markedForRemoval)
-                    {
-                        // Release semaphore and fail
-                        _semaphore.Release();
                         return false;
                     }
 
@@ -251,46 +228,47 @@ namespace Zetian.Internal
                     _lastAccess = DateTime.UtcNow;
                     return true;
                 }
-                catch
-                {
-                    // On any error, release the semaphore
-                    _semaphore.Release();
-                    throw;
-                }
                 finally
                 {
-                    _lock.ExitWriteLock();
+                    _syncLock.Release();
                 }
             }
 
             /// <summary>
             /// Atomically releases a connection
             /// </summary>
-            public int Release()
+            public async Task<int> ReleaseAsync()
             {
-                _lock.EnterWriteLock();
+                await _syncLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     if (_activeConnections > 0)
                     {
                         _activeConnections--;
                         _lastAccess = DateTime.UtcNow;
-                        _semaphore.Release();
                     }
                     return _activeConnections;
                 }
                 finally
                 {
-                    _lock.ExitWriteLock();
+                    _syncLock.Release();
                 }
+            }
+
+            /// <summary>
+            /// Synchronous release for backward compatibility
+            /// </summary>
+            public int Release()
+            {
+                return ReleaseAsync().GetAwaiter().GetResult();
             }
 
             /// <summary>
             /// Tries to mark this info for removal
             /// </summary>
-            public bool TryMarkForRemoval()
+            public async Task<bool> TryMarkForRemovalAsync()
             {
-                _lock.EnterWriteLock();
+                await _syncLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     // Only mark for removal if:
@@ -308,19 +286,30 @@ namespace Zetian.Internal
                 }
                 finally
                 {
-                    _lock.ExitWriteLock();
+                    _syncLock.Release();
                 }
+            }
+
+            /// <summary>
+            /// Synchronous version for timer callback
+            /// </summary>
+            public bool TryMarkForRemoval()
+            {
+                return TryMarkForRemovalAsync().GetAwaiter().GetResult();
             }
 
             /// <summary>
             /// Releases all resources used by the current instance.
             /// </summary>
-            /// <remarks>Call this method when you are finished using the instance to free unmanaged
-            /// resources. After calling Dispose, the instance should not be used.</remarks>
             public void Dispose()
             {
-                _semaphore?.Dispose();
-                _lock?.Dispose();
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                _syncLock?.Dispose();
             }
         }
     }

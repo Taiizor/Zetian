@@ -4,7 +4,7 @@
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian?label=Download)](https://www.nuget.org/api/v2/package/Zetian)
 [![License](https://img.shields.io/github/license/Taiizor/Zetian.svg?label=License)](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
 
-A professional, high-performance SMTP server library for .NET with minimal dependencies and modern async/await patterns.
+A professional, high-performance SMTP server library for .NET with minimal dependencies. Build custom SMTP servers with ease using a fluent API and extensible architecture.
 
 ## ⚡ Quick Start
 

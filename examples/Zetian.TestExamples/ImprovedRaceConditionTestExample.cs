@@ -8,7 +8,7 @@ namespace Zetian.TestExamples
     /// <summary>
     /// Improved test that keeps connections open simultaneously
     /// </summary>
-    public static class ImprovedRaceConditionTest
+    public static class ImprovedRaceConditionTestExample
     {
         private const int Port = 2525;
         private const int MaxConnectionsPerIp = 5;

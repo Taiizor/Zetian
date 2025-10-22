@@ -12,7 +12,7 @@ namespace Zetian.TestExamples
             Console.WriteLine("Zetian SMTP Server Test Examples");
             Console.WriteLine("============================");
             Console.WriteLine();
-            Console.WriteLine("1. Race Condition Test (Original)");
+            Console.WriteLine("1. Race Condition Test");
             Console.WriteLine("2. Improved Race Condition Test");
             Console.WriteLine();
             Console.Write("Select an example (1-2): ");
@@ -27,7 +27,7 @@ namespace Zetian.TestExamples
                         await RaceConditionTestExample.RunAsync();
                         break;
                     case "2":
-                        await ImprovedRaceConditionTest.RunAsync();
+                        await ImprovedRaceConditionTestExample.RunAsync();
                         break;
                     default:
                         Console.WriteLine("Invalid choice");

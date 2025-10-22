@@ -232,7 +232,7 @@ namespace Zetian.Tests
             // Arrange
             RateLimitConfiguration config = RateLimitConfiguration.PerHour(100);
             InMemoryRateLimiter limiter = CreateLimiter(config);
-            var keys = new[]
+            string[] keys = new[]
             {
                 "user:123",
                 "api-key:abc-def-ghi",
@@ -242,7 +242,7 @@ namespace Zetian.Tests
             };
 
             // Act & Assert
-            foreach (var key in keys)
+            foreach (string? key in keys)
             {
                 bool allowed = await limiter.IsAllowedAsync(key);
                 allowed.Should().BeTrue($"Key '{key}' should be allowed");
@@ -259,10 +259,10 @@ namespace Zetian.Tests
             // Arrange
             RateLimitConfiguration config = RateLimitConfiguration.PerMinute(10);
             InMemoryRateLimiter limiter = CreateLimiter(config);
-            var keys = new[] { "key1", "key2", "key3" };
+            string[] keys = new[] { "key1", "key2", "key3" };
 
             // Record requests for all keys
-            foreach (var key in keys)
+            foreach (string? key in keys)
             {
                 for (int i = 0; i < 5; i++)
                 {

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Xunit;
 using Zetian.Core;
 using Zetian.Storage;
@@ -167,7 +168,7 @@ namespace Zetian.Tests.Storage
             public string? ClientDomain => "test.local";
             public DateTime StartTime => DateTime.UtcNow;
             public IDictionary<string, object> Properties => new Dictionary<string, object>();
-            public System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate => null;
+            public X509Certificate2? ClientCertificate => null;
             public int MessageCount => 0;
             public bool PipeliningEnabled { get; set; }
             public bool EightBitMimeEnabled { get; set; }

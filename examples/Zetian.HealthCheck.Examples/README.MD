@@ -22,10 +22,10 @@ This project contains examples demonstrating the health check functionality of Z
 - Binding to specific IP addresses
 
 ### 4. Health Check with Custom Path
-- Custom base path `/status/` instead of `/health/`
-- Performance metrics collection
 - Uptime tracking
 - Self-test functionality
+- Performance metrics collection
+- Custom base path `/status/` instead of `/health/`
 
 ## Running the Examples
 

@@ -112,21 +112,12 @@ namespace Zetian.Extensions.RateLimiting
             _windows.Clear();
         }
 
-        private class RequestWindow
+        private class RequestWindow(RateLimitConfiguration configuration)
         {
-            private readonly RateLimitConfiguration _configuration;
             private readonly object _lock = new();
-            private readonly Queue<DateTime> _requests;
-            private DateTime _windowStart;
-            private int _requestCount;
-
-            public RequestWindow(RateLimitConfiguration configuration)
-            {
-                _configuration = configuration;
-                _requests = new Queue<DateTime>();
-                _windowStart = DateTime.UtcNow;
-                _requestCount = 0;
-            }
+            private readonly Queue<DateTime> _requests = new();
+            private DateTime _windowStart = DateTime.UtcNow;
+            private int _requestCount = 0;
 
             public bool IsAllowed()
             {
@@ -134,22 +125,22 @@ namespace Zetian.Extensions.RateLimiting
                 {
                     CleanupOldRequests();
 
-                    if (_configuration.UseSlidingWindow)
+                    if (configuration.UseSlidingWindow)
                     {
-                        return _requests.Count < _configuration.MaxRequests;
+                        return _requests.Count < configuration.MaxRequests;
                     }
                     else
                     {
                         // Fixed window
                         DateTime now = DateTime.UtcNow;
-                        if (now - _windowStart > _configuration.Window)
+                        if (now - _windowStart > configuration.Window)
                         {
                             // New window
                             _windowStart = now;
                             _requestCount = 0;
                         }
 
-                        return _requestCount < _configuration.MaxRequests;
+                        return _requestCount < configuration.MaxRequests;
                     }
                 }
             }
@@ -160,7 +151,7 @@ namespace Zetian.Extensions.RateLimiting
                 {
                     DateTime now = DateTime.UtcNow;
 
-                    if (_configuration.UseSlidingWindow)
+                    if (configuration.UseSlidingWindow)
                     {
                         CleanupOldRequests();
                         _requests.Enqueue(now);
@@ -168,7 +159,7 @@ namespace Zetian.Extensions.RateLimiting
                     else
                     {
                         // Fixed window
-                        if (now - _windowStart > _configuration.Window)
+                        if (now - _windowStart > configuration.Window)
                         {
                             // New window
                             _windowStart = now;
@@ -188,19 +179,19 @@ namespace Zetian.Extensions.RateLimiting
                 {
                     CleanupOldRequests();
 
-                    if (_configuration.UseSlidingWindow)
+                    if (configuration.UseSlidingWindow)
                     {
-                        return Math.Max(0, _configuration.MaxRequests - _requests.Count);
+                        return Math.Max(0, configuration.MaxRequests - _requests.Count);
                     }
                     else
                     {
                         DateTime now = DateTime.UtcNow;
-                        if (now - _windowStart > _configuration.Window)
+                        if (now - _windowStart > configuration.Window)
                         {
-                            return _configuration.MaxRequests;
+                            return configuration.MaxRequests;
                         }
 
-                        return Math.Max(0, _configuration.MaxRequests - _requestCount);
+                        return Math.Max(0, configuration.MaxRequests - _requestCount);
                     }
                 }
             }
@@ -211,27 +202,27 @@ namespace Zetian.Extensions.RateLimiting
                 {
                     DateTime now = DateTime.UtcNow;
 
-                    if (_configuration.UseSlidingWindow)
+                    if (configuration.UseSlidingWindow)
                     {
                         CleanupOldRequests();
                         return _requests.Count == 0 &&
-                               (_requests.Count == 0 || now - _windowStart > _configuration.Window * 2);
+                               (_requests.Count == 0 || now - _windowStart > configuration.Window * 2);
                     }
                     else
                     {
-                        return now - _windowStart > _configuration.Window * 2;
+                        return now - _windowStart > configuration.Window * 2;
                     }
                 }
             }
 
             private void CleanupOldRequests()
             {
-                if (!_configuration.UseSlidingWindow)
+                if (!configuration.UseSlidingWindow)
                 {
                     return;
                 }
 
-                DateTime cutoff = DateTime.UtcNow - _configuration.Window;
+                DateTime cutoff = DateTime.UtcNow - configuration.Window;
 
                 while (_requests.Count > 0 && _requests.Peek() < cutoff)
                 {

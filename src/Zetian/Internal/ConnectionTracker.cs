@@ -204,18 +204,32 @@ namespace Zetian.Internal
                 {
                     if (_connections.TryRemove(key, out ConnectionInfo? removed))
                     {
-                        // Only dispose if still marked for removal
-                        removed.Lock();
+                        // Double-check under lock before disposing
                         try
                         {
-                            if (removed.IsMarkedForRemovalUnsafe())
+                            removed.Lock();
+                            try
                             {
-                                removed.Dispose();
+                                // Re-verify no new connections were acquired
+                                if (removed.IsMarkedForRemovalUnsafe() && removed.GetCountUnsafe() == 0)
+                                {
+                                    removed.Dispose();
+                                }
+                                else
+                                {
+                                    // Race condition: new connection acquired, put it back
+                                    removed.MarkAsActiveUnsafe();
+                                    _connections.TryAdd(key, removed);
+                                }
+                            }
+                            finally
+                            {
+                                removed.ReleaseLock();
                             }
                         }
-                        finally
+                        catch (ObjectDisposedException)
                         {
-                            removed.ReleaseLock();
+                            // Already disposed by another thread, ignore
                         }
                     }
                 }
@@ -280,6 +294,14 @@ namespace Zetian.Internal
             /// </summary>
             public Task LockAsync(CancellationToken cancellationToken = default)
             {
+#if NET6_0
+                if (_disposed)
+                {
+                    throw new ObjectDisposedException(nameof(ConnectionInfo));
+                }
+#elif NET7_0_OR_GREATER
+                ObjectDisposedException.ThrowIf(_disposed, nameof(ConnectionInfo));
+#endif
                 return _syncLock.WaitAsync(cancellationToken);
             }
 
@@ -288,6 +310,14 @@ namespace Zetian.Internal
             /// </summary>
             public void Lock()
             {
+#if NET6_0
+                if (_disposed)
+                {
+                    throw new ObjectDisposedException(nameof(ConnectionInfo));
+                }
+#elif NET7_0_OR_GREATER
+                ObjectDisposedException.ThrowIf(_disposed, nameof(ConnectionInfo));
+#endif
                 _syncLock.Wait();
             }
 
@@ -360,6 +390,14 @@ namespace Zetian.Internal
             public bool IsMarkedForRemovalUnsafe()
             {
                 return _markedForRemoval;
+            }
+
+            /// <summary>
+            /// Marks as active again (must be called under lock)
+            /// </summary>
+            public void MarkAsActiveUnsafe()
+            {
+                _markedForRemoval = false;
             }
 
             /// <summary>

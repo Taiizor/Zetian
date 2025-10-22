@@ -4,6 +4,7 @@ using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Services;
+using Zetian.Server;
 
 namespace Zetian.HealthCheck.Examples
 {

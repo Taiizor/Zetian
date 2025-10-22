@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Zetian.Authentication;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.Extensions;
-using Zetian.Extensions.RateLimiting;
+using Zetian.Models;
+using Zetian.RateLimiting;
+using Zetian.Server;
 
 namespace Zetian.Examples
 {
@@ -47,7 +49,7 @@ namespace Zetian.Examples
                 .Certificate(certificate)
                 .RequireAuthentication()
                 .AllowPlainTextAuthentication(true) // Allow plain text auth for testing, but TLS is available via STARTTLS
-                .SslProtocols(System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13)
+                .SslProtocols(SslProtocols.Tls12 | SslProtocols.Tls13)
 
                 // Authentication
                 .AddAuthenticationMechanism("PLAIN")

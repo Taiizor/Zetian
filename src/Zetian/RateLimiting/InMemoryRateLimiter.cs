@@ -6,8 +6,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Models;
 
-namespace Zetian.Extensions.RateLimiting
+namespace Zetian.RateLimiting
 {
     /// <summary>
     /// In-memory rate limiter implementation

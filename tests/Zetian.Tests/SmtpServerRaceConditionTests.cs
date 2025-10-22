@@ -3,6 +3,7 @@ using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
 using Xunit;
+using Zetian.Server;
 
 namespace Zetian.Tests
 {

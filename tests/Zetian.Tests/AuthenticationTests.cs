@@ -2,8 +2,9 @@ using FluentAssertions;
 using Moq;
 using System.Text;
 using Xunit;
+using Zetian.Abstractions;
 using Zetian.Authentication;
-using Zetian.Core;
+using Zetian.Models;
 
 namespace Zetian.Tests
 {

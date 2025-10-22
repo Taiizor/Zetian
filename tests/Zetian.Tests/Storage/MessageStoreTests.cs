@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.Storage;
 
 namespace Zetian.Tests.Storage

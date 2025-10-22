@@ -2,8 +2,10 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using Zetian.Core;
+using Zetian.Abstractions;
+using Zetian.Enums;
 using Zetian.Extensions;
+using Zetian.Server;
 using Zetian.Storage;
 
 namespace Zetian.Benchmarks
@@ -84,7 +86,7 @@ namespace Zetian.Benchmarks
         [Benchmark(Description = "Composite Filter (Multiple Filters)")]
         public async Task CompositeFiltering()
         {
-            CompositeMailboxFilter compositeFilter = new(CompositeMailboxFilter.CompositeMode.All);
+            CompositeMailboxFilter compositeFilter = new(CompositeMode.All);
             compositeFilter.AddFilter(new DomainMailboxFilter(true).BlockFromDomains(_testDomains.ToArray()));
             compositeFilter.AddFilter(new AcceptAllMailboxFilter());
 

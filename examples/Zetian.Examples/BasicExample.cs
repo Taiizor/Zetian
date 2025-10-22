@@ -1,3 +1,5 @@
+using Zetian.Server;
+
 namespace Zetian.Examples
 {
     /// <summary>

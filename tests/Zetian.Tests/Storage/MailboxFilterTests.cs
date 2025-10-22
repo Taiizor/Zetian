@@ -1,7 +1,8 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
-using Zetian.Core;
+using Zetian.Abstractions;
+using Zetian.Enums;
 using Zetian.Storage;
 
 namespace Zetian.Tests.Storage
@@ -79,7 +80,7 @@ namespace Zetian.Tests.Storage
             // Arrange
             DomainMailboxFilter filter1 = new DomainMailboxFilter(true).AllowFromDomains("allowed.com");
             DomainMailboxFilter filter2 = new DomainMailboxFilter(true).BlockFromDomains("spam.com");
-            CompositeMailboxFilter composite = new(CompositeMailboxFilter.CompositeMode.All, filter1, filter2);
+            CompositeMailboxFilter composite = new(CompositeMode.All, filter1, filter2);
             MockSession session = new();
 
             // Act & Assert
@@ -94,7 +95,7 @@ namespace Zetian.Tests.Storage
             // Arrange
             DomainMailboxFilter filter1 = new DomainMailboxFilter(false).AllowFromDomains("domain1.com");
             DomainMailboxFilter filter2 = new DomainMailboxFilter(false).AllowFromDomains("domain2.com");
-            CompositeMailboxFilter composite = new(CompositeMailboxFilter.CompositeMode.Any, filter1, filter2);
+            CompositeMailboxFilter composite = new(CompositeMode.Any, filter1, filter2);
             MockSession session = new();
 
             // Act & Assert
@@ -107,7 +108,7 @@ namespace Zetian.Tests.Storage
         public async Task CompositeMailboxFilter_AddRemoveFilters()
         {
             // Arrange
-            CompositeMailboxFilter composite = new(CompositeMailboxFilter.CompositeMode.All);
+            CompositeMailboxFilter composite = new(CompositeMode.All);
             AcceptAllMailboxFilter filter1 = AcceptAllMailboxFilter.Instance;
             DomainMailboxFilter filter2 = new(false);
             MockSession session = new();

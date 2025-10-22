@@ -3,10 +3,11 @@ using Moq;
 using System.Net;
 using System.Net.Mail;
 using Xunit;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.Extensions;
-using Zetian.Extensions.RateLimiting;
-using ErrorEventArgs = Zetian.Core.ErrorEventArgs;
+using Zetian.Models;
+using Zetian.Models.EventArgs;
+using ErrorEventArgs = Zetian.Models.EventArgs.ErrorEventArgs;
 
 namespace Zetian.Tests
 {

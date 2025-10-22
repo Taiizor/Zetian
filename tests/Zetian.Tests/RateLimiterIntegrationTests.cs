@@ -3,7 +3,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 using Xunit;
-using Zetian.Extensions.RateLimiting;
+using Zetian.Models;
+using Zetian.RateLimiting;
 
 namespace Zetian.Tests
 {

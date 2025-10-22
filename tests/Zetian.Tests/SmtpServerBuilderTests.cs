@@ -2,6 +2,7 @@ using FluentAssertions;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
+using Zetian.Server;
 using Zetian.Storage;
 
 namespace Zetian.Tests

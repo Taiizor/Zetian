@@ -5,10 +5,11 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.HealthCheck.Abstractions;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Options;
+using Zetian.Server;
 
 namespace Zetian.HealthCheck.Checks
 {

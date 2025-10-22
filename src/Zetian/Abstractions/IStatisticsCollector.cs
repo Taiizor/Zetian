@@ -11,16 +11,11 @@ namespace Zetian.Abstractions
         /// Records a new session
         /// </summary>
         void RecordSession();
-        
+
         /// <summary>
         /// Records a received message
         /// </summary>
         void RecordMessage(ISmtpMessage message);
-        
-        /// <summary>
-        /// Records a rejected message
-        /// </summary>
-        void RecordRejectedMessage(string reason);
 
         /// <summary>
         /// Records the specified exception for error tracking or logging purposes.

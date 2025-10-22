@@ -2,7 +2,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.Internal;
 using Zetian.Storage;
 

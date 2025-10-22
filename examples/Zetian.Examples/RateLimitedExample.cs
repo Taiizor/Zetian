@@ -1,5 +1,7 @@
 using Zetian.Extensions;
-using Zetian.Extensions.RateLimiting;
+using Zetian.Models;
+using Zetian.RateLimiting;
+using Zetian.Server;
 
 namespace Zetian.Examples
 {

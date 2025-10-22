@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
-using Zetian.Models;
 
-namespace Zetian.Authentication
+namespace Zetian.Models
 {
     /// <summary>
     /// Authentication handler delegate

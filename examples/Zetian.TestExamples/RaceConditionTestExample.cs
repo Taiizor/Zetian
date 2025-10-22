@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Mail;
+using Zetian.Server;
 
 namespace Zetian.TestExamples
 {

@@ -1,7 +1,8 @@
 using FluentAssertions;
 using System.Net;
 using Xunit;
-using Zetian.Extensions.RateLimiting;
+using Zetian.Models;
+using Zetian.RateLimiting;
 
 namespace Zetian.Tests
 {

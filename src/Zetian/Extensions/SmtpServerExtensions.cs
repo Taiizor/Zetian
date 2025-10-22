@@ -6,8 +6,9 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
-using Zetian.Extensions.RateLimiting;
+using Zetian.Models;
 using Zetian.Protocol;
+using Zetian.RateLimiting;
 
 namespace Zetian.Extensions
 {

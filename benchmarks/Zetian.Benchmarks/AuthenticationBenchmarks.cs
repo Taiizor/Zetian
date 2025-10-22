@@ -1,8 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using Moq;
 using System.Text;
+using Zetian.Abstractions;
 using Zetian.Authentication;
-using Zetian.Core;
+using Zetian.Models;
 
 namespace Zetian.Benchmarks
 {

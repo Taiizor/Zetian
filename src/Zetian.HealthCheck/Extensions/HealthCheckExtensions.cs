@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Zetian.Core;
+using Zetian.Abstractions;
 using Zetian.HealthCheck.Abstractions;
 using Zetian.HealthCheck.Checks;
 using Zetian.HealthCheck.Models;

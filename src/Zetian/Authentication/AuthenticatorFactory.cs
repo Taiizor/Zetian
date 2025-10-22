@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Zetian.Abstractions;
+using Zetian.Models;
 
 namespace Zetian.Authentication
 {

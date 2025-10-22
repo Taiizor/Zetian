@@ -21,6 +21,12 @@ This project contains examples demonstrating the health check functionality of Z
 - All interfaces binding (0.0.0.0)
 - Binding to specific IP addresses
 
+### 4. Health Check with Custom Path
+- Custom base path `/status/` instead of `/health/`
+- Performance metrics collection
+- Uptime tracking
+- Self-test functionality
+
 ## Running the Examples
 
 ```bash

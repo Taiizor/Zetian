@@ -34,8 +34,9 @@ namespace Zetian.HealthCheck.Examples
             Console.WriteLine("1. Basic Health Check (localhost - usually works without admin)");
             Console.WriteLine("2. Health Check with Custom Options (localhost - usually works without admin)");
             Console.WriteLine("3. Health Check with IP/Hostname Binding (may require admin)");
+            Console.WriteLine("4. Health Check with Custom Path (/status/ instead of /health/)");
             Console.WriteLine();
-            Console.Write("Select an example (1-3): ");
+            Console.Write("Select an example (1-4): ");
 
             string? choice = Console.ReadLine();
 
@@ -51,6 +52,9 @@ namespace Zetian.HealthCheck.Examples
                         break;
                     case "3":
                         await HealthCheckWithBindingExample.RunAsync();
+                        break;
+                    case "4":
+                        await CustomPathHealthCheckExample.RunAsync();
                         break;
                     default:
                         Console.WriteLine("Invalid choice");

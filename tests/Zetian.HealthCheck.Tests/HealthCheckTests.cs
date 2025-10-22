@@ -11,6 +11,12 @@ namespace Zetian.HealthCheck.Tests
         private SmtpServer? _smtpServer;
         private HealthCheckService? _healthCheckService;
         private readonly HttpClient _httpClient = new();
+        private static int _portCounter = 40000;  // Starting port for tests
+
+        private static int GetNextPort()
+        {
+            return Interlocked.Increment(ref _portCounter);
+        }
 
         public void Dispose()
         {
@@ -25,18 +31,19 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536), // Random port
+                Port = GetNextPort(),
                 ServerName = "Test SMTP Server"
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8181);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500); // Give the service time to start
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8181/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             string content = await response.Content.ReadAsStringAsync();
 
             // Parse JSON response
@@ -57,17 +64,18 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536),
+                Port = GetNextPort(),
                 ServerName = "Test SMTP Server"
             };
             _smtpServer = new SmtpServer(config);
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8182);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8182/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
 
             // Assert
             Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
@@ -82,14 +90,15 @@ namespace Zetian.HealthCheck.Tests
         public async Task LivenessCheck_AlwaysReturnsOK()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = new Random().Next(50000, 65536) };
+            SmtpServerConfiguration config = new() { Port = GetNextPort() };
             _smtpServer = new SmtpServer(config);
-            _healthCheckService = _smtpServer.EnableHealthCheck(8183);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8183/health/livez");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/livez");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -104,11 +113,12 @@ namespace Zetian.HealthCheck.Tests
         public async Task CustomHealthCheck_CanBeAdded()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = new Random().Next(50000, 65536) };
+            SmtpServerConfiguration config = new() { Port = GetNextPort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8184);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
 
             // Add custom health check
             _healthCheckService.AddHealthCheck("custom_check", async (ct) =>
@@ -125,7 +135,7 @@ namespace Zetian.HealthCheck.Tests
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8184/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             string content = await response.Content.ReadAsStringAsync();
 
             // Parse JSON response
@@ -146,20 +156,22 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536),
+                Port = GetNextPort(),
                 MaxConnections = 100,
                 MaxMessageSize = 10485760, // 10MB
-                RequireAuthentication = true
+                RequireAuthentication = true,
+                AllowPlainTextAuthentication = true  // Fix: Allow plain text auth without secure connection
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8185);
+            int healthCheckPort = GetNextPort();  // Use incremental port to avoid conflicts
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8185/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             string content = await response.Content.ReadAsStringAsync();
 
             // Parse JSON response
@@ -183,11 +195,15 @@ namespace Zetian.HealthCheck.Tests
         public async Task StartWithHealthCheck_StartsSmtpServerAndHealthCheck()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = new Random().Next(50000, 65536) };
+            SmtpServerConfiguration config = new()
+            {
+                Port = GetNextPort()
+            };
             _smtpServer = new SmtpServer(config);
 
             // Act
-            _healthCheckService = await _smtpServer.StartWithHealthCheckAsync(8186);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = await _smtpServer.StartWithHealthCheckAsync(healthCheckPort);
 
             // Assert
             Assert.True(_smtpServer.IsRunning);
@@ -195,7 +211,7 @@ namespace Zetian.HealthCheck.Tests
 
             // Verify health endpoint
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8186/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -203,20 +219,21 @@ namespace Zetian.HealthCheck.Tests
         public async Task HealthCheck_WithIPBinding_Works()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = new Random().Next(50000, 65536) };
+            SmtpServerConfiguration config = new() { Port = GetNextPort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
             // Act - Bind to specific IP
             IPAddress ipAddress = IPAddress.Loopback;
-            _healthCheckService = _smtpServer.EnableHealthCheck(ipAddress, 8188);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(ipAddress, healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Assert
             Assert.True(_healthCheckService.IsRunning);
 
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://127.0.0.1:8188/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://127.0.0.1:{healthCheckPort}/health/");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -224,19 +241,20 @@ namespace Zetian.HealthCheck.Tests
         public async Task HealthCheck_WithHostnameBinding_Works()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = new Random().Next(50000, 65536) };
+            SmtpServerConfiguration config = new() { Port = GetNextPort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
             // Act - Bind to hostname
-            _healthCheckService = _smtpServer.EnableHealthCheck("localhost", 8189);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck("localhost", healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Assert
             Assert.True(_healthCheckService.IsRunning);
 
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8189/health/");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -244,11 +262,12 @@ namespace Zetian.HealthCheck.Tests
         public async Task HealthCheckService_CanBeStopped()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = new Random().Next(50000, 65536) };
+            SmtpServerConfiguration config = new() { Port = GetNextPort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8187);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             await Task.Delay(500);
@@ -262,7 +281,7 @@ namespace Zetian.HealthCheck.Tests
             // Should not be able to connect
             await Assert.ThrowsAsync<HttpRequestException>(async () =>
             {
-                await _httpClient.GetAsync("http://localhost:8187/health/");
+                await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             });
         }
     }

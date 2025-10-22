@@ -13,6 +13,12 @@ namespace Zetian.HealthCheck.Tests
         private SmtpServer? _smtpServer;
         private HealthCheckService? _healthCheckService;
         private readonly HttpClient _httpClient = new();
+        private static int _portCounter = 45000;  // Starting port for path tests (different range)
+
+        private static int GetNextPort()
+        {
+            return Interlocked.Increment(ref _portCounter);
+        }
 
         public void Dispose()
         {
@@ -29,17 +35,18 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536)
+                Port = GetNextPort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8190);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:8190{path}");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}{path}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -57,17 +64,18 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536)
+                Port = GetNextPort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8191);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:8191{path}");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}{path}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -85,17 +93,18 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536)
+                Port = GetNextPort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8192);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:8192{path}");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}{path}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -110,17 +119,18 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = new Random().Next(50000, 65536)
+                Port = GetNextPort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            _healthCheckService = _smtpServer.EnableHealthCheck(8193);
+            int healthCheckPort = GetNextPort();
+            _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
             // Act
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync("http://localhost:8193/health/invalid");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/invalidpath");
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);

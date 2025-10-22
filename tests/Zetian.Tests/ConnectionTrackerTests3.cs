@@ -36,7 +36,7 @@ namespace Zetian.Tests
                     {
                         try
                         {
-                            var handle = await tracker.TryAcquireAsync(ipAddress);
+                            ConnectionTracker.ConnectionHandle? handle = await tracker.TryAcquireAsync(ipAddress);
                             if (handle != null)
                             {
                                 Interlocked.Increment(ref successCount);
@@ -84,13 +84,13 @@ namespace Zetian.Tests
             // Act - Acquire up to the maximum
             for (int i = 0; i < maxConnectionsPerIp; i++)
             {
-                var handle = await tracker.TryAcquireAsync(ipAddress);
+                ConnectionTracker.ConnectionHandle? handle = await tracker.TryAcquireAsync(ipAddress);
                 Assert.NotNull(handle);
                 handles.Add(handle);
             }
 
             // Try to acquire one more (should fail)
-            var extraHandle = await tracker.TryAcquireAsync(ipAddress);
+            ConnectionTracker.ConnectionHandle? extraHandle = await tracker.TryAcquireAsync(ipAddress);
             Assert.Null(extraHandle);
 
             // Release one connection
@@ -98,12 +98,12 @@ namespace Zetian.Tests
             handles.RemoveAt(0);
 
             // Now we should be able to acquire again
-            var newHandle = await tracker.TryAcquireAsync(ipAddress);
+            ConnectionTracker.ConnectionHandle? newHandle = await tracker.TryAcquireAsync(ipAddress);
             Assert.NotNull(newHandle);
             handles.Add(newHandle);
 
             // Cleanup
-            foreach (var handle in handles)
+            foreach (ConnectionTracker.ConnectionHandle? handle in handles)
             {
                 handle?.Dispose();
             }
@@ -125,10 +125,10 @@ namespace Zetian.Tests
             IPAddress ip3 = IPAddress.Parse("192.168.1.3");
 
             // Act
-            var handle1_1 = await tracker.TryAcquireAsync(ip1);
-            var handle1_2 = await tracker.TryAcquireAsync(ip1);
-            var handle2_1 = await tracker.TryAcquireAsync(ip2);
-            var handle3_1 = await tracker.TryAcquireAsync(ip3);
+            ConnectionTracker.ConnectionHandle? handle1_1 = await tracker.TryAcquireAsync(ip1);
+            ConnectionTracker.ConnectionHandle? handle1_2 = await tracker.TryAcquireAsync(ip1);
+            ConnectionTracker.ConnectionHandle? handle2_1 = await tracker.TryAcquireAsync(ip2);
+            ConnectionTracker.ConnectionHandle? handle3_1 = await tracker.TryAcquireAsync(ip3);
 
             // Assert
             Assert.Equal(2, await tracker.GetConnectionCountAsync(ip1));
@@ -169,7 +169,7 @@ namespace Zetian.Tests
                     {
                         try
                         {
-                            var handle = await tracker.TryAcquireAsync(ipAddress, cancellationTokenSource.Token);
+                            ConnectionTracker.ConnectionHandle? handle = await tracker.TryAcquireAsync(ipAddress, cancellationTokenSource.Token);
                             if (handle != null)
                             {
                                 await Task.Delay(Random.Shared.Next(10, 50), cancellationTokenSource.Token);

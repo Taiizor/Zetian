@@ -40,21 +40,30 @@ namespace Zetian.Internal
             // Get or create connection info atomically
             ConnectionInfo info = _connections.GetOrAdd(ipAddress, _ => new ConnectionInfo(_maxConnectionsPerIp));
 
-            // All operations on the connection info must be atomic
-            bool acquired = await info.TryAcquireAsync(cancellationToken).ConfigureAwait(false);
-
-            if (acquired)
+            // Acquire the lock and perform the operation atomically
+            await info.LockAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                _logger.LogDebug("Connection acquired for {IPAddress}. Current count: {Count}/{Max}",
-                    ipAddress, info.CurrentCount, _maxConnectionsPerIp);
+                // Check if we can acquire a connection
+                if (info.CanAcquire())
+                {
+                    info.IncrementUnsafe();
 
-                return new ConnectionHandle(ipAddress, info, this);
+                    _logger.LogDebug("Connection acquired for {IPAddress}. Current count: {Count}/{Max}",
+                        ipAddress, info.GetCountUnsafe(), _maxConnectionsPerIp);
+
+                    return new ConnectionHandle(ipAddress, info, this);
+                }
+
+                _logger.LogWarning("Connection limit exceeded for {IPAddress}. Max: {Max}",
+                    ipAddress, _maxConnectionsPerIp);
+
+                return null;
             }
-
-            _logger.LogWarning("Connection limit exceeded for {IPAddress}. Max: {Max}",
-                ipAddress, _maxConnectionsPerIp);
-
-            return null;
+            finally
+            {
+                info.ReleaseLock();
+            }
         }
 
         /// <summary>
@@ -64,7 +73,15 @@ namespace Zetian.Internal
         {
             if (_connections.TryGetValue(ipAddress, out ConnectionInfo? info))
             {
-                return await info.GetCurrentCountAsync().ConfigureAwait(false);
+                await info.LockAsync().ConfigureAwait(false);
+                try
+                {
+                    return info.GetCountUnsafe();
+                }
+                finally
+                {
+                    info.ReleaseLock();
+                }
             }
             return 0;
         }
@@ -74,7 +91,19 @@ namespace Zetian.Internal
         /// </summary>
         public int GetConnectionCount(IPAddress ipAddress)
         {
-            return GetConnectionCountAsync(ipAddress).GetAwaiter().GetResult();
+            if (_connections.TryGetValue(ipAddress, out ConnectionInfo? info))
+            {
+                info.Lock();
+                try
+                {
+                    return info.GetCountUnsafe();
+                }
+                finally
+                {
+                    info.ReleaseLock();
+                }
+            }
+            return 0;
         }
 
         /// <summary>
@@ -85,23 +114,52 @@ namespace Zetian.Internal
         /// ensure thread safety and prevent premature deletion of connection information.</remarks>
         /// <param name="ipAddress">The IP address for which the connection is being released.</param>
         /// <param name="info">The connection information object that manages the state and count for the specified IP address.</param>
-        private async Task ReleaseConnectionAsync(IPAddress ipAddress, ConnectionInfo info)
+        internal async Task ReleaseConnectionAsync(IPAddress ipAddress, ConnectionInfo info)
         {
             try
             {
-                // Release connection atomically
-                int currentCount = await info.ReleaseAsync().ConfigureAwait(false);
+                await info.LockAsync().ConfigureAwait(false);
+                try
+                {
+                    info.DecrementUnsafe();
+                    int currentCount = info.GetCountUnsafe();
 
-                _logger.LogDebug("Connection released for {IPAddress}. Current count: {Count}",
-                    ipAddress, currentCount);
+                    _logger.LogDebug("Connection released for {IPAddress}. Current count: {Count}",
+                        ipAddress, currentCount);
+                }
+                finally
+                {
+                    info.ReleaseLock();
+                }
 
-                // Try to remove if expired and no connections
                 // The removal logic is handled in the cleanup timer to avoid race conditions
-                // We don't remove immediately to prevent the scenario where:
-                // 1. Thread A releases last connection
-                // 2. Thread B tries to acquire and creates new ConnectionInfo
-                // 3. Thread A removes the ConnectionInfo
-                // Instead, we let the cleanup timer handle removal after inactivity
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error releasing connection for {IPAddress}", ipAddress);
+            }
+        }
+
+        /// <summary>
+        /// Releases a connection synchronously
+        /// </summary>
+        internal void ReleaseConnection(IPAddress ipAddress, ConnectionInfo info)
+        {
+            try
+            {
+                info.Lock();
+                try
+                {
+                    info.DecrementUnsafe();
+                    int currentCount = info.GetCountUnsafe();
+
+                    _logger.LogDebug("Connection released for {IPAddress}. Current count: {Count}",
+                        ipAddress, currentCount);
+                }
+                finally
+                {
+                    info.ReleaseLock();
+                }
             }
             catch (Exception ex)
             {
@@ -125,22 +183,40 @@ namespace Zetian.Internal
                 // Identify candidates for removal
                 foreach (KeyValuePair<IPAddress, ConnectionInfo> kvp in _connections)
                 {
-                    // Use TryMarkForRemoval to atomically check and mark
-                    if (kvp.Value.TryMarkForRemoval())
+                    kvp.Value.Lock();
+                    try
                     {
-                        keysToRemove.Add(kvp.Key);
+                        // Only remove if no active connections and not accessed recently
+                        if (kvp.Value.CanRemoveUnsafe())
+                        {
+                            kvp.Value.MarkForRemovalUnsafe();
+                            keysToRemove.Add(kvp.Key);
+                        }
+                    }
+                    finally
+                    {
+                        kvp.Value.ReleaseLock();
                     }
                 }
 
                 // Remove marked entries
                 foreach (IPAddress key in keysToRemove)
                 {
-                    // Only remove if it's still marked for removal
                     if (_connections.TryRemove(key, out ConnectionInfo? removed))
                     {
-                        // The ConnectionInfo was already marked for removal,
-                        // so it's safe to dispose
-                        removed.Dispose();
+                        // Only dispose if still marked for removal
+                        removed.Lock();
+                        try
+                        {
+                            if (removed.IsMarkedForRemovalUnsafe())
+                            {
+                                removed.Dispose();
+                            }
+                        }
+                        finally
+                        {
+                            removed.ReleaseLock();
+                        }
                     }
                 }
             }
@@ -184,7 +260,7 @@ namespace Zetian.Internal
             {
                 if (Interlocked.Exchange(ref _disposed, 1) == 0)
                 {
-                    tracker.ReleaseConnectionAsync(ipAddress, info).GetAwaiter().GetResult();
+                    tracker.ReleaseConnection(ipAddress, info);
                 }
             }
         }
@@ -199,117 +275,99 @@ namespace Zetian.Internal
             private DateTime _lastAccess = DateTime.UtcNow;
             private bool _markedForRemoval = false;
             private bool _disposed = false;
-
-            public int CurrentCount => Volatile.Read(ref _activeConnections);
+            /// <summary>
+            /// Acquires the async lock for exclusive access
+            /// </summary>
+            public Task LockAsync(CancellationToken cancellationToken = default)
+            {
+                return _syncLock.WaitAsync(cancellationToken);
+            }
 
             /// <summary>
-            /// Atomically tries to acquire a connection
+            /// Acquires the sync lock for exclusive access
             /// </summary>
-            public async Task<bool> TryAcquireAsync(CancellationToken cancellationToken)
+            public void Lock()
             {
-                // Use semaphore for async-safe locking
-                await _syncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    // Check if we can accept more connections
-                    if (_disposed || _markedForRemoval || _activeConnections >= maxConnections)
-                    {
-                        return false;
-                    }
+                _syncLock.Wait();
+            }
 
-                    _activeConnections++;
+            /// <summary>
+            /// Releases the lock
+            /// </summary>
+            public void ReleaseLock()
+            {
+                _syncLock.Release();
+            }
+
+            /// <summary>
+            /// Checks if a connection can be acquired (must be called under lock)
+            /// </summary>
+            public bool CanAcquire()
+            {
+                return !_disposed && !_markedForRemoval && _activeConnections < maxConnections;
+            }
+
+            /// <summary>
+            /// Increments the connection count (must be called under lock)
+            /// </summary>
+            public void IncrementUnsafe()
+            {
+                _activeConnections++;
+                _lastAccess = DateTime.UtcNow;
+            }
+
+            /// <summary>
+            /// Decrements the connection count (must be called under lock)
+            /// </summary>
+            public void DecrementUnsafe()
+            {
+                if (_activeConnections > 0)
+                {
+                    _activeConnections--;
                     _lastAccess = DateTime.UtcNow;
-                    return true;
-                }
-                finally
-                {
-                    _syncLock.Release();
                 }
             }
 
             /// <summary>
-            /// Atomically releases a connection
+            /// Gets the current connection count (must be called under lock)
             /// </summary>
-            public async Task<int> ReleaseAsync()
+            public int GetCountUnsafe()
             {
-                await _syncLock.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    if (_activeConnections > 0)
-                    {
-                        _activeConnections--;
-                        _lastAccess = DateTime.UtcNow;
-                    }
-                    return _activeConnections;
-                }
-                finally
-                {
-                    _syncLock.Release();
-                }
+                return _activeConnections;
             }
 
             /// <summary>
-            /// Gets the current connection count thread-safely
+            /// Checks if this can be removed (must be called under lock)
             /// </summary>
-            public async Task<int> GetCurrentCountAsync()
+            public bool CanRemoveUnsafe()
             {
-                await _syncLock.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    return _activeConnections;
-                }
-                finally
-                {
-                    _syncLock.Release();
-                }
+                // Remove if no active connections and not accessed for 5 minutes
+                return _activeConnections == 0 &&
+                       (DateTime.UtcNow - _lastAccess) > TimeSpan.FromMinutes(5);
             }
 
             /// <summary>
-            /// Synchronous release for backward compatibility
+            /// Marks for removal (must be called under lock)
             /// </summary>
-            public int Release()
+            public void MarkForRemovalUnsafe()
             {
-                return ReleaseAsync().GetAwaiter().GetResult();
+                _markedForRemoval = true;
             }
 
             /// <summary>
-            /// Tries to mark this info for removal
+            /// Checks if marked for removal (must be called under lock)
             /// </summary>
-            public async Task<bool> TryMarkForRemovalAsync()
+            public bool IsMarkedForRemovalUnsafe()
             {
-                await _syncLock.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    // Only mark for removal if:
-                    // 1. No active connections
-                    // 2. Not accessed for 10 minutes
-                    // 3. Not already marked
-                    if (_activeConnections == 0 &&
-                        !_markedForRemoval &&
-                        (DateTime.UtcNow - _lastAccess) > TimeSpan.FromMinutes(10))
-                    {
-                        _markedForRemoval = true;
-                        return true;
-                    }
-                    return false;
-                }
-                finally
-                {
-                    _syncLock.Release();
-                }
+                return _markedForRemoval;
             }
 
             /// <summary>
-            /// Synchronous version for timer callback
+            /// Releases all resources used by the current instance.
             /// </summary>
-            public bool TryMarkForRemoval()
-            {
-                return TryMarkForRemovalAsync().GetAwaiter().GetResult();
-            }
-
-            /// <summary>
-            /// Releases resources
-            /// </summary>
+            /// <remarks>Call this method when you are finished using the object to free unmanaged
+            /// resources and perform other cleanup operations. After calling <see cref="Dispose"/>, the object should
+            /// not be used further.</remarks>
             public void Dispose()
             {
                 if (_disposed)

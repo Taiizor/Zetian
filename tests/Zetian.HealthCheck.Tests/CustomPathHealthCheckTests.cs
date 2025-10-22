@@ -52,9 +52,9 @@ namespace Zetian.HealthCheck.Tests
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
             await _healthCheckService.StartAsync();
 
-            // Act - Note: Even with custom prefix, the actual path is still /health
+            // Act - With new implementation, custom prefix works correctly
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/health");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -88,7 +88,7 @@ namespace Zetian.HealthCheck.Tests
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
             await _healthCheckService.StartAsync();
 
-            // Act - Path after prefix must match the hardcoded paths
+            // Act - With new implementation, custom prefix works correctly
             await Task.Delay(500);
             HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/api/livez");
 
@@ -122,7 +122,7 @@ namespace Zetian.HealthCheck.Tests
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
             await _healthCheckService.StartAsync();
 
-            // Act - Path after prefix must match the hardcoded paths
+            // Act - With new implementation, custom prefix works correctly
             await Task.Delay(500);
             HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/monitoring/readyz");
 
@@ -156,11 +156,23 @@ namespace Zetian.HealthCheck.Tests
             // Act
             await Task.Delay(500);
 
-            // Try to access default path - should fail
-            await Assert.ThrowsAsync<HttpRequestException>(async () =>
+            // Custom path should work
+            HttpResponseMessage customResponse = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/custom/");
+            Assert.Equal(HttpStatusCode.OK, customResponse.StatusCode);
+
+            // Try to access default path - The behavior depends on HttpListener
+            // If the listener is only on /custom/, accessing /health/ might fail or return 404
+            try
             {
-                await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
-            });
+                HttpResponseMessage healthResponse = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
+                // If we get here, the path returns something (likely 404 Not Found)
+                Assert.NotEqual(HttpStatusCode.OK, healthResponse.StatusCode);
+            }
+            catch (HttpRequestException)
+            {
+                // This is expected - the listener is not on /health/
+                // Test passes
+            }
         }
 
         [Theory]
@@ -190,12 +202,9 @@ namespace Zetian.HealthCheck.Tests
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
             await _healthCheckService.StartAsync();
 
-            // Act - The path part after the prefix needs to match the hardcoded paths
+            // Act - With new implementation, custom prefixes work correctly
             await Task.Delay(500);
-            string testUrl = customPath.EndsWith("/healthz/") ?
-                $"http://localhost:{healthCheckPort}{customPath}" :
-                $"http://localhost:{healthCheckPort}{customPath}health";
-            HttpResponseMessage response = await _httpClient.GetAsync(testUrl);
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}{customPath}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -229,16 +238,16 @@ namespace Zetian.HealthCheck.Tests
             // Act & Assert
             await Task.Delay(500);
 
-            // Test first prefix - /health/ already includes the path
+            // Test first prefix
             HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/health/");
             Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
-            // Test second prefix - need to add 'health' to match route
-            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/health");
+            // Test second prefix
+            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/");
             Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
-            // Test third prefix - need to add 'healthz' to match route
-            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://127.0.0.1:{healthCheckPort}/api/healthz");
+            // Test third prefix
+            HttpResponseMessage response3 = await _httpClient.GetAsync($"http://127.0.0.1:{healthCheckPort}/api/");
             Assert.Equal(HttpStatusCode.OK, response3.StatusCode);
         }
 
@@ -273,9 +282,9 @@ namespace Zetian.HealthCheck.Tests
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions, healthOptions);
             await _healthCheckService.StartAsync();
 
-            // Act - Add 'health' to match the hardcoded route
+            // Act - With new implementation, custom prefix works
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/metrics/health");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/metrics/");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -315,12 +324,12 @@ namespace Zetian.HealthCheck.Tests
             // Act & Assert
             await Task.Delay(500);
 
-            // Test with trailing slash - add 'health' to match route
-            HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/health");
+            // Test with trailing slash
+            HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/");
             Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
-            // Test another valid path
-            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status/healthz");
+            // Test without trailing slash  
+            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/status");
             Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
         }
 
@@ -360,9 +369,9 @@ namespace Zetian.HealthCheck.Tests
 
             await _healthCheckService.StartAsync();
 
-            // Act
+            // Act - With new implementation, custom prefix works
             await Task.Delay(500);
-            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/diagnostics/health");
+            HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{healthCheckPort}/diagnostics/");
             string content = await response.Content.ReadAsStringAsync();
 
             // Assert
@@ -425,8 +434,8 @@ namespace Zetian.HealthCheck.Tests
             HttpResponseMessage response1 = await _httpClient.GetAsync($"http://localhost:{defaultHealthCheckPort}/health/");
             Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
-            // Test custom path - need to add 'health' to match route
-            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{customHealthCheckPort}/status/health");
+            // Test custom path
+            HttpResponseMessage response2 = await _httpClient.GetAsync($"http://localhost:{customHealthCheckPort}/status/");
             Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
             // Cleanup

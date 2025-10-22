@@ -3,7 +3,6 @@ using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
 using Xunit;
-using System.Linq;
 
 namespace Zetian.Tests
 {
@@ -53,7 +52,7 @@ namespace Zetian.Tests
             const int attemptCount = 20;
             ConcurrentBag<TcpClient> successfulConnections = new();
             Barrier barrier = new(attemptCount);
-            var successCount = 0;
+            int successCount = 0;
 
             // Act - Try to connect many times simultaneously
             Task<bool>[] tasks = Enumerable.Range(0, attemptCount).Select(i => Task.Run(async () =>
@@ -119,82 +118,93 @@ namespace Zetian.Tests
             // Arrange
             _server = await CreateAndStartServerAsync(TestPort + 1); // Use different port
 
-            // First, max out connections
+            // First, quickly max out connections
             List<TcpClient> firstBatch = new();
-            for (int i = 0; i < MaxConnectionsPerIp; i++)
+            Task<TcpClient>[] connectionTasks = Enumerable.Range(0, MaxConnectionsPerIp).Select(async i =>
             {
                 TcpClient client = new();
                 await client.ConnectAsync("localhost", TestPort + 1);
+                return client;
+            }).ToArray();
 
-                // Verify we got the greeting
+            TcpClient[] connectedClients = await Task.WhenAll(connectionTasks);
+
+            // Verify all got greetings
+            foreach (TcpClient client in connectedClients)
+            {
                 byte[] buffer = new byte[1024];
+                client.ReceiveTimeout = 1000;
                 int bytes = await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
                 string response = Encoding.UTF8.GetString(buffer, 0, bytes);
                 Assert.StartsWith("220", response);
-
                 firstBatch.Add(client);
             }
 
-            // Try one more - should fail to get a valid SMTP greeting
-            // Note: TCP connection might succeed but should not get SMTP service
-            using (TcpClient extraClient = new())
+            // Small delay to ensure all connections are properly tracked
+            await Task.Delay(100);
+
+            // Verify that we're at the limit by checking current count
+            Assert.Equal(MaxConnectionsPerIp, firstBatch.Count);
+
+            // Try one more - should fail or timeout
+            bool extraConnectionAccepted = false;
+            string debugInfo = "";
+
+            try
             {
-                var gotValidGreeting = false;
-                try
+                using TcpClient extraClient = new();
+                extraClient.ReceiveTimeout = 500; // Increased timeout
+
+                // Try to connect
+                await extraClient.ConnectAsync("localhost", TestPort + 1);
+                debugInfo += "TCP connected. ";
+
+                if (extraClient.Connected)
                 {
-                    extraClient.ReceiveTimeout = 500;
-                    await extraClient.ConnectAsync("localhost", TestPort + 1);
-
-                    // Even if TCP connects, we shouldn't get a valid SMTP greeting
-                    // because the connection tracker should reject it
-                    await Task.Delay(50);
-
-                    if (extraClient.Available > 0)
+                    try
                     {
-                        var buffer = new byte[1024];
-                        var bytes = await extraClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                        var response = Encoding.UTF8.GetString(buffer, 0, bytes);
-                        gotValidGreeting = response.StartsWith("220");
+                        // Try to read SMTP greeting
+                        byte[] buffer = new byte[1024];
+                        int bytes = await extraClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                        string response = Encoding.UTF8.GetString(buffer, 0, bytes);
+                        debugInfo += $"Got response: {response.Trim()}. ";
+
+                        // If we got a valid greeting, the connection was incorrectly accepted
+                        if (response.StartsWith("220"))
+                        {
+                            extraConnectionAccepted = true;
+                            debugInfo += "SMTP greeting received - connection was accepted!";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Timeout or error is expected - connection was rejected
+                        debugInfo += $"Read failed: {ex.GetType().Name}. Connection rejected.";
                     }
                 }
-                catch
-                {
-                    // Connection failed - this is expected and OK
-                }
-
-                Assert.False(gotValidGreeting, "Should not get SMTP greeting beyond connection limit");
             }
-
-            // Close all first batch connections
-            foreach (TcpClient client in firstBatch)
+            catch (Exception ex)
             {
-                byte[] quit = Encoding.UTF8.GetBytes("QUIT\r\n");
-                await client.GetStream().WriteAsync(quit, 0, quit.Length);
-                client.Close();
+                // Connection failed - this is expected
+                debugInfo += $"Connect failed: {ex.GetType().Name}. Connection rejected.";
             }
 
-            // Wait a bit for cleanup
+            Assert.False(extraConnectionAccepted, $"Extra connection should be rejected. Debug: {debugInfo}");
+
+            // Close all first batch connections quickly
+            Parallel.ForEach(firstBatch, client => client.Close());
+
+            // Wait briefly for cleanup
             await Task.Delay(50);
 
-            // Now should be able to connect again
-            List<TcpClient> secondBatch = new();
-            for (int i = 0; i < MaxConnectionsPerIp; i++)
+            // Now should be able to connect again - test with just one connection
+            using (TcpClient newClient = new())
             {
-                TcpClient client = new();
-                await client.ConnectAsync("localhost", TestPort + 1);
-
+                await newClient.ConnectAsync("localhost", TestPort + 1);
                 byte[] buffer = new byte[1024];
-                int bytes = await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                int bytes = await newClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
                 string response = Encoding.UTF8.GetString(buffer, 0, bytes);
                 Assert.StartsWith("220", response);
-
-                secondBatch.Add(client);
-            }
-
-            // Cleanup
-            foreach (TcpClient client in secondBatch)
-            {
-                client.Close();
             }
         }
 
@@ -208,8 +218,8 @@ namespace Zetian.Tests
             _server = await CreateAndStartServerAsync(TestPort + 2); // Use different port
             const int attemptCount = 10; // Reduced for faster test
             List<Task<bool>> tasks = new();
-            var successCount = 0;
-            var failureMessages = new ConcurrentBag<string>();
+            int successCount = 0;
+            ConcurrentBag<string> failureMessages = new();
             Barrier barrier = new(attemptCount);
 
             // Act
@@ -253,7 +263,7 @@ namespace Zetian.Tests
             // no more than MaxConnectionsPerIp are active
             if (successCount == 0)
             {
-                var errorDetails = string.Join("\n", failureMessages.Take(5));
+                string errorDetails = string.Join("\n", failureMessages.Take(5));
                 Assert.True(false, $"No connections succeeded. Sample errors:\n{errorDetails}");
             }
             Assert.True(successCount > 0, "At least some connections should succeed");

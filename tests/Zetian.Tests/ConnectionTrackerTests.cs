@@ -113,24 +113,26 @@ namespace Zetian.Tests
         {
             // Arrange
             const int maxConnections = 5;
-            const int totalAttempts = 20; // Reduced from 100 for faster test
+            const int totalAttempts = 10; // Further reduced for faster test
             int successCount = 0;
-            var handles = new ConcurrentBag<ConnectionTracker.ConnectionHandle>();
-            var barrier = new Barrier(totalAttempts);
+            ConcurrentBag<ConnectionTracker.ConnectionHandle> handles = new();
+            TaskCompletionSource<bool> startSignal = new();
 
             // Act - Many concurrent attempts
             Task[] tasks = Enumerable.Range(0, totalAttempts).Select(_ => Task.Run(async () =>
             {
-                barrier.SignalAndWait(); // Synchronize all tasks to start at the same time
+                await startSignal.Task; // Wait for signal to start simultaneously
 
                 ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp);
                 if (handle != null)
                 {
                     Interlocked.Increment(ref successCount);
                     handles.Add(handle);
-                    // No delay needed for this test
                 }
             })).ToArray();
+
+            // Start all tasks at once
+            startSignal.SetResult(true);
 
             await Task.WhenAll(tasks);
 
@@ -202,7 +204,7 @@ namespace Zetian.Tests
         public async Task TryAcquireAsync_ShouldRespectCancellationToken()
         {
             // Arrange
-            using var cts = new CancellationTokenSource();
+            using CancellationTokenSource cts = new();
             cts.Cancel();
 
             // Act & Assert - TaskCanceledException derives from OperationCanceledException

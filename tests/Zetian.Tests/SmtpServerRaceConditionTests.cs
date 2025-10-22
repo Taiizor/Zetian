@@ -264,7 +264,7 @@ namespace Zetian.Tests
             if (successCount == 0)
             {
                 string errorDetails = string.Join("\n", failureMessages.Take(5));
-                Assert.True(false, $"No connections succeeded. Sample errors:\n{errorDetails}");
+                Assert.Fail($"No connections succeeded. Sample errors:\n{errorDetails}");
             }
             Assert.True(successCount > 0, "At least some connections should succeed");
         }

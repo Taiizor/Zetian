@@ -59,10 +59,14 @@ namespace Zetian.HealthCheck
         /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken = default)
         {
+#if NET6_0
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(HealthCheckService));
             }
+#else
+            ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
 
             if (IsRunning)
             {
@@ -182,7 +186,7 @@ namespace Zetian.HealthCheck
                     {
                         // Extract the path after the prefix
                         effectivePath = fullPath[prefixPath.Length..];
-                        if (!effectivePath.StartsWith("/"))
+                        if (!effectivePath.StartsWith('/'))
                         {
                             effectivePath = "/" + effectivePath;
                         }
@@ -305,7 +309,7 @@ namespace Zetian.HealthCheck
             byte[] buffer = Encoding.UTF8.GetBytes(json);
             response.ContentLength64 = buffer.Length;
 
-            await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+            await response.OutputStream.WriteAsync(buffer);
             response.Close();
         }
 

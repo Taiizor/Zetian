@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -42,10 +41,7 @@ namespace Zetian.HealthCheck.Extensions
             int port,
             string path = "/health/")
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
             if (string.IsNullOrWhiteSpace(hostname))
             {
@@ -53,14 +49,14 @@ namespace Zetian.HealthCheck.Extensions
             }
 
             // Ensure path ends with /
-            if (!path.EndsWith("/"))
+            if (!path.EndsWith('/'))
             {
-                path += "/";
+                path += '/';
             }
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new List<string> { $"http://{hostname}:{port}{path}" }
+                Prefixes = new() { $"http://{hostname}:{port}{path}" }
             };
 
             HealthCheckService service = new(options, server.Configuration.LoggerFactory);
@@ -86,15 +82,9 @@ namespace Zetian.HealthCheck.Extensions
             int port,
             string path = "/health/")
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (ipAddress == null)
-            {
-                throw new ArgumentNullException(nameof(ipAddress));
-            }
+            ArgumentNullException.ThrowIfNull(ipAddress);
 
             string hostname = ipAddress.ToString();
             if (ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
@@ -117,15 +107,9 @@ namespace Zetian.HealthCheck.Extensions
             HealthCheckServiceOptions serviceOptions,
             SmtpHealthCheckOptions? healthCheckOptions = null)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
-            if (serviceOptions == null)
-            {
-                throw new ArgumentNullException(nameof(serviceOptions));
-            }
+            ArgumentNullException.ThrowIfNull(serviceOptions);
 
             HealthCheckService service = new(serviceOptions, server.Configuration.LoggerFactory);
 
@@ -218,20 +202,14 @@ namespace Zetian.HealthCheck.Extensions
             string name,
             Func<CancellationToken, Task<HealthCheckResult>> healthCheckFunc)
         {
-            if (service == null)
-            {
-                throw new ArgumentNullException(nameof(service));
-            }
+            ArgumentNullException.ThrowIfNull(service);
 
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentNullException(nameof(name));
             }
 
-            if (healthCheckFunc == null)
-            {
-                throw new ArgumentNullException(nameof(healthCheckFunc));
-            }
+            ArgumentNullException.ThrowIfNull(healthCheckFunc);
 
             FunctionalHealthCheck functionalHealthCheck = new(healthCheckFunc);
             service.AddHealthCheck(name, functionalHealthCheck);
@@ -243,14 +221,9 @@ namespace Zetian.HealthCheck.Extensions
     /// <summary>
     /// Functional health check implementation
     /// </summary>
-    internal class FunctionalHealthCheck : IHealthCheck
+    internal class FunctionalHealthCheck(Func<CancellationToken, Task<HealthCheckResult>> checkFunc) : IHealthCheck
     {
-        private readonly Func<CancellationToken, Task<HealthCheckResult>> _checkFunc;
-
-        public FunctionalHealthCheck(Func<CancellationToken, Task<HealthCheckResult>> checkFunc)
-        {
-            _checkFunc = checkFunc ?? throw new ArgumentNullException(nameof(checkFunc));
-        }
+        private readonly Func<CancellationToken, Task<HealthCheckResult>> _checkFunc = checkFunc ?? throw new ArgumentNullException(nameof(checkFunc));
 
         public Task<HealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default)
         {

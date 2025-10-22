@@ -413,7 +413,7 @@ namespace Zetian
             {
                 throw new ObjectDisposedException(GetType().FullName);
             }
-#elif NET7_0_OR_GREATER
+#else
             ObjectDisposedException.ThrowIf(_disposed, this);
 #endif
         }

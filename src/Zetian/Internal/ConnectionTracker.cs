@@ -299,8 +299,8 @@ namespace Zetian.Internal
                 {
                     throw new ObjectDisposedException(nameof(ConnectionInfo));
                 }
-#elif NET7_0_OR_GREATER
-                ObjectDisposedException.ThrowIf(_disposed, nameof(ConnectionInfo));
+#else
+                ObjectDisposedException.ThrowIf(_disposed, this);
 #endif
                 return _syncLock.WaitAsync(cancellationToken);
             }
@@ -315,8 +315,8 @@ namespace Zetian.Internal
                 {
                     throw new ObjectDisposedException(nameof(ConnectionInfo));
                 }
-#elif NET7_0_OR_GREATER
-                ObjectDisposedException.ThrowIf(_disposed, nameof(ConnectionInfo));
+#else
+                ObjectDisposedException.ThrowIf(_disposed, this);
 #endif
                 _syncLock.Wait();
             }

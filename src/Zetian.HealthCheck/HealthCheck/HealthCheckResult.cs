@@ -6,38 +6,30 @@ namespace Zetian.HealthCheck
     /// <summary>
     /// Represents the result of a health check
     /// </summary>
-    public class HealthCheckResult
+    /// <remarks>
+    /// Initializes a new instance of HealthCheckResult
+    /// </remarks>
+    public class HealthCheckResult(HealthStatus status, string? description = null, Exception? exception = null, Dictionary<string, object>? data = null)
     {
-        /// <summary>
-        /// Initializes a new instance of HealthCheckResult
-        /// </summary>
-        public HealthCheckResult(HealthStatus status, string? description = null, Exception? exception = null, Dictionary<string, object>? data = null)
-        {
-            Status = status;
-            Description = description;
-            Exception = exception;
-            Data = data ?? new();
-        }
-
         /// <summary>
         /// Gets the health status
         /// </summary>
-        public HealthStatus Status { get; }
+        public HealthStatus Status { get; } = status;
 
         /// <summary>
         /// Gets the description
         /// </summary>
-        public string? Description { get; }
+        public string? Description { get; } = description;
 
         /// <summary>
         /// Gets the exception if any
         /// </summary>
-        public Exception? Exception { get; }
+        public Exception? Exception { get; } = exception;
 
         /// <summary>
         /// Gets additional data
         /// </summary>
-        public Dictionary<string, object> Data { get; }
+        public Dictionary<string, object> Data { get; } = data ?? new();
 
         /// <summary>
         /// Creates a healthy result

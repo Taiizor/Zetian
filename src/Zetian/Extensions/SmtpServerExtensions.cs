@@ -195,9 +195,9 @@ namespace Zetian.Extensions
 
             server.MessageReceived += (sender, e) =>
             {
-                List<MailAddress> invalidRecipients = e.Message.Recipients
+                MailAddress[] invalidRecipients = e.Message.Recipients
                     .Where(r => !validator(r))
-                    .ToList();
+                    .ToArray();
 
                 if (invalidRecipients.Any())
                 {

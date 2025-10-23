@@ -91,10 +91,10 @@ namespace Zetian.RateLimiting
 
         private void CleanupExpiredWindows()
         {
-            List<string> expiredKeys = _windows
+            string[] expiredKeys = _windows
                 .Where(kvp => kvp.Value.IsExpired())
                 .Select(kvp => kvp.Key)
-                .ToList();
+                .ToArray();
 
             foreach (string? key in expiredKeys)
             {

@@ -65,6 +65,11 @@ namespace Zetian.Server
         /// </summary>
         public DateTime? StartTime { get; private set; }
 
+        /// <summary>
+        /// Gets the number of active sessions
+        /// </summary>
+        public int ActiveSessionCount => _sessions?.Count ?? 0;
+
         /// <inheritdoc />
         public event EventHandler<SessionEventArgs>? SessionCreated;
 

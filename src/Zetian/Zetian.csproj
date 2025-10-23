@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
@@ -7,6 +7,21 @@
         <DefaultLanguage>en-GB</DefaultLanguage>
         <RootNamespace>Zetian</RootNamespace>
         <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <!-- AOT Support for .NET 7.0+ -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0' OR '$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
+        <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">true</EnableAotAnalyzer>
+        <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+        <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+        <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
+        <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <IsAotCompatible>true</IsAotCompatible>
+        <IlcTrimMetadata>true</IlcTrimMetadata>
+        <IsTrimmable>true</IsTrimmable>
+        <TrimMode>link</TrimMode>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -60,7 +75,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <None Include="README.MD">
             <Pack>True</Pack>

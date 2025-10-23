@@ -32,9 +32,9 @@ const apiCategories = [
       {
         name: 'SmtpServer',
         description: 'Main SMTP server class that handles connections and messages',
-        properties: ['Configuration', 'StartTime', 'IsRunning', 'Endpoint'],
+        properties: ['ActiveSessionCount', 'Configuration', 'StartTime', 'IsRunning', 'Endpoint'],
         methods: ['StartAsync()', 'StopAsync()', 'Dispose()'],
-        events: ['MessageReceived', 'SessionCreated', 'SessionCompleted', 'ErrorOccurred']
+        events: ['SessionCompleted', 'MessageReceived', 'SessionCreated', 'ErrorOccurred']
       },
       {
         name: 'SmtpServerBuilder',

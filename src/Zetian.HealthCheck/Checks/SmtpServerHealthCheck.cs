@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
@@ -97,16 +95,8 @@ namespace Zetian.HealthCheck.Checks
 
         private int GetActiveSessionCount(SmtpServer server)
         {
-            // Use reflection to access private field (for health monitoring purposes)
-            FieldInfo? sessionsField = typeof(SmtpServer).GetField("_sessions",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (sessionsField?.GetValue(server) is ConcurrentDictionary<string, object> sessions)
-            {
-                return sessions.Count;
-            }
-
-            return 0;
+            // Use the public ActiveSessionCount property (AOT-compatible)
+            return server.ActiveSessionCount;
         }
 
         private string GetUptime()

@@ -7,15 +7,13 @@ import {
   Shield, 
   Filter,
   Gauge,
-  Copy,
   AlertCircle,
   CheckCircle,
-  FileCode,
   Lock
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
-const configExample = `using Zetian;
+const configExample = `using Zetian.Server;
 
 var server = new SmtpServerBuilder()
     // Basic Settings
@@ -41,7 +39,10 @@ var server = new SmtpServerBuilder()
     
     .Build();`;
 
-const authConfigExample = `// Simple authentication
+const authConfigExample = `using Zetian.Models;
+using Zetian.Server;
+
+// Simple authentication
 .SimpleAuthentication("admin", "password123")
 
 // Custom authentication
@@ -60,7 +61,10 @@ const authConfigExample = `// Simple authentication
 .AddAuthenticationMechanism("PLAIN")
 .AddAuthenticationMechanism("LOGIN")`;
 
-const filterConfigExample = `// Protocol-Level Filtering (at SMTP command level)
+const filterConfigExample = `using Zetian.Server;
+using Zetian.Extensions;
+
+// Protocol-Level Filtering (at SMTP command level)
 var server = new SmtpServerBuilder()
     .Port(25)
     // Domain filtering
@@ -80,8 +84,9 @@ server.AddSpamFilter(new[] { "spam.com", "junk.org" });
 server.AddSizeFilter(10 * 1024 * 1024); // 10MB
 server.AddAllowedDomains("example.com");`;
 
-const rateLimitExample = `using Zetian.Extensions;
-using Zetian.Extensions.RateLimiting;
+const rateLimitExample = `using Zetian.Server;
+using Zetian.Models;
+using Zetian.Extensions;
 
 // Rate limiting configuration
 var rateLimitConfig = new RateLimitConfiguration

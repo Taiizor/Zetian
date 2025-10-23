@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<TrimmerRootDescriptor>
+  <!-- Preserve types used in JSON serialization -->
+  <assemblies>
+    <assembly fullname="Zetian.HealthCheck">
+      <!-- Preserve all models for JSON serialization -->
+      <type fullname="Zetian.HealthCheck.Enums.*" preserve="all" />
+      <type fullname="Zetian.HealthCheck.Models.*" preserve="all" />
+
+      <!-- Preserve anonymous types and dynamic JSON handling -->
+      <type fullname="System.Text.Json.JsonSerializer" preserve="all" />
+      <type fullname="System.Text.Json.JsonSerializerOptions" preserve="all" />
+    </assembly>
+  </assemblies>
+</TrimmerRootDescriptor>

@@ -1,0 +1,126 @@
+name: Feature Request
+description: Suggest a new feature for Zetian SMTP Server library
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please fill out the sections below to help us understand your request.
+  
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature Type
+      description: What type of feature are you requesting?
+      options:
+        - New SMTP Command Support
+        - Authentication Enhancement
+        - Performance Improvement
+        - Security Feature
+        - Configuration Option
+        - API Enhancement
+        - Protocol Extension
+        - Other
+    validations:
+      required: true
+  
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Describe the problem or limitation you're trying to solve
+      placeholder: "Currently, when trying to implement X, I have to..."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: "I would like Zetian to provide..."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: api-design
+    attributes:
+      label: API Design (if applicable)
+      description: Provide example code showing how the feature would be used
+      placeholder: |
+        ```csharp
+        // Example usage
+        var server = new SmtpServer(config);
+        server.EnableFeature(new ProposedFeature());
+        ```
+      render: csharp
+    validations:
+      required: false
+  
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or workarounds you've considered
+      placeholder: "I've tried using..."
+    validations:
+      required: false
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature for your use case?
+      options:
+        - Critical - Blocking production use
+        - High - Important for my project
+        - Medium - Would be nice to have
+        - Low - Future consideration
+    validations:
+      required: true
+  
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: Implementation Considerations
+      description: Please check all that apply
+      options:
+        - label: This feature should be backward compatible
+        - label: This feature requires configuration changes
+        - label: This feature may impact performance
+        - label: This feature requires documentation updates
+        - label: I am willing to contribute to the implementation
+  
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific use cases for this feature
+      placeholder: |
+        1. When sending bulk emails...
+        2. For authentication with...
+        3. To handle specific SMTP extensions...
+    validations:
+      required: false
+  
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Add any relevant RFC specifications, documentation, or similar implementations
+      placeholder: |
+        - RFC 5321: https://tools.ietf.org/html/rfc5321
+        - Similar feature in other libraries...
+    validations:
+      required: false
+  
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this feature request, you agree to follow our [Code of Conduct](https://github.com/Taiizor/Zetian/blob/develop/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

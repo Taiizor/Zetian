@@ -167,10 +167,34 @@ const searchData: SearchItem[] = [
   { 
     title: 'DomainMailboxFilter', 
     description: 'Domain-based filtering - whitelist/blacklist for sender and recipient domains', 
-    path: '/api#storage', 
+    path: '/api#filtering', 
     category: 'API',
     tags: ['filter', 'domain', 'whitelist', 'blacklist'],
     code: '.WithSenderDomainWhitelist("trusted.com")'
+  },
+  { 
+    title: 'CompositeMailboxFilter', 
+    description: 'Combine multiple filters - Mode (All/Any), AddFilter(), RemoveFilter()', 
+    path: '/api#filtering', 
+    category: 'API',
+    tags: ['filter', 'composite', 'combine', 'multiple'],
+    code: 'new CompositeMailboxFilter(CompositeMode.All)'
+  },
+  { 
+    title: 'AcceptAllMailboxFilter', 
+    description: 'Filter that accepts all messages - no validation', 
+    path: '/api#filtering', 
+    category: 'API',
+    tags: ['filter', 'accept', 'all'],
+    code: 'AcceptAllMailboxFilter.Instance'
+  },
+  { 
+    title: 'NullMessageStore', 
+    description: 'Null storage - discards messages without saving', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 'null', 'discard'],
+    code: 'NullMessageStore.Instance'
   },
   
   // Extension Methods
@@ -257,6 +281,55 @@ const searchData: SearchItem[] = [
     category: 'Examples',
     tags: ['example', 'storage', 'save', 'database'],
     code: '.WithFileMessageStore(directory, createDateFolders: true)'
+  },
+  
+  // Protocol Classes
+  { 
+    title: 'SmtpResponse', 
+    description: 'SMTP response - Ok, ServiceReady, AuthenticationRequired, AuthenticationSuccessful, etc.', 
+    path: '/api#protocol', 
+    category: 'API',
+    tags: ['protocol', 'response', 'smtp', 'codes'],
+    code: 'SmtpResponse.Ok'
+  },
+  { 
+    title: 'SmtpCommand', 
+    description: 'SMTP command parser - Parse(), Name, Parameters, IsValid()', 
+    path: '/api#protocol', 
+    category: 'API',
+    tags: ['protocol', 'command', 'smtp', 'parser'],
+    code: 'SmtpCommand.Parse("MAIL FROM:<user@example.com>")'
+  },
+  
+  // Event Arguments
+  { 
+    title: 'MessageEventArgs', 
+    description: 'Event args for MessageReceived - Message, Session, Cancel, Response', 
+    path: '/api#event-arguments', 
+    category: 'API',
+    tags: ['event', 'args', 'message'],
+    code: 'e.Cancel = true; e.Response = SmtpResponse.TransactionFailed;'
+  },
+  { 
+    title: 'SessionEventArgs', 
+    description: 'Event args for session events - Session property', 
+    path: '/api#event-arguments', 
+    category: 'API',
+    tags: ['event', 'args', 'session']
+  },
+  { 
+    title: 'AuthenticationEventArgs', 
+    description: 'Event args for authentication - Username, Password, Session, IsAuthenticated', 
+    path: '/api#event-arguments', 
+    category: 'API',
+    tags: ['event', 'args', 'authentication']
+  },
+  { 
+    title: 'ErrorEventArgs', 
+    description: 'Event args for errors - Exception, Session', 
+    path: '/api#event-arguments', 
+    category: 'API',
+    tags: ['event', 'args', 'error', 'exception']
   },
   
   // Common Issues & Solutions

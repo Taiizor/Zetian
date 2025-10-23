@@ -23,6 +23,7 @@ namespace Zetian.HealthCheck.Services
         private readonly ILogger<HealthCheckService> _logger;
         private readonly HealthCheckServiceOptions _options;
         private readonly Dictionary<string, IHealthCheck> _healthChecks;
+        private readonly Dictionary<string, IHealthCheck> _readinessChecks;
         private HttpListener? _listener;
         private CancellationTokenSource? _cancellationTokenSource;
         private Task? _listenerTask;
@@ -34,6 +35,7 @@ namespace Zetian.HealthCheck.Services
         public HealthCheckService(HealthCheckServiceOptions? options = null, ILoggerFactory? loggerFactory = null)
         {
             _options = options ?? new HealthCheckServiceOptions();
+            _readinessChecks = new();
             _healthChecks = new();
 
             loggerFactory ??= NullLoggerFactory.Instance;
@@ -57,6 +59,20 @@ namespace Zetian.HealthCheck.Services
 
             _healthChecks[name] = healthCheck ?? throw new ArgumentNullException(nameof(healthCheck));
             _logger.LogDebug($"Added health check: {name}");
+        }
+
+        /// <summary>
+        /// Adds a readiness check
+        /// </summary>
+        public void AddReadinessCheck(string name, IHealthCheck readinessCheck)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            _readinessChecks[name] = readinessCheck ?? throw new ArgumentNullException(nameof(readinessCheck));
+            _logger.LogDebug($"Added readiness check: {name}");
         }
 
         /// <summary>
@@ -289,8 +305,56 @@ namespace Zetian.HealthCheck.Services
 
         private async Task HandleReadinessCheckAsync(HttpListenerResponse response, CancellationToken cancellationToken)
         {
-            // For now, readiness = health. Can be customized later.
-            await HandleHealthCheckAsync(response, cancellationToken);
+            Dictionary<string, object> results = new();
+            HealthStatus overallStatus = HealthStatus.Healthy;
+
+            // First check all readiness-specific checks
+            Dictionary<string, IHealthCheck> checksToRun = _readinessChecks.Count > 0 ? _readinessChecks : _healthChecks;
+
+            foreach (KeyValuePair<string, IHealthCheck> kvp in checksToRun)
+            {
+                try
+                {
+                    HealthCheckResult result = await kvp.Value.CheckHealthAsync(cancellationToken);
+
+                    results[kvp.Key] = new
+                    {
+                        status = result.Status.ToString(),
+                        description = result.Description,
+                        data = result.Data
+                    };
+
+                    // Readiness is more strict - degraded services are not ready
+                    if (result.Status != HealthStatus.Healthy)
+                    {
+                        overallStatus = HealthStatus.Unhealthy;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    results[kvp.Key] = new
+                    {
+                        status = "Unhealthy",
+                        error = ex.Message
+                    };
+                    overallStatus = HealthStatus.Unhealthy;
+                }
+            }
+
+            var responseData = new
+            {
+                status = overallStatus == HealthStatus.Healthy ? "Ready" : "NotReady",
+                timestamp = DateTimeOffset.UtcNow,
+                checks = results,
+                ready = overallStatus == HealthStatus.Healthy
+            };
+
+            // Set status code based on readiness
+            response.StatusCode = overallStatus == HealthStatus.Healthy
+                ? (int)HttpStatusCode.OK
+                : (int)HttpStatusCode.ServiceUnavailable;
+
+            await WriteJsonResponse(response, responseData);
         }
 
         private async Task HandleLivenessCheckAsync(HttpListenerResponse response, CancellationToken cancellationToken)

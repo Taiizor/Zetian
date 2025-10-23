@@ -10,7 +10,6 @@ import {
   Hash,
   Box,
   Zap,
-  Lock,
   Mail,
   Settings,
   Gauge,

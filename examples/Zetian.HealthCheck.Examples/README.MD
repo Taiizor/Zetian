@@ -27,6 +27,14 @@ This project contains examples demonstrating the health check functionality of Z
 - Performance metrics collection
 - Custom base path `/status/` instead of `/health/`
 
+### 5. Readiness Check Example
+- Connection capacity monitoring
+- Kubernetes-style readiness probes
+- Gradual service startup simulation
+- Database, cache, and warmup checks
+- Separate readiness vs health checks
+- Shows difference between liveness and readiness
+
 ## Running the Examples
 
 ```bash

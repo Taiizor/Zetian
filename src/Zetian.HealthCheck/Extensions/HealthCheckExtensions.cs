@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
-using Zetian.HealthCheck.Abstractions;
 using Zetian.HealthCheck.Checks;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Options;
@@ -288,18 +287,32 @@ namespace Zetian.HealthCheck.Extensions
 
             return service;
         }
-    }
 
-    /// <summary>
-    /// Functional health check implementation
-    /// </summary>
-    internal class FunctionalHealthCheck(Func<CancellationToken, Task<HealthCheckResult>> checkFunc) : IHealthCheck
-    {
-        private readonly Func<CancellationToken, Task<HealthCheckResult>> _checkFunc = checkFunc ?? throw new ArgumentNullException(nameof(checkFunc));
-
-        public Task<HealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Adds a custom readiness check to the service
+        /// </summary>
+        /// <param name="service">The health check service</param>
+        /// <param name="name">The name of the readiness check</param>
+        /// <param name="readinessCheckFunc">The readiness check function</param>
+        /// <returns>The health check service</returns>
+        public static HealthCheckService AddReadinessCheck(
+            this HealthCheckService service,
+            string name,
+            Func<CancellationToken, Task<HealthCheckResult>> readinessCheckFunc)
         {
-            return _checkFunc(cancellationToken);
+            ArgumentNullException.ThrowIfNull(service);
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            ArgumentNullException.ThrowIfNull(readinessCheckFunc);
+
+            FunctionalHealthCheck functionalHealthCheck = new(readinessCheckFunc);
+            service.AddReadinessCheck(name, functionalHealthCheck);
+
+            return service;
         }
     }
 }

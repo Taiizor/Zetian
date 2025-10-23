@@ -95,7 +95,7 @@ namespace Zetian.HealthCheck.Checks
 
         private int GetActiveSessionCount(SmtpServer server)
         {
-            // Use the public ActiveSessionCount property (AOT-compatible)
+            // Use the public ActiveSessionCount property
             return server.ActiveSessionCount;
         }
 

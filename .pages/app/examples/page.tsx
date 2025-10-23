@@ -21,7 +21,7 @@ const examples = [
     icon: Zap,
     color: 'from-blue-500 to-indigo-600',
     difficulty: 'Beginner',
-    code: `using Zetian;
+    code: `using Zetian.Server;
 
 // Basic SMTP server - accepts all messages
 using var server = new SmtpServerBuilder()
@@ -49,8 +49,8 @@ Console.WriteLine("SMTP Server is running on port 25");`
     icon: Shield,
     color: 'from-green-500 to-emerald-600',
     difficulty: 'Intermediate',
-    code: `using Zetian;
-using Zetian.Authentication;
+    code: `using Zetian.Models;
+using Zetian.Server;
 
 // Authenticated SMTP server
 using var server = new SmtpServerBuilder()
@@ -93,8 +93,7 @@ Console.WriteLine("SMTP Server with authentication on port 587");`
     icon: Lock,
     color: 'from-purple-500 to-pink-600',
     difficulty: 'Intermediate',
-    code: `using Zetian;
-using Zetian.Authentication;
+    code: `using Zetian.Server;
 
 // Secure SMTP server with TLS/SSL support
 using var server = new SmtpServerBuilder()
@@ -127,8 +126,9 @@ Console.WriteLine("Secure SMTP Server running with STARTTLS support on port 587"
     icon: Gauge,
     color: 'from-yellow-500 to-orange-600',
     difficulty: 'Intermediate',
-    code: `using Zetian.Extensions;
-using Zetian.Extensions.RateLimiting;
+    code: `using Zetian.Models;
+using Zetian.Server;
+using Zetian.Extensions;
 
 // SMTP server protected with rate limiting
 using var server = new SmtpServerBuilder()
@@ -165,7 +165,8 @@ Console.WriteLine("Rate-limited server on port 25");`
     icon: Filter,
     color: 'from-red-500 to-rose-600',
     difficulty: 'Advanced',
-    code: `using Zetian;
+    code: `using Zetian.Server;
+using Zetian.Protocol;
 
 // Protocol-level filtering
 using var server = new SmtpServerBuilder()
@@ -211,9 +212,10 @@ await server.StartAsync();`
     icon: Database,
     color: 'from-teal-500 to-cyan-600',
     difficulty: 'Advanced',
-    code: `using Zetian;
-using Zetian.Storage;
+    code: `using System.Net;
+using Zetian.Server;
 using System.Text.Json;
+using Zetian.Abstractions;
 
 // SMTP server with built-in file storage
 using var server = new SmtpServerBuilder()

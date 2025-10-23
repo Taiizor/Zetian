@@ -3,6 +3,7 @@ using Moq;
 using System.Text;
 using Zetian.Abstractions;
 using Zetian.Authentication;
+using Zetian.Delegates;
 using Zetian.Models;
 
 namespace Zetian.Benchmarks

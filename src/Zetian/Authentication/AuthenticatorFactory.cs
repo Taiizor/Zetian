@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Zetian.Abstractions;
-using Zetian.Models;
+using Zetian.Delegates;
 
 namespace Zetian.Authentication
 {

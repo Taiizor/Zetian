@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Zetian.HealthCheck.Enums;
 
 namespace Zetian.HealthCheck.Models
 {

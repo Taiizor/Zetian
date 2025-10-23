@@ -1,4 +1,4 @@
-namespace Zetian.HealthCheck.Models
+namespace Zetian.HealthCheck.Enums
 {
     /// <summary>
     /// Health status enumeration

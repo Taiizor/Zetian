@@ -4,6 +4,7 @@ using System.Text;
 using Xunit;
 using Zetian.Abstractions;
 using Zetian.Authentication;
+using Zetian.Delegates;
 using Zetian.Models;
 
 namespace Zetian.Tests

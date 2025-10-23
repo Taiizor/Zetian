@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.HealthCheck.Abstractions;
+using Zetian.HealthCheck.Enums;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Options;
 

@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Delegates;
 using Zetian.Models;
 
 namespace Zetian.Authentication

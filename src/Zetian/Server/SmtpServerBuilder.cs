@@ -6,6 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using Zetian.Abstractions;
 using Zetian.Authentication;
 using Zetian.Configuration;
+using Zetian.Delegates;
 using Zetian.Models;
 using Zetian.Storage;
 

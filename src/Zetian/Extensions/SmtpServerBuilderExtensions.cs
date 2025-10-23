@@ -1,7 +1,7 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
 using Zetian.Abstractions;
-using Zetian.Models;
+using Zetian.Delegates;
 using Zetian.Server;
 
 namespace Zetian.Extensions

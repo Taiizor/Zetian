@@ -18,8 +18,8 @@ import {
 import CodeBlock from '@/components/CodeBlock';
 
 const customFilterExample = `using System.Net;
-using Zetian.Core;
-using Zetian.Storage;
+using Zetian.Server;
+using Zetian.Abstractions;
 
 // Custom mailbox filter
 public class CustomSpamFilter : IMailboxFilter
@@ -230,6 +230,8 @@ var spamDatabase = new SimpleSpamDatabase();
 var spamFilter = new CustomSpamFilter(spamDatabase);
 
 // Build server with custom filter
+using Zetian.Server;
+
 var server = new SmtpServerBuilder()
     .Port(25)
     .MailboxFilter(spamFilter)
@@ -238,8 +240,12 @@ var server = new SmtpServerBuilder()
 // Start server
 await server.StartAsync();`;
 
-const customStoreExample = `using Zetian.Storage;
+const customStoreExample = `using System.Net;
+using Zetian.Server;
 using Azure.Storage.Blobs;
+using Zetian.Abstractions;
+using Azure.Storage.Blobs.Models;
+using Microsoft.Extensions.Logging;
 
 // Azure Blob Storage message store
 public class AzureBlobMessageStore : IMessageStore
@@ -324,14 +330,16 @@ var server = new SmtpServerBuilder()
     .MessageStore(azureStore)
     .Build();`;
 
-const compositeFilterExample = `using Zetian.Storage;
+const compositeFilterExample = `using Zetian.Enums;
+using Zetian.Server;
+using Zetian.Storage;
 
 // Combining multiple filters
 var compositeFilter = new CompositeMailboxFilter(CompositeMode.All) // All must pass
     .AddFilter(new DomainMailboxFilter()
         .AllowFromDomains("trusted.com", "partner.org")
         .BlockFromDomains("spam.com"))
-    .AddFilter(new RateLimitFilter(100, TimeSpan.FromHour(1)))
+    .AddFilter(new RateLimitFilter(100, TimeSpan.FromHours(1)))
     .AddFilter(new GeoLocationFilter(allowedCountries: new[] { "TR", "US", "GB" }))
     .AddFilter(new CustomSpamFilter(spamDatabase));
 
@@ -354,7 +362,8 @@ var mainFilter = new CompositeMailboxFilter(CompositeMode.All)
 
 const extensionMethodsExample = `using Nest;
 using System.Net;
-using Zetian.Core;
+using Zetian.Server;
+using Zetian.Abstractions;
 using System.Net.Http.Json;
 using Metrics = Prometheus.Metrics;
 
@@ -433,7 +442,7 @@ public static class SmtpServerExtensions
                 Recipients = e.Message.Recipients,
                 Subject = e.Message.Subject,
                 Size = e.Message.Size,
-                RemoteIp = (session.RemoteEndPoint as IPEndPoint)?.Address.ToString() ?? ""
+                RemoteIp = (e.Session.RemoteEndPoint as IPEndPoint)?.Address.ToString() ?? ""
             };
             
             await elasticClient.IndexDocumentAsync(logEntry);
@@ -451,14 +460,12 @@ var server = new SmtpServerBuilder()
     .AddPrometheusMetrics()
     .AddElasticsearchLogging("http://localhost:9200");
 
-// Initialize plugins
-await pluginManager.InitializePluginsAsync(server);
-
 // Start server
 await server.StartAsync();`;
 
-const pluginSystemExample = `using Zetian.Core;
+const pluginSystemExample = `using Zetian.Server;
 using Zetian.Protocol;
+using Zetian.Abstractions;
 
 // Spam checker interface
 public interface ISpamChecker

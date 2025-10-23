@@ -1,0 +1,150 @@
+# Zetian SMTP Stress Testing Framework
+# Resource Allocation Summary:
+# ┌─────────────┬──────────┬──────────┬────────────┬──────────────┐
+# │ Service     │ Max RAM  │ Min RAM  │ Max CPUs   │ CPU Priority │
+# ├─────────────┼──────────┼──────────┼────────────┼──────────────┤
+# │ Server      │ 4 GB     │ 2 GB     │ 4 cores    │ High (2048)  │
+# │ Client      │ 2 GB     │ 1 GB     │ 2 cores    │ Normal (1024)│
+# │ Prometheus  │ 1 GB     │ 512 MB   │ 1 core     │ Low (512)    │
+# │ Grafana     │ 1 GB     │ 512 MB   │ 1 core     │ Low (512)    │
+# └─────────────┴──────────┴──────────┴────────────┴──────────────┘
+# Total: 8 GB RAM (max), 4.5 GB RAM (min), 8 CPU cores (max)
+
+services:
+  # SMTP Test Server
+  server:
+    build:
+      context: ..
+      dockerfile: stress/server/Dockerfile
+    container_name: smtp-server
+    hostname: server
+    ports:
+      - "2525:25"       # SMTP port (mapped to 2525 on host to avoid conflicts)
+      - "9100:9100"     # Metrics port
+    volumes:
+      - ./config/server.yml:/app/config/server.yml:ro
+    networks:
+      - stress-net
+    environment:
+      - DOTNET_EnableDiagnostics=0
+      - ASPNETCORE_ENVIRONMENT=Production
+    # Resource limits for SMTP server (high performance)
+    mem_limit: 4g            # Maximum 4GB RAM
+    mem_reservation: 2g      # Minimum 2GB RAM reserved
+    cpus: 4                  # Maximum 4 CPU cores
+    cpu_shares: 2048         # Higher CPU priority (default is 1024)
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Load Generator Client
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: load-generator
+    hostname: client
+    ports:
+      - "9101:9101"     # Metrics port
+    volumes:
+      - ./config/client.yml:/app/config/client.yml:ro
+      - ./results:/app/results
+    networks:
+      - stress-net
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    # Resource limits for load generator
+    mem_limit: 2g            # Maximum 2GB RAM
+    mem_reservation: 1g      # Minimum 1GB RAM reserved
+    cpus: 2                  # Maximum 2 CPU cores
+    cpu_shares: 1024         # Normal CPU priority
+    depends_on:
+      - server
+    profiles:
+      - test
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=7d'
+    # Resource limits for Prometheus
+    mem_limit: 1g            # Maximum 1GB RAM
+    mem_reservation: 512m    # Minimum 512MB RAM reserved
+    cpus: 1                  # Maximum 1 CPU core
+    cpu_shares: 512          # Lower CPU priority
+    networks:
+      - stress-net
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    hostname: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    # Resource limits for Grafana
+    mem_limit: 1g            # Maximum 1GB RAM
+    mem_reservation: 512m    # Minimum 512MB RAM reserved
+    cpus: 1                  # Maximum 1 CPU core
+    cpu_shares: 512          # Lower CPU priority
+    networks:
+      - stress-net
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  stress-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

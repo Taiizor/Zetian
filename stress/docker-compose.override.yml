@@ -1,0 +1,13 @@
+# Development overrides for docker-compose
+# This file is automatically loaded by docker-compose
+
+services:
+  server:
+    environment:
+      - DOTNET_EnableDiagnostics=0
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Logging__LogLevel__Default=None #Debug
+  client:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Logging__LogLevel__Default=None #Debug

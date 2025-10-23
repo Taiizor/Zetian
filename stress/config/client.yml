@@ -1,0 +1,18 @@
+# Load Generator Configuration
+
+# Target SMTP server
+Target:
+  Host: server
+  Port: 25
+
+# Test scenario configuration
+Scenario:
+  Type: concurrent
+  Duration: 30
+  Connections: 10000
+  Rate: 5000
+
+# Message configuration
+Message:
+  Size: 1
+  Recipients: 1

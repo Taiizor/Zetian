@@ -1,0 +1,54 @@
+# Prometheus Configuration for SMTP Stress Testing
+
+global:
+  scrape_interval: 5s       # How frequently to scrape targets
+  evaluation_interval: 5s   # How frequently to evaluate rules
+  
+  # Attach labels to any time series
+  external_labels:
+    monitor: 'smtp-stress-test'
+    environment: 'test'
+
+# Scrape configurations
+scrape_configs:
+  # SMTP Server metrics
+  - job_name: 'smtp-server'
+    static_configs:
+      - targets: ['server:9100']
+        labels:
+          service: 'smtp-server'
+          component: 'server'
+    
+    # Override global settings
+    scrape_interval: 2s
+    scrape_timeout: 2s
+    
+    # Metric relabeling
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'smtp_.*'
+        action: keep
+
+  # Load Generator metrics
+  - job_name: 'load-generator'
+    static_configs:
+      - targets: ['client:9101']
+        labels:
+          service: 'load-generator'
+          component: 'client'
+    
+    scrape_interval: 2s
+    scrape_timeout: 2s
+    
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'client_.*'
+        action: keep
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          component: 'monitoring'

@@ -1,0 +1,12 @@
+# SMTP Server Configuration
+# All limits are disabled for stress testing
+
+Smtp:
+  Port: 25                      # SMTP listening port
+  EnableTls: false              # TLS/SSL support
+  MaxConnections: unlimited     # Maximum concurrent connections
+  MaxMessageSize: unlimited     # Maximum message size in bytes
+  
+Metrics:
+  Enabled: true                 # Enable Prometheus metrics
+  Port: 9100                    # Metrics endpoint port

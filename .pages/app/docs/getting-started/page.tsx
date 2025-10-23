@@ -12,7 +12,7 @@ import {
 import CodeBlock from '@/components/CodeBlock';
 
 const installCommand = 'dotnet add package Zetian';
-const basicExample = `using Zetian;
+const basicExample = `using Zetian.Server;
 
 // Create a simple SMTP server
 using var server = SmtpServerBuilder.CreateBasic();
@@ -32,7 +32,7 @@ Console.WriteLine($"SMTP Server running on {server.Endpoint}");
 // Keep the server running
 Console.ReadLine();`;
 
-const authExample = `using Zetian;
+const authExample = `using Zetian.Server;
 
 // Authenticated server
 using var server = new SmtpServerBuilder()
@@ -54,7 +54,7 @@ server.MessageReceived += (sender, e) =>
 
 await server.StartAsync();`;
 
-const tlsExample = `using Zetian;
+const tlsExample = `using Zetian.Server;
 
 // Secure server with TLS/SSL support
 using var server = new SmtpServerBuilder()

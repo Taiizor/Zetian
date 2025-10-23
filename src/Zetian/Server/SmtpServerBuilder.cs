@@ -160,7 +160,7 @@ namespace Zetian.Server
         /// <param name="path">Path to the .pfx or .p12 file</param>
         /// <param name="password">Password for the PFX file (optional)</param>
         /// <param name="keyStorageFlags">Key storage flags (optional)</param>
-        public SmtpServerBuilder CertificateFromPfx(string path, string? password = null, 
+        public SmtpServerBuilder CertificateFromPfx(string path, string? password = null,
             X509KeyStorageFlags keyStorageFlags = X509KeyStorageFlags.DefaultKeySet)
         {
             _configuration.Certificate = X509CertificateLoader.LoadPkcs12FromFile(path, password, keyStorageFlags);

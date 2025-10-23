@@ -87,11 +87,11 @@ const searchData: SearchItem[] = [
   },
   { 
     title: 'SmtpServerBuilder', 
-    description: 'Fluent builder - Port(), ServerName(), Certificate(), RequireAuthentication(), WithFileMessageStore(), Build()', 
+    description: 'Fluent builder - Port(), ServerName(), Certificate(), CertificateFromPfx(), CertificateFromPem(), CertificateFromCer(), RequireAuthentication(), WithFileMessageStore(), Build()', 
     path: '/api#core-classes', 
     category: 'API',
-    tags: ['builder', 'fluent', 'configuration'],
-    code: '.Port(587).RequireAuthentication().Certificate(cert)'
+    tags: ['builder', 'fluent', 'configuration', 'certificate'],
+    code: '.Port(587).RequireAuthentication().CertificateFromPfx("cert.pfx", "password")'
   },
   { 
     title: 'SmtpServerConfiguration', 
@@ -134,17 +134,25 @@ const searchData: SearchItem[] = [
   },
   { 
     title: 'IAuthenticator', 
-    description: 'Custom authentication mechanism interface - AuthenticateAsync() method', 
+    description: 'Custom authentication mechanism interface - AuthenticateAsync() method (Zetian.Abstractions)', 
     path: '/api#authentication', 
     category: 'API',
-    tags: ['authenticator', 'interface', 'custom']
+    tags: ['authenticator', 'interface', 'custom', 'abstractions']
   },
   { 
     title: 'IRateLimiter', 
-    description: 'Rate limiting interface - IsAllowedAsync(), RecordRequestAsync(), GetRemainingAsync()', 
-    path: '/api#extensions', 
+    description: 'Rate limiting interface - IsAllowedAsync(), RecordRequestAsync(), GetRemainingAsync() (Zetian.Abstractions)', 
+    path: '/api#rate-limiting', 
     category: 'API',
-    tags: ['ratelimit', 'interface', 'throttle']
+    tags: ['ratelimit', 'interface', 'throttle', 'abstractions']
+  },
+  { 
+    title: 'IStatisticsCollector', 
+    description: 'Statistics collection interface - RecordSession(), RecordMessage(), RecordError() (Zetian.Abstractions)', 
+    path: '/api#core-interfaces', 
+    category: 'API',
+    tags: ['statistics', 'interface', 'metrics', 'abstractions'],
+    code: 'server.AddStatistics(new MyStatisticsCollector())'
   },
   
   // Storage Classes
@@ -218,6 +226,15 @@ const searchData: SearchItem[] = [
     code: '.Certificate("cert.pfx", "password").RequireSecureConnection()'
   },
   { 
+    title: 'Certificate Formats', 
+    description: 'PFX, PEM, CER/CRT certificate loading - CertificateFromPfx(), CertificateFromPem(), CertificateFromCer()', 
+    path: '/examples#certificate-formats', 
+    category: 'Examples',
+    tags: ['certificate', 'pfx', 'pem', 'cer', 'crt', 'x509'],
+    popular: true,
+    code: '.CertificateFromPem("cert.pem", "key.pem")'
+  },
+  { 
     title: 'Rate Limited Example', 
     description: 'Spam protection - PerMinute/PerHour limits, connection limits per IP', 
     path: '/examples#rate-limited', 
@@ -265,6 +282,143 @@ const searchData: SearchItem[] = [
     category: 'Troubleshooting',
     tags: ['error', 'connection', 'limit'],
     code: '.MaxConnectionsPerIP(100)'
+  },
+  
+  // Health Check
+  { 
+    title: 'Health Check', 
+    description: 'Health monitoring endpoints - /health, /livez, /readyz - server metrics, uptime, memory usage', 
+    path: '/docs/health-check', 
+    category: 'Documentation',
+    tags: ['health', 'monitoring', 'metrics', 'liveness', 'readiness'],
+    popular: true,
+    code: 'server.EnableHealthCheck(8080)'
+  },
+  { 
+    title: 'HealthCheckService', 
+    description: 'HTTP service for health checks - StartAsync(), AddHealthCheck(), AddReadinessCheck()', 
+    path: '/api#health-check-core', 
+    category: 'API',
+    tags: ['health', 'service', 'http', 'monitoring'],
+    code: 'healthCheck.AddHealthCheck("database", async (ct) => { ... })'
+  },
+  { 
+    title: 'IHealthCheck', 
+    description: 'Health check interface - CheckHealthAsync() for custom health checks', 
+    path: '/api#health-check-core', 
+    category: 'API',
+    tags: ['health', 'interface', 'custom']
+  },
+  { 
+    title: 'HealthCheckResult', 
+    description: 'Health check result - Healthy(), Degraded(), Unhealthy() static factory methods', 
+    path: '/api#health-check-core', 
+    category: 'API',
+    tags: ['health', 'result', 'status'],
+    code: 'HealthCheckResult.Healthy("Service is running")'
+  },
+  { 
+    title: 'SmtpServerHealthCheck', 
+    description: 'Built-in SMTP server health check - monitors uptime, active sessions, memory usage', 
+    path: '/api#health-check-core', 
+    category: 'API',
+    tags: ['health', 'smtp', 'monitoring']
+  },
+  { 
+    title: 'EnableHealthCheck', 
+    description: 'Extension method - enables health check endpoint on SMTP server', 
+    path: '/api#health-check-extensions', 
+    category: 'API',
+    tags: ['health', 'extension', 'enable'],
+    code: 'server.EnableHealthCheck("0.0.0.0", 8080)'
+  },
+  { 
+    title: 'StartWithHealthCheckAsync', 
+    description: 'Extension - starts SMTP server with health check endpoint simultaneously', 
+    path: '/api#health-check-extensions', 
+    category: 'API',
+    tags: ['health', 'extension', 'start'],
+    code: 'await server.StartWithHealthCheckAsync(8080, healthService => { ... }, ct)'
+  },
+  
+  // Authentication Updates
+  { 
+    title: 'AuthenticatorFactory', 
+    description: 'Factory for creating authenticators - Create(), SetDefaultHandler(), GetDefaultHandler()', 
+    path: '/api#authentication', 
+    category: 'API',
+    tags: ['authentication', 'factory', 'handler'],
+    code: 'AuthenticatorFactory.SetDefaultHandler(myHandler)'
+  },
+  { 
+    title: 'AuthenticationHandler', 
+    description: 'Delegate for custom authentication - Task<AuthenticationResult>(username, password)', 
+    path: '/api#delegates', 
+    category: 'API',
+    tags: ['authentication', 'delegate', 'handler'],
+    code: 'async (username, password) => AuthenticationResult.Succeed(username)'
+  },
+  
+  // Rate Limiting Updates
+  { 
+    title: 'InMemoryRateLimiter', 
+    description: 'In-memory rate limiter - IsAllowedAsync(), RecordRequestAsync(), CleanupExpiredWindows()', 
+    path: '/api#rate-limiting', 
+    category: 'API',
+    tags: ['ratelimit', 'memory', 'implementation'],
+    code: 'new InMemoryRateLimiter(RateLimitConfiguration.PerHour(100))'
+  },
+  { 
+    title: 'RateLimitConfiguration', 
+    description: 'Rate limit config - PerMinute(), PerHour(), PerDay(), PerCustom() factory methods', 
+    path: '/api#rate-limiting', 
+    category: 'API',
+    tags: ['ratelimit', 'configuration', 'factory'],
+    code: 'RateLimitConfiguration.PerCustom(50, TimeSpan.FromMinutes(30))'
+  },
+  
+  // Extension Method Updates
+  { 
+    title: 'SmtpServerExtensions', 
+    description: 'Extension methods - AddRateLimiting(), AddMessageFilter(), AddSpamFilter(), SaveMessagesToDirectory(), AddStatistics()', 
+    path: '/api#extensions', 
+    category: 'API',
+    tags: ['extension', 'methods', 'server'],
+    popular: true
+  },
+  { 
+    title: 'SmtpServerBuilderExtensions', 
+    description: 'Builder extensions - WithRecipientDomainWhitelist(), WithRecipientDomainBlacklist()', 
+    path: '/api#extensions', 
+    category: 'API',
+    tags: ['extension', 'builder', 'domain'],
+    code: '.WithRecipientDomainWhitelist("mydomain.com")'
+  },
+  
+  // Enum Updates
+  { 
+    title: 'HealthStatus', 
+    description: 'Health status enum - Healthy = 0, Degraded = 1, Unhealthy = 2', 
+    path: '/api#health-check-enums', 
+    category: 'API',
+    tags: ['health', 'enum', 'status'],
+    code: 'HealthStatus.Healthy'
+  },
+  { 
+    title: 'CompositeMode', 
+    description: 'Composite filter mode - All (AND logic), Any (OR logic)', 
+    path: '/api#enums', 
+    category: 'API',
+    tags: ['enum', 'filter', 'composite'],
+    code: 'CompositeMode.All'
+  },
+  { 
+    title: 'SmtpSessionState', 
+    description: 'Session states - Connected, AwaitingCommand, ReceivingData, Closing', 
+    path: '/api#enums', 
+    category: 'API',
+    tags: ['enum', 'session', 'state'],
+    code: 'SmtpSessionState.AwaitingCommand'
   },
 ];
 

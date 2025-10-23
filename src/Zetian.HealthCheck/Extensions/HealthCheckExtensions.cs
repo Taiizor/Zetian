@@ -137,11 +137,32 @@ namespace Zetian.HealthCheck.Extensions
             int healthCheckPort = 8080,
             CancellationToken cancellationToken = default)
         {
+            return await StartWithHealthCheckAsync(server, healthCheckPort, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Starts the SMTP server with health check endpoint and configures health checks
+        /// </summary>
+        /// <param name="server">The SMTP server</param>
+        /// <param name="healthCheckPort">The port for health check endpoint</param>
+        /// <param name="configureHealthChecks">Action to configure health checks</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The health check service</returns>
+        public static async Task<HealthCheckService> StartWithHealthCheckAsync(
+            this ISmtpServer server,
+            int healthCheckPort,
+            Action<HealthCheckService>? configureHealthChecks,
+            CancellationToken cancellationToken = default)
+        {
             // Start SMTP server
             await server.StartAsync(cancellationToken);
 
             // Enable and start health check
             HealthCheckService healthCheckService = server.EnableHealthCheck(healthCheckPort);
+
+            // Configure health checks if provided
+            configureHealthChecks?.Invoke(healthCheckService);
+
             await healthCheckService.StartAsync(cancellationToken);
 
             return healthCheckService;
@@ -161,11 +182,34 @@ namespace Zetian.HealthCheck.Extensions
             int healthCheckPort,
             CancellationToken cancellationToken = default)
         {
+            return await StartWithHealthCheckAsync(server, hostname, healthCheckPort, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Starts the SMTP server with health check endpoint on specific hostname and configures health checks
+        /// </summary>
+        /// <param name="server">The SMTP server</param>
+        /// <param name="hostname">The hostname to bind health check to</param>
+        /// <param name="healthCheckPort">The port for health check endpoint</param>
+        /// <param name="configureHealthChecks">Action to configure health checks</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The health check service</returns>
+        public static async Task<HealthCheckService> StartWithHealthCheckAsync(
+            this ISmtpServer server,
+            string hostname,
+            int healthCheckPort,
+            Action<HealthCheckService>? configureHealthChecks,
+            CancellationToken cancellationToken = default)
+        {
             // Start SMTP server
             await server.StartAsync(cancellationToken);
 
             // Enable and start health check
             HealthCheckService healthCheckService = server.EnableHealthCheck(hostname, healthCheckPort);
+
+            // Configure health checks if provided
+            configureHealthChecks?.Invoke(healthCheckService);
+
             await healthCheckService.StartAsync(cancellationToken);
 
             return healthCheckService;
@@ -185,11 +229,34 @@ namespace Zetian.HealthCheck.Extensions
             int healthCheckPort,
             CancellationToken cancellationToken = default)
         {
+            return await StartWithHealthCheckAsync(server, ipAddress, healthCheckPort, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Starts the SMTP server with health check endpoint on specific IP address and configures health checks
+        /// </summary>
+        /// <param name="server">The SMTP server</param>
+        /// <param name="ipAddress">The IP address to bind health check to</param>
+        /// <param name="healthCheckPort">The port for health check endpoint</param>
+        /// <param name="configureHealthChecks">Action to configure health checks</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The health check service</returns>
+        public static async Task<HealthCheckService> StartWithHealthCheckAsync(
+            this ISmtpServer server,
+            IPAddress ipAddress,
+            int healthCheckPort,
+            Action<HealthCheckService>? configureHealthChecks,
+            CancellationToken cancellationToken = default)
+        {
             // Start SMTP server
             await server.StartAsync(cancellationToken);
 
             // Enable and start health check
             HealthCheckService healthCheckService = server.EnableHealthCheck(ipAddress, healthCheckPort);
+
+            // Configure health checks if provided
+            configureHealthChecks?.Invoke(healthCheckService);
+
             await healthCheckService.StartAsync(cancellationToken);
 
             return healthCheckService;

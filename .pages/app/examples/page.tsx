@@ -9,7 +9,8 @@ import {
   Zap,
   FileCode,
   ExternalLink,
-  Check
+  Check,
+  Heart
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
@@ -288,6 +289,81 @@ public class JsonMessageStore : IMessageStore
         return true;
     }
 }`
+  },
+  {
+    id: 'health-check',
+    title: 'Health Monitoring',
+    description: 'Server with health monitoring and custom checks',
+    icon: Heart,
+    color: 'from-pink-500 to-rose-600',
+    difficulty: 'Advanced',
+    code: `using Zetian.Server;
+using StackExchange.Redis;
+using Microsoft.Data.SqlClient;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Extensions;
+
+// SMTP server with health monitoring
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .MaxConnections(100)
+    .MaxMessageSizeMB(10)
+    .Build();
+
+// Monitor server metrics
+server.MessageReceived += (sender, e) => {
+    var sessionCount = server.Configuration.MaxConnections; // Active sessions
+    Console.WriteLine($"Active sessions: {sessionCount}");
+
+    if (sessionCount > 80)
+    {
+        Console.WriteLine("WARNING: High connection count!");
+    }
+};
+
+// Start server and health check with custom checks configuration
+await server.StartWithHealthCheckAsync(8080, healthService =>
+{
+    // Add custom health checks
+    healthService.AddHealthCheck("database", async (ct) =>
+    {
+        try
+        {
+            // Check database connection
+            using var connection = new SqlConnection("Server=...;Database=...;User ID=...;Password=...;");
+            await connection.OpenAsync(ct);
+            return HealthCheckResult.Healthy("Database connected");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("Cannot connect to database", ex);
+        }
+    });
+
+    // Add Redis check
+    healthService.AddHealthCheck("redis", async (ct) =>
+    {
+        try
+        {
+            // Check Redis connection
+            var redis = ConnectionMultiplexer.Connect("localhost:6379");
+            var db = redis.GetDatabase();
+            await db.PingAsync();
+            return HealthCheckResult.Healthy("Redis is responsive");
+        }
+        catch (Exception ex)
+        {
+            // Redis down is not critical, mark as degraded
+            return HealthCheckResult.Degraded("Redis not available", ex);
+        }
+    });
+});
+
+Console.WriteLine("Server running with health monitoring");
+Console.WriteLine("Health endpoints:");
+Console.WriteLine("  http://localhost:8080/health - Overall status");
+Console.WriteLine("  http://localhost:8080/health/livez  - Liveness check");
+Console.WriteLine("  http://localhost:8080/health/readyz - Readiness check");`
   }
 ];
 
@@ -309,7 +385,7 @@ export default function ExamplesPage() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">6</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">7</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Code Examples</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">

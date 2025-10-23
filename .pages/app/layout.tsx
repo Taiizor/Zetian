@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     "email server",
     ".NET",
     "C#",
+    "AoT",
     "mail server",
     "smtp server",
     "TLS",

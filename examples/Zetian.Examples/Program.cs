@@ -20,8 +20,9 @@ namespace Zetian.Examples
             Console.WriteLine("6. SMTP Server with Custom Processing");
             Console.WriteLine("7. Full Featured SMTP Server");
             Console.WriteLine("8. Protocol-Level vs Event-Based Filtering");
+            Console.WriteLine("9. Certificate Formats for Secure SMTP");
             Console.WriteLine();
-            Console.Write("Select an example (1-8): ");
+            Console.Write("Select an example (1-9): ");
 
             string? choice = Console.ReadLine();
 
@@ -52,6 +53,9 @@ namespace Zetian.Examples
                         break;
                     case "8":
                         await ProtocolLevelFilteringExample.RunAsync();
+                        break;
+                    case "9":
+                        await CertificateFormatsExample.RunAsync();
                         break;
                     default:
                         Console.WriteLine("Invalid choice");

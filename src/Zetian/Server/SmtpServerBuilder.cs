@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -136,7 +137,7 @@ namespace Zetian.Server
         }
 
         /// <summary>
-        /// Sets SSL certificate from file
+        /// Sets SSL certificate from file (auto-detects format)
         /// </summary>
         public SmtpServerBuilder Certificate(string path, string? password = null)
         {
@@ -151,6 +152,102 @@ namespace Zetian.Server
 #endif
             return this;
         }
+
+#if NET9_0_OR_GREATER
+        /// <summary>
+        /// Sets SSL certificate from PFX/P12 file
+        /// </summary>
+        /// <param name="path">Path to the .pfx or .p12 file</param>
+        /// <param name="password">Password for the PFX file (optional)</param>
+        /// <param name="keyStorageFlags">Key storage flags (optional)</param>
+        public SmtpServerBuilder CertificateFromPfx(string path, string? password = null, 
+            X509KeyStorageFlags keyStorageFlags = X509KeyStorageFlags.DefaultKeySet)
+        {
+            _configuration.Certificate = X509CertificateLoader.LoadPkcs12FromFile(path, password, keyStorageFlags);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets SSL certificate from PEM files
+        /// </summary>
+        /// <param name="certificatePemFilePath">Path to the certificate .pem file</param>
+        /// <param name="keyPemFilePath">Path to the private key .pem file (optional if included in certificate file)</param>
+        public SmtpServerBuilder CertificateFromPem(string certificatePemFilePath, string? keyPemFilePath = null)
+        {
+            if (string.IsNullOrEmpty(keyPemFilePath))
+            {
+                // Certificate and key in same file
+                _configuration.Certificate = X509CertificateLoader.LoadCertificateFromFile(certificatePemFilePath);
+            }
+            else
+            {
+                // Separate certificate and key files
+                string certPem = File.ReadAllText(certificatePemFilePath);
+                string keyPem = File.ReadAllText(keyPemFilePath);
+                _configuration.Certificate = X509Certificate2.CreateFromPem(certPem, keyPem);
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// Sets SSL certificate from CER/CRT file
+        /// </summary>
+        /// <param name="path">Path to the .cer or .crt file</param>
+        public SmtpServerBuilder CertificateFromCer(string path)
+        {
+            _configuration.Certificate = X509CertificateLoader.LoadCertificateFromFile(path);
+            return this;
+        }
+#else
+        /// <summary>
+        /// Sets SSL certificate from PFX/P12 file
+        /// </summary>
+        /// <param name="path">Path to the .pfx or .p12 file</param>
+        /// <param name="password">Password for the PFX file (optional)</param>
+        /// <param name="keyStorageFlags">Key storage flags (optional)</param>
+        public SmtpServerBuilder CertificateFromPfx(string path, string? password = null,
+            X509KeyStorageFlags keyStorageFlags = X509KeyStorageFlags.DefaultKeySet)
+        {
+            _configuration.Certificate = new X509Certificate2(path, password, keyStorageFlags);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets SSL certificate from PEM files
+        /// </summary>
+        /// <param name="certificatePemFilePath">Path to the certificate .pem file</param>
+        /// <param name="keyPemFilePath">Path to the private key .pem file (optional if included in certificate file)</param>
+        public SmtpServerBuilder CertificateFromPem(string certificatePemFilePath, string? keyPemFilePath = null)
+        {
+#if NET6_0_OR_GREATER
+            if (string.IsNullOrEmpty(keyPemFilePath))
+            {
+                // Try to load certificate with embedded key
+                _configuration.Certificate = new X509Certificate2(certificatePemFilePath);
+            }
+            else
+            {
+                // Separate certificate and key files
+                string keyPem = File.ReadAllText(keyPemFilePath);
+                string certPem = File.ReadAllText(certificatePemFilePath);
+                _configuration.Certificate = X509Certificate2.CreateFromPem(certPem, keyPem);
+            }
+#else
+            throw new PlatformNotSupportedException("PEM certificate loading requires .NET 6.0 or later");
+#endif
+            return this;
+        }
+
+        /// <summary>
+        /// Sets SSL certificate from CER/CRT file
+        /// </summary>
+        /// <param name="path">Path to the .cer or .crt file</param>
+        public SmtpServerBuilder CertificateFromCer(string path)
+        {
+            _configuration.Certificate = new X509Certificate2(path);
+            return this;
+        }
+#endif
 
         /// <summary>
         /// Sets SSL protocols

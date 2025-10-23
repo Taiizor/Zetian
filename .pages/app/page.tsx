@@ -56,7 +56,7 @@ const features = [
   }
 ];
 
-const codeExample = `using Zetian;
+const codeExample = `using Zetian.Server;
 
 // Create SMTP server
 using var server = new SmtpServerBuilder()

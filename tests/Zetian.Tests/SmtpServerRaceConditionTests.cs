@@ -127,91 +127,102 @@ namespace Zetian.Tests
 
             // First, quickly max out connections
             List<TcpClient> firstBatch = new();
-            Task<TcpClient>[] connectionTasks = Enumerable.Range(0, MaxConnectionsPerIp).Select(async i =>
-            {
-                using TcpClient client = new();
-                await client.ConnectAsync("127.0.0.1", _testPort + 1);
-                return client;
-            }).ToArray();
-
-            TcpClient[] connectedClients = await Task.WhenAll(connectionTasks);
-
-            // Verify all got greetings
-            foreach (TcpClient client in connectedClients)
-            {
-                byte[] buffer = new byte[1024];
-                client.ReceiveTimeout = 1000;
-                int bytes = await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                string response = Encoding.UTF8.GetString(buffer, 0, bytes);
-                Assert.StartsWith("220", response);
-                firstBatch.Add(client);
-            }
-
-            // Small delay to ensure all connections are properly tracked
-            await Task.Delay(100);
-
-            // Verify that we're at the limit by checking current count
-            Assert.Equal(MaxConnectionsPerIp, firstBatch.Count);
-
-            // Try one more - should fail or timeout
-            bool extraConnectionAccepted = false;
-            string debugInfo = "";
-
             try
             {
-                using TcpClient extraClient = new();
-                extraClient.ReceiveTimeout = 500; // Increased timeout
-
-                // Try to connect
-                await extraClient.ConnectAsync("127.0.0.1", _testPort + 1);
-                debugInfo += "TCP connected. ";
-
-                if (extraClient.Connected)
+                Task<TcpClient>[] connectionTasks = Enumerable.Range(0, MaxConnectionsPerIp).Select(async i =>
                 {
-                    try
-                    {
-                        // Try to read SMTP greeting
-                        byte[] buffer = new byte[1024];
-                        int bytes = await extraClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                        string response = Encoding.UTF8.GetString(buffer, 0, bytes);
-                        debugInfo += $"Got response: {response.Trim()}. ";
+                    TcpClient client = new();
+                    await client.ConnectAsync("127.0.0.1", _testPort + 1);
+                    return client;
+                }).ToArray();
 
-                        // If we got a valid greeting, the connection was incorrectly accepted
-                        if (response.StartsWith("220"))
+                TcpClient[] connectedClients = await Task.WhenAll(connectionTasks);
+
+                // Verify all got greetings
+                foreach (TcpClient client in connectedClients)
+                {
+                    byte[] buffer = new byte[1024];
+                    client.ReceiveTimeout = 1000;
+                    int bytes = await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    string response = Encoding.UTF8.GetString(buffer, 0, bytes);
+                    Assert.StartsWith("220", response);
+                    firstBatch.Add(client);
+                }
+
+                // Small delay to ensure all connections are properly tracked
+                await Task.Delay(100);
+
+                // Verify that we're at the limit by checking current count
+                Assert.Equal(MaxConnectionsPerIp, firstBatch.Count);
+
+                // Try one more - should fail or timeout
+                bool extraConnectionAccepted = false;
+                string debugInfo = "";
+
+                try
+                {
+                    using TcpClient extraClient = new();
+                    extraClient.ReceiveTimeout = 500; // Increased timeout
+
+                    // Try to connect
+                    await extraClient.ConnectAsync("127.0.0.1", _testPort + 1);
+                    debugInfo += "TCP connected. ";
+
+                    if (extraClient.Connected)
+                    {
+                        try
                         {
-                            extraConnectionAccepted = true;
-                            debugInfo += "SMTP greeting received - connection was accepted!";
+                            // Try to read SMTP greeting
+                            byte[] buffer = new byte[1024];
+                            int bytes = await extraClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                            string response = Encoding.UTF8.GetString(buffer, 0, bytes);
+                            debugInfo += $"Got response: {response.Trim()}. ";
+
+                            // If we got a valid greeting, the connection was incorrectly accepted
+                            if (response.StartsWith("220"))
+                            {
+                                extraConnectionAccepted = true;
+                                debugInfo += "SMTP greeting received - connection was accepted!";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Timeout or error is expected - connection was rejected
+                            debugInfo += $"Read failed: {ex.GetType().Name}. Connection rejected.";
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        // Timeout or error is expected - connection was rejected
-                        debugInfo += $"Read failed: {ex.GetType().Name}. Connection rejected.";
-                    }
+                }
+                catch (Exception ex)
+                {
+                    // Connection failed - this is expected
+                    debugInfo += $"Connect failed: {ex.GetType().Name}. Connection rejected.";
+                }
+
+                Assert.False(extraConnectionAccepted, $"Extra connection should be rejected. Debug: {debugInfo}");
+
+                // Close all first batch connections quickly
+                Parallel.ForEach(firstBatch, client => client.Close());
+
+                // Wait briefly for cleanup
+                await Task.Delay(50);
+
+                // Now should be able to connect again - test with just one connection
+                using (TcpClient newClient = new())
+                {
+                    await newClient.ConnectAsync("127.0.0.1", _testPort + 1);
+                    byte[] buffer = new byte[1024];
+                    int bytes = await newClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    string response = Encoding.UTF8.GetString(buffer, 0, bytes);
+                    Assert.StartsWith("220", response);
                 }
             }
-            catch (Exception ex)
+            finally
             {
-                // Connection failed - this is expected
-                debugInfo += $"Connect failed: {ex.GetType().Name}. Connection rejected.";
-            }
-
-            Assert.False(extraConnectionAccepted, $"Extra connection should be rejected. Debug: {debugInfo}");
-
-            // Close all first batch connections quickly
-            Parallel.ForEach(firstBatch, client => client.Close());
-
-            // Wait briefly for cleanup
-            await Task.Delay(50);
-
-            // Now should be able to connect again - test with just one connection
-            using (TcpClient newClient = new())
-            {
-                await newClient.ConnectAsync("127.0.0.1", _testPort + 1);
-                byte[] buffer = new byte[1024];
-                int bytes = await newClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                string response = Encoding.UTF8.GetString(buffer, 0, bytes);
-                Assert.StartsWith("220", response);
+                // Ensure all connections are closed even if test fails
+                foreach (TcpClient client in firstBatch)
+                {
+                    try { client?.Close(); } catch { }
+                }
             }
         }
 

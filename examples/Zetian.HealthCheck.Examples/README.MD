@@ -29,10 +29,10 @@ This project contains examples demonstrating the health check functionality of Z
 
 ### 5. Readiness Check Example
 - Connection capacity monitoring
-- Kubernetes-style readiness probes
 - Gradual service startup simulation
-- Database, cache, and warmup checks
+- Kubernetes-style readiness probes
 - Separate readiness vs health checks
+- Database, cache, and warmup checks
 - Shows difference between liveness and readiness
 
 ## Running the Examples

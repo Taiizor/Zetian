@@ -78,7 +78,7 @@ namespace Zetian.Tests
                     // Read greeting
                     NetworkStream stream = client.GetStream();
                     byte[] buffer = new byte[1024];
-                    int bytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    int bytes = await stream.ReadAsync(buffer);
                     string response = Encoding.UTF8.GetString(buffer, 0, bytes);
 
                     if (response.StartsWith("220"))
@@ -91,7 +91,7 @@ namespace Zetian.Tests
 
                         // Send QUIT
                         byte[] quit = Encoding.UTF8.GetBytes("QUIT\r\n");
-                        await stream.WriteAsync(quit, 0, quit.Length);
+                        await stream.WriteAsync(quit);
 
                         return true;
                     }
@@ -143,7 +143,7 @@ namespace Zetian.Tests
                 {
                     byte[] buffer = new byte[1024];
                     client.ReceiveTimeout = 1000;
-                    int bytes = await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    int bytes = await client.GetStream().ReadAsync(buffer);
                     string response = Encoding.UTF8.GetString(buffer, 0, bytes);
                     Assert.StartsWith("220", response);
                     firstBatch.Add(client);
@@ -174,7 +174,7 @@ namespace Zetian.Tests
                         {
                             // Try to read SMTP greeting
                             byte[] buffer = new byte[1024];
-                            int bytes = await extraClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                            int bytes = await extraClient.GetStream().ReadAsync(buffer);
                             string response = Encoding.UTF8.GetString(buffer, 0, bytes);
                             debugInfo += $"Got response: {response.Trim()}. ";
 
@@ -211,7 +211,7 @@ namespace Zetian.Tests
                 {
                     await newClient.ConnectAsync("127.0.0.1", _testPort + 1);
                     byte[] buffer = new byte[1024];
-                    int bytes = await newClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    int bytes = await newClient.GetStream().ReadAsync(buffer);
                     string response = Encoding.UTF8.GetString(buffer, 0, bytes);
                     Assert.StartsWith("220", response);
                 }

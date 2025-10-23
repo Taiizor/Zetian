@@ -1,5 +1,6 @@
 using FluentAssertions;
 using System.Net;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
 using Zetian.Server;
@@ -192,7 +193,7 @@ namespace Zetian.Tests
         {
             // Arrange
             SmtpServerBuilder builder = new();
-            X509Certificate2 cert = new();
+            X509Certificate2 cert = CreateTestCertificate();
 
             // Act
             SmtpServer server = builder
@@ -523,6 +524,27 @@ namespace Zetian.Tests
             server.Configuration.EnableSmtpUtf8.Should().BeTrue();
             server.Configuration.MessageStore.Should().NotBeNull();
             server.Configuration.MailboxFilter.Should().NotBeNull();
+        }
+
+        private static X509Certificate2 CreateTestCertificate()
+        {
+            using RSA rsa = RSA.Create(2048);
+            CertificateRequest req = new(
+                "CN=Test",
+                rsa,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
+
+            X509Certificate2 cert = req.CreateSelfSigned(
+                DateTimeOffset.UtcNow.AddDays(-1),
+                DateTimeOffset.UtcNow.AddYears(1));
+
+#if NET9_0_OR_GREATER
+            byte[] pfxData = cert.Export(X509ContentType.Pfx);
+            return X509CertificateLoader.LoadPkcs12(pfxData, null);
+#else
+            return new X509Certificate2(cert.Export(X509ContentType.Pfx));
+#endif
         }
     }
 }

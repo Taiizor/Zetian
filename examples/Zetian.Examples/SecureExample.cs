@@ -80,10 +80,18 @@ namespace Zetian.Examples
                 DateTimeOffset.Now,
                 DateTimeOffset.Now.AddYears(1));
 
+#if NET9_0_OR_GREATER
+            byte[] pfxData = certificate.Export(X509ContentType.Pfx, "");
+            return X509CertificateLoader.LoadPkcs12(
+                pfxData,
+                "",
+                X509KeyStorageFlags.MachineKeySet);
+#else
             return new X509Certificate2(
                 certificate.Export(X509ContentType.Pfx, ""),
                 "",
                 X509KeyStorageFlags.MachineKeySet);
+#endif
         }
     }
 }

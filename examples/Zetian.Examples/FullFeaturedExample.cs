@@ -64,7 +64,7 @@ namespace Zetian.Examples
                         { "demo", "demo123" }
                     };
 
-                    if (validUsers.TryGetValue(username, out string? validPassword) && validPassword == password)
+                    if (username != null && validUsers.TryGetValue(username, out string? validPassword) && validPassword == password)
                     {
                         Console.WriteLine($"[AUTH] User {username} authenticated successfully");
                         return AuthenticationResult.Succeed(username);
@@ -227,10 +227,18 @@ namespace Zetian.Examples
                 DateTimeOffset.Now,
                 DateTimeOffset.Now.AddYears(1));
 
+#if NET9_0_OR_GREATER
+            byte[] pfxData = certificate.Export(X509ContentType.Pfx, "");
+            return X509CertificateLoader.LoadPkcs12(
+                pfxData,
+                "",
+                X509KeyStorageFlags.MachineKeySet);
+#else
             return new X509Certificate2(
                 certificate.Export(X509ContentType.Pfx, ""),
                 "",
                 X509KeyStorageFlags.MachineKeySet);
+#endif
         }
 
         private static void ShowStatistics(SimpleStatisticsCollector stats)

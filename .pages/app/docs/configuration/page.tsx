@@ -9,7 +9,8 @@ import {
   Gauge,
   AlertCircle,
   CheckCircle,
-  Lock
+  Lock,
+  Heart
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
@@ -102,6 +103,59 @@ server.AddRateLimiting(rateLimitConfig);
 server.AddRateLimiting(RateLimitConfiguration.PerDay(1000));  // 1000 per day
 server.AddRateLimiting(RateLimitConfiguration.PerHour(100));  // 100 per hour
 server.AddRateLimiting(RateLimitConfiguration.PerMinute(10)); // 10 per minute`;
+
+const healthCheckExample = `using Zetian.Server;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Options;
+using Zetian.HealthCheck.Extensions;
+
+// Simple health check setup
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .Build();
+
+// Enable health check on port 8080 (localhost)
+var healthCheck = server.EnableHealthCheck(8080);
+
+// Or bind to all interfaces
+var healthCheck = server.EnableHealthCheck("0.0.0.0", 8080);
+
+// Or with custom service options
+var serviceOptions = new HealthCheckServiceOptions
+{
+    // Define HTTP prefixes to listen on
+    Prefixes = new() { "http://+:8080/health/" },  // Listen on all interfaces
+    DegradedStatusCode = 200  // HTTP status code for degraded state
+};
+
+// SMTP health check options
+var smtpOptions = new SmtpHealthCheckOptions
+{
+    CheckMemoryUsage = true,          // Include memory metrics
+    DegradedThresholdPercent = 60,    // 60% utilization = degraded
+    UnhealthyThresholdPercent = 85    // 85% utilization = unhealthy
+};
+
+var healthCheck = server.EnableHealthCheck(serviceOptions, smtpOptions);
+
+// Start server with health check and custom checks
+await server.StartWithHealthCheckAsync(8080, healthService =>
+{
+    // Add custom health checks
+    healthService.AddHealthCheck("database", async (ct) =>
+    {
+        try
+        {
+            // Check database connection
+            await CheckDatabaseAsync();
+            return HealthCheckResult.Healthy("Database connected");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("Database unavailable", ex);
+        }
+    });
+});`;
 
 export default function ConfigurationPage() {
   return (
@@ -293,6 +347,47 @@ export default function ConfigurationPage() {
                   You can keep limits high in development environment.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Health Check Configuration */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Heart className="h-6 w-6" />
+            Health Check Configuration
+          </h2>
+          
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Monitor your SMTP server's health with built-in HTTP endpoints:
+          </p>
+          
+          <CodeBlock 
+            code={healthCheckExample}
+            language="csharp"
+            filename="HealthCheck.cs"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">/health</h4>
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                Overall health status with details about all checks
+              </p>
+            </div>
+            
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">/livez</h4>
+              <p className="text-sm text-green-800 dark:text-green-200">
+                Liveness probe for Kubernetes - is the service alive?
+              </p>
+            </div>
+            
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+              <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">/readyz</h4>
+              <p className="text-sm text-purple-800 dark:text-purple-200">
+                Readiness probe - is the service ready for traffic?
+              </p>
             </div>
           </div>
         </section>

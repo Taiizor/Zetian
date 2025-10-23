@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
-const basicAuthExample = `using Zetian;
-using Zetian.Authentication;
+const basicAuthExample = `using Zetian.Models;
+using Zetian.Server;
 
 // Simple username/password authentication
 var server = new SmtpServerBuilder()
@@ -48,7 +48,10 @@ var server = new SmtpServerBuilder()
     })
     .Build();`;
 
-const customAuthExample = `// Custom authentication handler with database
+const customAuthExample = `using Zetian.Models;
+using Zetian.Server;
+
+// Custom authentication handler with database
 public class DatabaseAuthHandler
 {
     private readonly IUserRepository _userRepository;
@@ -107,7 +110,10 @@ var server = new SmtpServerBuilder()
     .AuthenticationHandler(authHandler.AuthenticateAsync)
     .Build();`;
 
-const tlsExample = `// Secure connection with TLS/SSL
+const tlsExample = `using Zetian.Server;
+using System.Security.Cryptography.X509Certificates;
+
+// Secure connection with TLS/SSL
 var server = new SmtpServerBuilder()
     .Port(587)
     .Certificate("certificate.pfx", "certificate_password")
@@ -132,7 +138,10 @@ var server = new SmtpServerBuilder()
     .RequireAuthentication()
     .Build();`;
 
-const authMechanismsExample = `// Different authentication mechanisms
+const authMechanismsExample = `using Zetian.Models;
+using Zetian.Server;
+
+// Different authentication mechanisms
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()

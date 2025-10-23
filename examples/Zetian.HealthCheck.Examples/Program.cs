@@ -5,7 +5,7 @@ namespace Zetian.HealthCheck.Examples
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;

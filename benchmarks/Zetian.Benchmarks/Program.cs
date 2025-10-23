@@ -5,7 +5,7 @@ namespace Zetian.Benchmarks
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             // Run benchmarks
             ManualConfig config = DefaultConfig.Instance

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -299,6 +300,10 @@ namespace Zetian.HealthCheck.Services
             await WriteJsonResponse(response, new { status = "Alive", timestamp = DateTimeOffset.UtcNow });
         }
 
+#if NET7_0_OR_GREATER
+        [RequiresDynamicCode("JSON serialization/deserialization might require runtime code generation.")]
+        [RequiresUnreferencedCode("JSON serialization/deserialization might require types that cannot be statically analyzed.")]
+#endif
         private async Task WriteJsonResponse(HttpListenerResponse response, object data)
         {
             response.ContentType = "application/json";

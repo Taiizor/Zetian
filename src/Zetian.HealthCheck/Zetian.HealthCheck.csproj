@@ -9,6 +9,18 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <!-- AOT Support for .NET 7.0+ (JSON Serialization excluded) -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0' OR '$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
+        <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">true</EnableAotAnalyzer>
+        <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault> <!-- JSON Serialization will use reflection -->
+        <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <IsAotCompatible>true</IsAotCompatible>
+        <IsTrimmable>true</IsTrimmable>
+        <TrimMode>partial</TrimMode>
+    </PropertyGroup>
+
     <PropertyGroup>
         <ApplicationIcon>Resources\Zetian.ico</ApplicationIcon>
         <Version>1.0.4</Version>
@@ -46,7 +58,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Configurations>Debug;Release</Configurations>
-        <NoWarn>$(NoWarn);1591</NoWarn>
+        <NoWarn>$(NoWarn);1591;IL2026;IL3050</NoWarn>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     </PropertyGroup>
 
@@ -59,6 +71,11 @@
             <Version>10.0.0-beta.25514.2</Version>
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
+    </ItemGroup>
+
+    <!-- Preserve types for JSON serialization -->
+    <ItemGroup>
+        <TrimmerRootDescriptor Include="TrimmerRoots.xml" Condition="Exists('TrimmerRoots.xml')" />
     </ItemGroup>
     
     <ItemGroup>

@@ -47,7 +47,7 @@ export default function ChangelogPage() {
               Upcoming
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Version 1.0.10
+              Version 1.0.20
             </h2>
             <span className="text-gray-500 dark:text-gray-400 text-sm">
               Initial Release

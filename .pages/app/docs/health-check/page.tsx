@@ -337,7 +337,7 @@ export default function HealthCheckPage() {
             <div className="flex items-start gap-3">
               <Gauge className="h-5 w-5 text-green-500 mt-1" />
               <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">/livez</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">/health/livez</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Liveness probe for container orchestration
                 </p>
@@ -347,7 +347,7 @@ export default function HealthCheckPage() {
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-purple-500 mt-1" />
               <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">/readyz</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">/health/readyz</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Readiness probe for load balancing
                 </p>

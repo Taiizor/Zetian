@@ -1,7 +1,5 @@
 using Microsoft.Extensions.Logging;
-using System.Threading;
 using Zetian.Configuration;
-using Zetian.HealthCheck.Enums;
 using Zetian.HealthCheck.Extensions;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Options;
@@ -134,13 +132,13 @@ namespace Zetian.HealthCheck.Examples
 
             Console.WriteLine("✅ SMTP Server started on port 2525");
             Console.WriteLine("✅ Health check service started on port 8080\n");
-            
+
             Console.WriteLine("📍 Configured Timeouts:");
             Console.WriteLine($"   Total Timeout: {healthCheckOptions.TotalTimeout.TotalSeconds} seconds");
             Console.WriteLine($"   Individual Check Timeout: {healthCheckOptions.IndividualCheckTimeout.TotalSeconds} seconds");
             Console.WriteLine($"   Fail Fast on Timeout: {healthCheckOptions.FailFastOnTimeout}");
             Console.WriteLine($"   Timeout Status Code: {healthCheckOptions.TimeoutStatusCode}\n");
-            
+
             Console.WriteLine("📍 Available endpoints:");
             Console.WriteLine("   http://localhost:8080/health/        - Health check (with timeouts)");
             Console.WriteLine("   http://localhost:8080/health/readyz  - Readiness check");
@@ -159,20 +157,20 @@ namespace Zetian.HealthCheck.Examples
             // Demonstrate timeout handling
             Console.WriteLine("📊 Running automated test in 3 seconds...");
             await Task.Delay(3000);
-            
+
             Console.WriteLine("\n🔍 Making health check request...");
             try
             {
                 using HttpClient client = new();
                 client.Timeout = TimeSpan.FromSeconds(10);
-                
+
                 HttpResponseMessage healthResponse = await client.GetAsync("http://localhost:8080/health/");
                 string healthContent = await healthResponse.Content.ReadAsStringAsync();
-                
+
                 Console.WriteLine($"\n📥 Health Response:");
                 Console.WriteLine($"   Status Code: {(int)healthResponse.StatusCode} {healthResponse.StatusCode}");
-                Console.WriteLine($"   Content: {healthContent.Substring(0, Math.Min(200, healthContent.Length))}...");
-                
+                Console.WriteLine($"   Content: {healthContent[..Math.Min(200, healthContent.Length)]}...");
+
                 if (healthResponse.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     Console.WriteLine("\n⚠️  Health check returned 503 - Some checks timed out!");
@@ -188,13 +186,13 @@ namespace Zetian.HealthCheck.Examples
             {
                 using HttpClient client = new();
                 client.Timeout = TimeSpan.FromSeconds(10);
-                
+
                 HttpResponseMessage readyResponse = await client.GetAsync("http://localhost:8080/health/readyz");
                 string readyContent = await readyResponse.Content.ReadAsStringAsync();
-                
+
                 Console.WriteLine($"\n📥 Readiness Response:");
                 Console.WriteLine($"   Status Code: {(int)readyResponse.StatusCode} {readyResponse.StatusCode}");
-                Console.WriteLine($"   Content: {readyContent.Substring(0, Math.Min(200, readyContent.Length))}...");
+                Console.WriteLine($"   Content: {readyContent[..Math.Min(200, readyContent.Length)]}...");
             }
             catch (Exception ex)
             {

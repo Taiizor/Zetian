@@ -7,6 +7,7 @@ using Zetian.Abstractions;
 using Zetian.Extensions;
 using Zetian.Models;
 using Zetian.Models.EventArgs;
+using Zetian.Tests.Helpers;
 using ErrorEventArgs = Zetian.Models.EventArgs.ErrorEventArgs;
 
 namespace Zetian.Tests
@@ -24,7 +25,7 @@ namespace Zetian.Tests
             _messageMock = new Mock<ISmtpMessage>();
 
             _sessionMock.Setup(s => s.Properties).Returns(new Dictionary<string, object>());
-            _sessionMock.Setup(s => s.RemoteEndPoint).Returns(new IPEndPoint(IPAddress.Loopback, 12345));
+            _sessionMock.Setup(s => s.RemoteEndPoint).Returns(new IPEndPoint(IPAddress.Loopback, TestHelper.GetAvailablePort()));
         }
 
         [Fact]

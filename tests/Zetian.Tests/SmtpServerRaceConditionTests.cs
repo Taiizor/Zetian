@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using Xunit;
 using Zetian.Server;
+using Zetian.Tests.Helpers;
 
 namespace Zetian.Tests
 {
@@ -13,8 +14,13 @@ namespace Zetian.Tests
     public class SmtpServerRaceConditionTests : IAsyncLifetime
     {
         private SmtpServer? _server;
-        private const int TestPort = 25250;
+        private readonly int _testPort;
         private const int MaxConnectionsPerIp = 5;
+
+        public SmtpServerRaceConditionTests()
+        {
+            _testPort = TestHelper.GetAvailablePort();
+        }
 
         public async Task InitializeAsync()
         {
@@ -32,10 +38,10 @@ namespace Zetian.Tests
             }
         }
 
-        private async Task<SmtpServer> CreateAndStartServerAsync(int port = TestPort)
+        private async Task<SmtpServer> CreateAndStartServerAsync(int port = 0)
         {
             SmtpServer server = new SmtpServerBuilder()
-                .Port(port)
+                .Port(port == 0 ? _testPort : port)
                 .MaxConnectionsPerIP(MaxConnectionsPerIp)
                 .MaxConnections(100)
                 .Build();
@@ -67,7 +73,7 @@ namespace Zetian.Tests
                     barrier.SignalAndWait();
 
                     // All tasks connect at the same time
-                    await client.ConnectAsync("localhost", TestPort);
+                    await client.ConnectAsync("localhost", _testPort);
 
                     // Read greeting
                     NetworkStream stream = client.GetStream();
@@ -117,14 +123,14 @@ namespace Zetian.Tests
         public async Task SmtpServer_ShouldAllowNewConnectionsAfterDisconnect()
         {
             // Arrange
-            _server = await CreateAndStartServerAsync(TestPort + 1); // Use different port
+            _server = await CreateAndStartServerAsync(_testPort + 1); // Use different port
 
             // First, quickly max out connections
             List<TcpClient> firstBatch = new();
             Task<TcpClient>[] connectionTasks = Enumerable.Range(0, MaxConnectionsPerIp).Select(async i =>
             {
-                TcpClient client = new();
-                await client.ConnectAsync("localhost", TestPort + 1);
+                using TcpClient client = new();
+                await client.ConnectAsync("127.0.0.1", _testPort + 1);
                 return client;
             }).ToArray();
 
@@ -157,7 +163,7 @@ namespace Zetian.Tests
                 extraClient.ReceiveTimeout = 500; // Increased timeout
 
                 // Try to connect
-                await extraClient.ConnectAsync("localhost", TestPort + 1);
+                await extraClient.ConnectAsync("127.0.0.1", _testPort + 1);
                 debugInfo += "TCP connected. ";
 
                 if (extraClient.Connected)
@@ -201,7 +207,7 @@ namespace Zetian.Tests
             // Now should be able to connect again - test with just one connection
             using (TcpClient newClient = new())
             {
-                await newClient.ConnectAsync("localhost", TestPort + 1);
+                await newClient.ConnectAsync("127.0.0.1", _testPort + 1);
                 byte[] buffer = new byte[1024];
                 int bytes = await newClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
                 string response = Encoding.UTF8.GetString(buffer, 0, bytes);
@@ -216,7 +222,7 @@ namespace Zetian.Tests
             // We're testing that the connection tracking properly handles this scenario
 
             // Arrange
-            _server = await CreateAndStartServerAsync(TestPort + 2); // Use different port
+            _server = await CreateAndStartServerAsync(_testPort + 2); // Use different port
             const int attemptCount = 10; // Reduced for faster test
             List<Task<bool>> tasks = new();
             int successCount = 0;
@@ -231,7 +237,7 @@ namespace Zetian.Tests
                 {
                     try
                     {
-                        using SmtpClient client = new("localhost", TestPort + 2);
+                        using SmtpClient client = new("127.0.0.1", _testPort + 2);
                         client.Timeout = 5000; // Increased timeout
 
                         // Synchronize all clients
@@ -286,7 +292,7 @@ namespace Zetian.Tests
         public async Task SmtpServer_StressTest_NoRaceConditions()
         {
             // Arrange
-            _server = await CreateAndStartServerAsync(TestPort + 3); // Use different port
+            _server = await CreateAndStartServerAsync(_testPort + 3); // Use different port
             const int iterations = 3; // Reduced for faster test
             const int concurrentAttempts = 15; // Reduced for faster test
             List<int> allSuccessCounts = new();
@@ -306,7 +312,7 @@ namespace Zetian.Tests
                         client = new TcpClient();
                         barrier.SignalAndWait();
 
-                        await client.ConnectAsync("localhost", TestPort + 3);
+                        await client.ConnectAsync("localhost", _testPort + 3);
 
                         byte[] buffer = new byte[1024];
                         int bytes = await client.GetStream().ReadAsync(buffer, 0, buffer.Length);

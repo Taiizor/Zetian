@@ -222,7 +222,7 @@ namespace Zetian.Tests
             AuthenticatorFactory.Reset();
 
             // Act
-            System.Collections.Generic.IEnumerable<string> mechanisms = AuthenticatorFactory.GetMechanisms();
+            IEnumerable<string> mechanisms = AuthenticatorFactory.GetMechanisms();
 
             // Assert
             mechanisms.Should().Contain("PLAIN");

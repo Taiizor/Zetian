@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Xunit;
 using Zetian.Abstractions;
 using Zetian.Storage;
@@ -132,7 +133,7 @@ namespace Zetian.Tests.Storage
 
             public byte[] GetRawData()
             {
-                return System.Text.Encoding.UTF8.GetBytes("Test message data");
+                return Encoding.UTF8.GetBytes("Test message data");
             }
 
             public Task<byte[]> GetRawDataAsync()

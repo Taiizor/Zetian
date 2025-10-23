@@ -10,9 +10,9 @@ import {
   Hash,
   Box,
   Zap,
-  Lock,
   Mail,
-  Settings
+  Settings,
+  Gauge
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -24,6 +24,7 @@ const apiCategories = [
   {
     title: 'Core Classes',
     icon: Box,
+    namespace: 'Zetian.Server',
     items: [
       {
         name: 'SmtpServer',
@@ -75,7 +76,14 @@ const apiCategories = [
           'Build()'
         ],
         events: []
-      },
+      }
+    ]
+  },
+  {
+    title: 'Configuration',
+    icon: Settings,
+    namespace: 'Zetian.Configuration',
+    items: [
       {
         name: 'SmtpServerConfiguration',
         description: 'Configuration settings for SMTP server',
@@ -116,6 +124,7 @@ const apiCategories = [
   {
     title: 'Core Interfaces',
     icon: FileCode,
+    namespace: 'Zetian.Abstractions',
     items: [
       {
         name: 'ISmtpMessage',
@@ -186,12 +195,24 @@ const apiCategories = [
           'CanDeliverToAsync(ISmtpSession, string, string, CancellationToken)'
         ],
         events: []
+      },
+      {
+        name: 'IStatisticsCollector',
+        description: 'Interface for statistics collection',
+        properties: ['TotalSessions', 'TotalMessages', 'TotalErrors', 'TotalBytes'],
+        methods: [
+          'RecordSession()',
+          'RecordMessage(ISmtpMessage)',
+          'RecordError(Exception)'
+        ],
+        events: []
       }
     ]
   },
   {
     title: 'Authentication',
     icon: Shield,
+    namespace: 'Zetian.Authentication & Zetian.Models',
     items: [
       {
         name: 'IAuthenticator',
@@ -226,6 +247,7 @@ const apiCategories = [
   {
     title: 'Storage',
     icon: Database,
+    namespace: 'Zetian.Storage',
     items: [
       {
         name: 'FileMessageStore',
@@ -246,6 +268,7 @@ const apiCategories = [
   {
     title: 'Filtering',
     icon: Filter,
+    namespace: 'Zetian.Storage',
     items: [
       {
         name: 'DomainMailboxFilter',
@@ -273,6 +296,7 @@ const apiCategories = [
   {
     title: 'Event Arguments',
     icon: Zap,
+    namespace: 'Zetian.Models.EventArgs',
     items: [
       {
         name: 'MessageEventArgs',
@@ -307,6 +331,7 @@ const apiCategories = [
   {
     title: 'Protocol',
     icon: Mail,
+    namespace: 'Zetian.Protocol',
     items: [
       {
         name: 'SmtpResponse',
@@ -340,6 +365,7 @@ const apiCategories = [
   {
     title: 'Extensions',
     icon: Zap,
+    namespace: 'Zetian.Extensions & Zetian.Models',
     items: [
       {
         name: 'SmtpServerExtensions',
@@ -384,13 +410,58 @@ const apiCategories = [
           'GetRemainingAsync(key)'
         ],
         events: []
-      },
+      }
+    ]
+  },
+  {
+    title: 'Rate Limiting',
+    icon: Gauge,
+    namespace: 'Zetian.RateLimiting & Zetian.Abstractions',
+    items: [
       {
         name: 'InMemoryRateLimiter',
         description: 'In-memory rate limiter implementation',
         properties: ['Configuration'],
-        methods: [],
+        methods: ['IsAllowedAsync(key)', 'IsAllowedAsync(IPAddress)', 'RecordRequestAsync(key)', 'RecordRequestAsync(IPAddress)', 'ResetAsync(key)', 'GetRemainingAsync(key)'],
         events: []
+      }
+    ]
+  },
+  {
+    title: 'Delegates',
+    icon: Code2,
+    namespace: 'Zetian.Delegates',
+    items: [
+      {
+        name: 'AuthenticationHandler',
+        description: 'Delegate for handling authentication',
+        properties: [],
+        methods: [],
+        events: [],
+        signature: 'Task<AuthenticationResult> AuthenticationHandler(string? username, string? password)'
+      }
+    ]
+  },
+  {
+    title: 'Enums',
+    icon: Hash,
+    namespace: 'Zetian.Enums',
+    items: [
+      {
+        name: 'CompositeMode',
+        description: 'Composite filter mode for combining multiple filters',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['All (AND logic)', 'Any (OR logic)']
+      },
+      {
+        name: 'SmtpSessionState',
+        description: 'SMTP session state enumeration',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Connected', 'AwaitingCommand', 'ReceivingData', 'Closing']
       }
     ]
   }
@@ -438,13 +509,20 @@ export default function ApiReferencePage() {
                 className="scroll-mt-20"
               >
                 {/* Category Header */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                    <Icon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+                      <Icon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {category.title}
+                    </h2>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {category.title}
-                  </h2>
+                  {'namespace' in category && category.namespace && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 ml-12">
+                      Namespace: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-primary-600 dark:text-primary-400">{category.namespace}</code>
+                    </p>
+                  )}
                 </div>
 
                 {/* Items */}
@@ -545,6 +623,42 @@ export default function ApiReferencePage() {
                                 <Zap className="h-3 w-3 text-gray-400" />
                                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-purple-600 dark:text-purple-400">
                                   {event}
+                                </code>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Delegate Signature */}
+                      {'signature' in item && item.signature && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                            Signature
+                          </h4>
+                          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded">
+                            <code className="text-sm text-blue-600 dark:text-blue-400">
+                              {item.signature}
+                            </code>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Enum Values */}
+                      {'values' in item && item.values && item.values.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                            Values
+                          </h4>
+                          <div className="space-y-2">
+                            {item.values.map((value: string) => (
+                              <div 
+                                key={value}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <Hash className="h-3 w-3 text-gray-400" />
+                                <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-orange-600 dark:text-orange-400">
+                                  {value}
                                 </code>
                               </div>
                             ))}

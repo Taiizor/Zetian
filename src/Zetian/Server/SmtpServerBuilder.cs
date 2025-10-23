@@ -136,13 +136,19 @@ namespace Zetian.Server
         }
 
         /// <summary>
-        /// Loads certificate from file
+        /// Sets SSL certificate from file
         /// </summary>
         public SmtpServerBuilder Certificate(string path, string? password = null)
         {
+#if NET9_0_OR_GREATER
+            _configuration.Certificate = string.IsNullOrEmpty(password)
+                ? X509CertificateLoader.LoadCertificateFromFile(path)
+                : X509CertificateLoader.LoadPkcs12FromFile(path, password);
+#else
             _configuration.Certificate = string.IsNullOrEmpty(password)
                 ? new X509Certificate2(path)
                 : new X509Certificate2(path, password);
+#endif
             return this;
         }
 

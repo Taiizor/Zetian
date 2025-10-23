@@ -122,7 +122,7 @@ namespace Zetian.HealthCheck.Tests
                 int checkNumber = i;
                 healthService.AddHealthCheck($"check_{checkNumber}", async (ct) =>
                 {
-                    await Task.Delay(1500, ct); // Each takes 1.5 seconds
+                    await Task.Delay(3000, ct); // Each takes 3 seconds (more than total timeout of 2 seconds)
                     return HealthCheckResult.Healthy($"Check {checkNumber} completed");
                 });
             }
@@ -142,7 +142,7 @@ namespace Zetian.HealthCheck.Tests
             // Assert
             Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
             Assert.True(root.GetProperty("timedOut").GetBoolean());
-            Assert.InRange(stopwatch.Elapsed.TotalSeconds, 1.5, 3.5); // Should complete around 2 seconds
+            Assert.InRange(stopwatch.Elapsed.TotalSeconds, 1.8, 2.5); // Should complete around 2 seconds
 
             // At least some checks should be marked as timeout
             JsonElement checks = root.GetProperty("checks");

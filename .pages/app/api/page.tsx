@@ -10,9 +10,12 @@ import {
   Hash,
   Box,
   Zap,
+  Lock,
   Mail,
   Settings,
-  Gauge
+  Gauge,
+  Heart,
+  Activity
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -462,6 +465,109 @@ const apiCategories = [
         methods: [],
         events: [],
         values: ['Connected', 'AwaitingCommand', 'ReceivingData', 'Closing']
+      }
+    ]
+  },
+  {
+    title: 'Health Check',
+    icon: Heart,
+    namespace: 'Zetian.HealthCheck',
+    items: [
+      {
+        name: 'IHealthCheck',
+        description: 'Interface for implementing health checks',
+        properties: [],
+        methods: ['CheckHealthAsync(CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'HealthCheckResult',
+        description: 'Represents the result of a health check',
+        properties: ['Status', 'Description', 'Exception', 'Data'],
+        methods: [
+          'Healthy(description?, data?)',
+          'Degraded(description?, exception?, data?)',
+          'Unhealthy(description?, exception?, data?)'
+        ],
+        events: []
+      },
+      {
+        name: 'HealthCheckService',
+        description: 'HTTP service for health check endpoints',
+        properties: ['Options', 'IsRunning', 'HttpListener'],
+        methods: [
+          'StartAsync(CancellationToken)',
+          'StopAsync(CancellationToken)',
+          'AddHealthCheck(name, check)',
+          'AddHealthCheck(name, checkFunc)'
+        ],
+        events: []
+      },
+      {
+        name: 'SmtpServerHealthCheck',
+        description: 'Health check implementation for SMTP server',
+        properties: ['Server', 'Options'],
+        methods: ['CheckHealthAsync(CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'HealthCheckServiceOptions',
+        description: 'Options for health check service',
+        properties: ['Host', 'Port', 'Endpoints', 'Timeout', 'DetailedErrors'],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'SmtpHealthCheckOptions',
+        description: 'Options for SMTP server health check',
+        properties: [
+          'DegradedThreshold',
+          'UnhealthyThreshold',
+          'MemoryThresholdMB',
+          'CheckInterval'
+        ],
+        methods: [],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Health Check Extensions',
+    icon: Activity,
+    namespace: 'Zetian.HealthCheck.Extensions',
+    items: [
+      {
+        name: 'HealthCheckExtensions',
+        description: 'Extension methods for adding health checks to SMTP server',
+        properties: [],
+        methods: [
+          'EnableHealthCheck(port)',
+          'EnableHealthCheck(hostname, port)',
+          'EnableHealthCheck(IPAddress, port)',
+          'EnableHealthCheck(options)',
+          'StartWithHealthCheckAsync(port, ct)',
+          'StartWithHealthCheckAsync(hostname, port, ct)',
+          'StartWithHealthCheckAsync(IPAddress, port, ct)',
+          'StartWithHealthCheckAsync(options, ct)',
+          'AddHealthCheck(healthCheckService, name, check)',
+          'AddHealthCheck(healthCheckService, name, checkFunc)'
+        ],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Health Check Enums',
+    icon: Heart,
+    namespace: 'Zetian.HealthCheck.Enums',
+    items: [
+      {
+        name: 'HealthStatus',
+        description: 'Health status enumeration',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Healthy (0)', 'Degraded (1)', 'Unhealthy (2)']
       }
     ]
   }

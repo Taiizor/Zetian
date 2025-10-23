@@ -42,6 +42,7 @@ const apiCategories = [
         methods: [
           'Port(int)', 
           'BindTo(IPAddress)',
+          'BindTo(string)',
           'ServerName(string)', 
           'MaxMessageSize(long)',
           'MaxMessageSizeMB(int)',
@@ -52,14 +53,17 @@ const apiCategories = [
           'Enable8BitMime(bool)',
           'EnableSmtpUtf8(bool)',
           'Certificate(X509Certificate2)',
-          'Certificate(string, string)',
+          'Certificate(string path, string? password)',
+          'CertificateFromPfx(string path, string? password, X509KeyStorageFlags flags)',
+          'CertificateFromPem(string certPath, string? keyPath)',
+          'CertificateFromCer(string path)',
           'SslProtocols(SslProtocols)',
           'RequireAuthentication(bool)',
           'RequireSecureConnection(bool)',
           'AllowPlainTextAuthentication(bool)',
           'AddAuthenticationMechanism(string)',
-          'AuthenticationHandler(handler)',
-          'SimpleAuthentication(user, pass)',
+          'AuthenticationHandler(AuthenticationHandler)',
+          'SimpleAuthentication(username, password)',
           'ConnectionTimeout(TimeSpan)',
           'CommandTimeout(TimeSpan)',
           'DataTimeout(TimeSpan)',
@@ -67,15 +71,18 @@ const apiCategories = [
           'EnableVerboseLogging(bool)',
           'Banner(string)',
           'Greeting(string)',
-          'BufferSize(read, write)',
+          'BufferSize(readSize, writeSize)',
           'MessageStore(IMessageStore)',
-          'WithFileMessageStore(dir, createFolders)',
+          'WithFileMessageStore(directory, createDateFolders)',
           'MailboxFilter(IMailboxFilter)',
-          'WithSenderDomainWhitelist(domains)',
-          'WithSenderDomainBlacklist(domains)',
-          'WithRecipientDomainWhitelist(domains)',
-          'WithRecipientDomainBlacklist(domains)',
-          'Build()'
+          'WithSenderDomainWhitelist(params string[])',
+          'WithSenderDomainBlacklist(params string[])',
+          'WithRecipientDomainWhitelist(params string[])',
+          'WithRecipientDomainBlacklist(params string[])',
+          'Build()',
+          'CreateBasic()',
+          'CreateSecure(X509Certificate2)',
+          'CreateAuthenticated(int, AuthenticationHandler)',
         ],
         events: []
       }
@@ -214,34 +221,46 @@ const apiCategories = [
   {
     title: 'Authentication',
     icon: Shield,
-    namespace: 'Zetian.Authentication & Zetian.Models',
+    namespace: 'Zetian.Authentication & Zetian.Abstractions',
     items: [
       {
         name: 'IAuthenticator',
-        description: 'Authentication mechanism interface',
+        description: 'Authentication mechanism interface (Zetian.Abstractions)',
         properties: ['Mechanism'],
         methods: ['AuthenticateAsync(session, initialResponse, reader, writer, ct)'],
         events: []
       },
       {
         name: 'AuthenticationResult',
-        description: 'Authentication result',
+        description: 'Authentication result (Zetian.Models)',
         properties: ['Success', 'Identity', 'ErrorMessage'],
-        methods: ['Succeed(string)', 'Fail(string?)'],
+        methods: ['Succeed(string identity)', 'Fail(string? errorMessage)'],
         events: []
       },
       {
         name: 'PlainAuthenticator',
-        description: 'Authentication with PLAIN mechanism',
-        properties: [],
-        methods: [],
+        description: 'PLAIN mechanism authentication implementation',
+        properties: ['Mechanism'],
+        methods: ['AuthenticateAsync(session, initialResponse, reader, writer, ct)'],
         events: []
       },
       {
         name: 'LoginAuthenticator',
-        description: 'Authentication with LOGIN mechanism',
+        description: 'LOGIN mechanism authentication implementation',
+        properties: ['Mechanism'],
+        methods: ['AuthenticateAsync(session, initialResponse, reader, writer, ct)'],
+        events: []
+      },
+      {
+        name: 'AuthenticatorFactory',
+        description: 'Factory for creating authenticators',
         properties: [],
-        methods: [],
+        methods: [
+          'Create(mechanism)',
+          'SetDefaultHandler(handler)',
+          'GetDefaultHandler()',
+          'ClearDefaultHandler()'
+        ],
         events: []
       }
     ]
@@ -367,7 +386,7 @@ const apiCategories = [
   {
     title: 'Extensions',
     icon: Zap,
-    namespace: 'Zetian.Extensions & Zetian.Models',
+    namespace: 'Zetian.Extensions',
     items: [
       {
         name: 'SmtpServerExtensions',
@@ -377,39 +396,24 @@ const apiCategories = [
           'AddRateLimiting(IRateLimiter)',
           'AddRateLimiting(RateLimitConfiguration)',
           'AddMessageFilter(Func<ISmtpMessage, bool>)',
-          'AddSpamFilter(blacklistedDomains)',
-          'AddSizeFilter(maxSizeBytes)',
-          'SaveMessagesToDirectory(directory)',
-          'LogMessages(logger)',
-          'ForwardMessages(forwarder)',
-          'AddRecipientValidation(validator)',
-          'AddAllowedDomains(domains)',
-          'AddStatistics(collector)'
+          'AddSpamFilter(string[] blacklistedDomains)',
+          'AddSizeFilter(long maxSizeBytes)',
+          'SaveMessagesToDirectory(string directory)',
+          'LogMessages(ILogger logger)',
+          'ForwardMessages(IMessageForwarder forwarder)',
+          'AddRecipientValidation(Func<string, Task<bool>> validator)',
+          'AddAllowedDomains(params string[] domains)',
+          'AddStatistics(IStatisticsCollector collector)'
         ],
         events: []
       },
       {
-        name: 'RateLimitConfiguration',
-        description: 'Rate limiting configuration',
-        properties: ['MaxRequests', 'Window', 'UseSlidingWindow'],
-        methods: [
-          'PerMinute(maxRequests)',
-          'PerHour(maxRequests)',
-          'PerDay(maxRequests)'
-        ],
-        events: []
-      },
-      {
-        name: 'IRateLimiter',
-        description: 'Rate limiting interface',
+        name: 'SmtpServerBuilderExtensions',
+        description: 'Extension methods for SMTP server builder',
         properties: [],
         methods: [
-          'IsAllowedAsync(key)',
-          'IsAllowedAsync(IPAddress)',
-          'RecordRequestAsync(key)',
-          'RecordRequestAsync(IPAddress)',
-          'ResetAsync(key)',
-          'GetRemainingAsync(key)'
+          'WithRecipientDomainWhitelist(params string[] domains)',
+          'WithRecipientDomainBlacklist(params string[] domains)'
         ],
         events: []
       }
@@ -418,13 +422,48 @@ const apiCategories = [
   {
     title: 'Rate Limiting',
     icon: Gauge,
-    namespace: 'Zetian.RateLimiting & Zetian.Abstractions',
+    namespace: 'Zetian.Models & Zetian.RateLimiting & Zetian.Abstractions',
     items: [
       {
+        name: 'RateLimitConfiguration',
+        description: 'Rate limiting configuration (Zetian.Models)',
+        properties: ['MaxRequests', 'Window', 'UseSlidingWindow'],
+        methods: [
+          'PerMinute(int maxRequests)',
+          'PerHour(int maxRequests)',
+          'PerDay(int maxRequests)',
+          'PerCustom(int maxRequests, TimeSpan window)'
+        ],
+        events: []
+      },
+      {
+        name: 'IRateLimiter',
+        description: 'Rate limiting interface (Zetian.Abstractions)',
+        properties: [],
+        methods: [
+          'IsAllowedAsync(string key)',
+          'IsAllowedAsync(IPAddress address)',
+          'RecordRequestAsync(string key)',
+          'RecordRequestAsync(IPAddress address)',
+          'ResetAsync(string key)',
+          'GetRemainingAsync(string key)'
+        ],
+        events: []
+      },
+      {
         name: 'InMemoryRateLimiter',
-        description: 'In-memory rate limiter implementation',
+        description: 'In-memory implementation of rate limiter (Zetian.RateLimiting)',
         properties: ['Configuration'],
-        methods: ['IsAllowedAsync(key)', 'IsAllowedAsync(IPAddress)', 'RecordRequestAsync(key)', 'RecordRequestAsync(IPAddress)', 'ResetAsync(key)', 'GetRemainingAsync(key)'],
+        methods: [
+          'IsAllowedAsync(string key)',
+          'IsAllowedAsync(IPAddress address)',
+          'RecordRequestAsync(string key)',
+          'RecordRequestAsync(IPAddress address)',
+          'ResetAsync(string key)',
+          'GetRemainingAsync(string key)',
+          'CleanupExpiredWindows()',
+          'Dispose()'
+        ],
         events: []
       }
     ]

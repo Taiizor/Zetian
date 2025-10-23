@@ -9,12 +9,8 @@ import {
   FileText, 
   Code2, 
   Hash, 
-  Shield, 
-  Database, 
-  Gauge, 
   Clock, 
   Star,
-  Zap,
   Settings,
   Package,
   ChevronRight

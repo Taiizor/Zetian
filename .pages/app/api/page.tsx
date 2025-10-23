@@ -546,9 +546,11 @@ const apiCategories = [
           'EnableHealthCheck(IPAddress, port)',
           'EnableHealthCheck(options)',
           'StartWithHealthCheckAsync(port, ct)',
+          'StartWithHealthCheckAsync(port, configureHealthChecks, ct)',
           'StartWithHealthCheckAsync(hostname, port, ct)',
+          'StartWithHealthCheckAsync(hostname, port, configureHealthChecks, ct)',
           'StartWithHealthCheckAsync(IPAddress, port, ct)',
-          'StartWithHealthCheckAsync(options, ct)',
+          'StartWithHealthCheckAsync(IPAddress, port, configureHealthChecks, ct)',
           'AddHealthCheck(healthCheckService, name, check)',
           'AddHealthCheck(healthCheckService, name, checkFunc)'
         ],

@@ -54,6 +54,38 @@ await healthCheck.StartAsync();
 ```csharp
 // Start both SMTP and health check together
 var healthCheck = await server.StartWithHealthCheckAsync(8080);
+
+// Or with custom health checks configured inline
+await server.StartWithHealthCheckAsync(8080, healthService =>
+{
+    // Add custom health checks
+    healthService.AddHealthCheck("database", async (ct) =>
+    {
+        try
+        {
+            await CheckDatabaseAsync();
+            return HealthCheckResult.Healthy("Database connected");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("Database unavailable", ex);
+        }
+    });
+    
+    healthService.AddHealthCheck("redis", async (ct) =>
+    {
+        try
+        {
+            await CheckRedisAsync();
+            return HealthCheckResult.Healthy("Redis connected");
+        }
+        catch (Exception ex)
+        {
+            // Redis is not critical, mark as degraded
+            return HealthCheckResult.Degraded("Redis unavailable", ex);
+        }
+    });
+});
 ```
 
 ## 🛠️ Advanced Configuration
@@ -383,11 +415,16 @@ curl -f http://localhost:8080/health/readyz
 | Method | Description |
 |--------|-------------|
 | `EnableHealthCheck(port)` | Enable health check on localhost |
-| `AddHealthCheck(name, checkFunc)` | Add custom health check |
+| `AddHealthCheck(name, checkFunc)` | Add custom health check to service |
 | `StartWithHealthCheckAsync(port)` | Start server and health check |
 | `EnableHealthCheck(hostname, port)` | Enable on specific hostname |
 | `EnableHealthCheck(IPAddress, port)` | Enable on specific IP |
 | `EnableHealthCheck(options, healthOptions)` | Advanced configuration |
+| `StartWithHealthCheckAsync(hostname, port)` | Start on specific hostname |
+| `StartWithHealthCheckAsync(IPAddress, port)` | Start on specific IP |
+| `StartWithHealthCheckAsync(port, configureHealthChecks)` | Start server with custom health checks |
+| `StartWithHealthCheckAsync(hostname, port, configureHealthChecks)` | Start on hostname with custom checks |
+| `StartWithHealthCheckAsync(IPAddress, port, configureHealthChecks)` | Start on IP with custom checks |
 
 ### Health Check Results
 

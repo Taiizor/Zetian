@@ -10,7 +10,8 @@ import {
   FileText,
   Github,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Heart
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -82,6 +83,19 @@ const docCategories = [
       'Storage Providers',
       'Event Extensions',
       'Middleware'
+    ]
+  },
+  {
+    title: 'Health Check',
+    description: 'Health monitoring and checks',
+    icon: Heart,
+    href: '/docs/health-check',
+    color: 'from-pink-500 to-rose-600',
+    items: [
+      'Basic Setup',
+      'Custom Checks',
+      'Kubernetes Integration',
+      'HTTP Endpoints'
     ]
   },
   {

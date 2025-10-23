@@ -328,18 +328,34 @@ services:
 ### Prometheus Metrics
 
 ```csharp
+using Zetian.Server;
 using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Extensions;
 
 // Add custom metrics check for Prometheus
 healthCheck.AddHealthCheck("metrics", async (ct) =>
 {
     var data = new Dictionary<string, object>
     {
-        ["smtp_uptime_seconds"] = server.UptimeSeconds,
-        ["smtp_connections_active"] = server.SessionCount,
-        ["smtp_messages_received"] = server.MessagesReceivedCount,
-        ["smtp_connections_total"] = server.TotalConnectionsCount
+        ["smtp_server_running"] = server.IsRunning,
+        ["smtp_server_port"] = server.Configuration.Port,
+        ["smtp_max_connections"] = server.Configuration.MaxConnections,
+        ["smtp_max_message_size"] = server.Configuration.MaxMessageSize
     };
+    
+    // Calculate uptime if server is running
+    if (server.IsRunning && server.StartTime.HasValue)
+    {
+        var uptime = DateTime.UtcNow - server.StartTime.Value;
+        data["smtp_uptime_seconds"] = uptime.TotalSeconds;
+        data["smtp_uptime_formatted"] = $"{uptime.Days}d {uptime.Hours}h {uptime.Minutes}m";
+    }
+    
+    // Add configuration metrics
+    if (server.Configuration.RequireAuthentication)
+    {
+        data["smtp_auth_required"] = true;
+    }
     
     return HealthCheckResult.Healthy("Metrics collected", data: data);
 });

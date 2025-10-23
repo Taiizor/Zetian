@@ -17,7 +17,7 @@ dotnet add package Zetian
 ### Basic Usage
 
 ```csharp
-using Zetian;
+using Zetian.Server;
 
 // Create a basic SMTP server
 using var server = SmtpServerBuilder.CreateBasic();
@@ -35,6 +35,8 @@ Console.WriteLine($"Server running on {server.Endpoint}");
 ### With Authentication
 
 ```csharp
+using Zetian.Server;
+
 using var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
@@ -48,6 +50,8 @@ await server.StartAsync();
 ### Secure Server (TLS/SSL)
 
 ```csharp
+using Zetian.Server;
+
 using var server = new SmtpServerBuilder()
     .Port(587)
     .Certificate("certificate.pfx", "password")
@@ -75,6 +79,9 @@ await server.StartAsync();
 ## 🔧 Advanced Configuration
 
 ```csharp
+using Zetian.Models;
+using Zetian.Server;
+
 var server = new SmtpServerBuilder()
     .Port(587)
     .ServerName("My SMTP Server")
@@ -100,6 +107,9 @@ var server = new SmtpServerBuilder()
 
 ```csharp
 // Save messages to file system with date structure (Protocol-level)
+using Zetian.Server;
+using Zetian.Extensions;
+
 var server = new SmtpServerBuilder()
     .Port(25)
     .WithFileMessageStore(@"C:\mail", createDateFolders: true)  // Saves at protocol level
@@ -109,6 +119,9 @@ var server = new SmtpServerBuilder()
 server.SaveMessagesToDirectory(@"C:\mail");  // Saves via event handler
 
 // Or use custom message store
+using Zetian.Server;
+using Zetian.Abstractions;
+
 public class MongoMessageStore : IMessageStore
 {
     public async Task<bool> SaveAsync(ISmtpSession session, ISmtpMessage message, CancellationToken cancellationToken)
@@ -127,6 +140,9 @@ var server = new SmtpServerBuilder()
 
 ```csharp
 // Protocol-level domain filtering (rejects at SMTP command level)
+using Zetian.Server;
+using Zetian.Extensions;
+
 var server = new SmtpServerBuilder()
     .WithSenderDomainWhitelist("company.com", "partner.com")
     .WithRecipientDomainWhitelist("mydomain.com")
@@ -138,6 +154,9 @@ server.AddAllowedDomains("example.com");  // Extension method
 server.AddSpamFilter(new[] { "spam.com" });  // Extension method
 
 // Custom mailbox filter
+using Zetian.Server;
+using Zetian.Abstractions;
+
 public class CustomMailboxFilter : IMailboxFilter
 {
     public async Task<bool> CanAcceptFromAsync(ISmtpSession session, string from, long size, CancellationToken cancellationToken)
@@ -162,7 +181,11 @@ var server = new SmtpServerBuilder()
 
 ```csharp
 // Combine multiple filters with AND logic
-var compositeFilter = new CompositeMailboxFilter(CompositeMailboxFilter.CompositeMode.All)
+using Zetian.Enums;
+using Zetian.Server;
+using Zetian.Storage;
+
+var compositeFilter = new CompositeMailboxFilter(CompositeMode.All)
     .AddFilter(new DomainMailboxFilter().AllowFromDomains("trusted.com"))
     .AddFilter(new CustomSpamFilter())
     .AddFilter(new RateLimitFilter());
@@ -249,6 +272,8 @@ server.SaveMessagesToDirectory(@"C:\smtp_messages");
 ### Protocol-Level Filtering (New)
 
 ```csharp
+using Zetian.Server;
+
 var server = new SmtpServerBuilder()
     .WithFileMessageStore(@"C:\mail")  // Saves at protocol level
     .WithSenderDomainWhitelist("trusted.com")  // Rejects at MAIL FROM

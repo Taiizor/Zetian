@@ -44,7 +44,7 @@ Install-Package Zetian
 ### Basic SMTP Server
 
 ```csharp
-using Zetian;
+using Zetian.Server;
 
 // Create and start a basic SMTP server
 using var server = SmtpServerBuilder.CreateBasic();
@@ -66,6 +66,8 @@ await server.StopAsync();
 ### Authenticated SMTP Server
 
 ```csharp
+using Zetian.Server;
+
 using var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()
@@ -79,6 +81,8 @@ await server.StartAsync();
 ### Secure SMTP Server with TLS
 
 ```csharp
+using Zetian.Server;
+
 using var server = new SmtpServerBuilder()
     .Port(587)
     .Certificate("certificate.pfx", "password")
@@ -93,6 +97,10 @@ await server.StartAsync();
 ### Using the Fluent Builder
 
 ```csharp
+using System.Net;
+using Zetian.Models;
+using Zetian.Server;
+
 var server = new SmtpServerBuilder()
     .Port(587)
     .BindTo(IPAddress.Any)
@@ -139,8 +147,8 @@ var server = new SmtpServerBuilder()
 ### Rate Limiting
 
 ```csharp
+using Zetian.Models;
 using Zetian.Extensions;
-using Zetian.Extensions.RateLimiting;
 
 server.AddRateLimiting(
     RateLimitConfiguration.PerHour(100)
@@ -276,6 +284,9 @@ server.ErrorOccurred += (s, e) =>
 
 ```csharp
 // Option 1: Create a custom authenticator class
+using Zetian.Models;
+using Zetian.Abstractions;
+
 public class CustomAuthenticator : IAuthenticator
 {
     public string Mechanism => "CUSTOM";
@@ -297,6 +308,9 @@ AuthenticatorFactory.Register("CUSTOM", () =>
     new CustomAuthenticator());
 
 // Option 2: Use the authentication handler with builder
+using Zetian.Models;
+using Zetian.Server;
+
 var server = new SmtpServerBuilder()
     .Port(587)
     .RequireAuthentication()

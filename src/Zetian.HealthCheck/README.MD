@@ -32,7 +32,7 @@ dotnet add package Zetian.HealthCheck
 ### Basic Health Check
 
 ```csharp
-using Zetian;
+using Zetian.Server;
 using Zetian.HealthCheck.Extensions;
 
 // Create and start SMTP server
@@ -87,6 +87,10 @@ var healthCheck = server.EnableHealthCheck(IPAddress.Parse("192.168.1.100"), 808
 ### Custom Health Checks
 
 ```csharp
+using Zetian.Server;
+using Zetian.HealthCheck.Models;
+using Zetian.HealthCheck.Extensions;
+
 var healthCheck = server.EnableHealthCheck(8080);
 
 // Add database check
@@ -132,6 +136,10 @@ await healthCheck.StartAsync();
 ### Advanced Options
 
 ```csharp
+using Zetian.Server;
+using Zetian.HealthCheck.Options;
+using Zetian.HealthCheck.Extensions;
+
 // Custom thresholds for SMTP health
 var smtpOptions = new SmtpHealthCheckOptions
 {
@@ -320,6 +328,8 @@ services:
 ### Prometheus Metrics
 
 ```csharp
+using Zetian.HealthCheck.Models;
+
 // Add custom metrics check for Prometheus
 healthCheck.AddHealthCheck("metrics", async (ct) =>
 {

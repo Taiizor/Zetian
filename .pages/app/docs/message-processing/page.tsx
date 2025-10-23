@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
-const messageEventsExample = `using Zetian;
+const messageEventsExample = `using Zetian.Server;
+using Zetian.Protocol;
 
 var server = new SmtpServerBuilder()
     .Port(25)
@@ -74,7 +75,10 @@ server.SessionCompleted += (sender, e) =>
     }
 };`;
 
-const messageValidationExample = `// Message validation and filtering
+const messageValidationExample = `using Zetian.Server;
+using Zetian.Protocol;
+
+// Message validation and filtering
 server.MessageReceived += (sender, e) =>
 {
     var message = e.Message;
@@ -138,7 +142,11 @@ server.MessageReceived += async (sender, e) =>
     }
 };`;
 
-const messageStorageExample = `// Protocol-Level Storage (with SmtpServerBuilder)
+const messageStorageExample = `using Zetian.Server;
+using System.Text.Json;
+using Zetian.Abstractions;
+
+// Protocol-Level Storage (with SmtpServerBuilder)
 var server = new SmtpServerBuilder()
     .Port(25)
     .WithFileMessageStore(@"C:\\smtp_messages", createDateFolders: true)
@@ -231,7 +239,12 @@ public class JsonMessageStore : IMessageStore
     }
 }`;
 
-const messageForwardingExample = `// Simple message forwarding
+const messageForwardingExample = `using System.Net;
+using Zetian.Server;
+using System.Net.Mail;
+using Zetian.Abstractions;
+
+// Simple message forwarding
 server.MessageReceived += async (sender, e) =>
 {
     var message = e.Message;

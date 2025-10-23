@@ -4,6 +4,7 @@ using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
 using Zetian.HealthCheck.Options;
 using Zetian.HealthCheck.Services;
+using Zetian.HealthCheck.Tests.Helpers;
 using Zetian.Server;
 
 namespace Zetian.HealthCheck.Tests
@@ -16,12 +17,6 @@ namespace Zetian.HealthCheck.Tests
         private SmtpServer? _smtpServer;
         private HealthCheckService? _healthCheckService;
         private readonly HttpClient _httpClient = new();
-        private static int _portCounter = 60000;  // Different range
-
-        private static int GetNextPort()
-        {
-            return Interlocked.Increment(ref _portCounter);
-        }
 
         public void Dispose()
         {
@@ -36,12 +31,12 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort()
+                Port = TestHelper.GetAvailablePort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -72,12 +67,12 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort()
+                Port = TestHelper.GetAvailablePort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             // Use custom path /api/
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort, "/api/");
@@ -113,12 +108,12 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort()
+                Port = TestHelper.GetAvailablePort()
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
                 Prefixes = new()

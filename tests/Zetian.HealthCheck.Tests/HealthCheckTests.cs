@@ -5,6 +5,7 @@ using Zetian.Configuration;
 using Zetian.HealthCheck.Extensions;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Services;
+using Zetian.HealthCheck.Tests.Helpers;
 using Zetian.Server;
 
 namespace Zetian.HealthCheck.Tests
@@ -14,18 +15,12 @@ namespace Zetian.HealthCheck.Tests
         private SmtpServer? _smtpServer;
         private HealthCheckService? _healthCheckService;
         private readonly HttpClient _httpClient = new();
-        private static int _portCounter = 40000;  // Starting port for tests
-
-        private static int GetNextPort()
-        {
-            return Interlocked.Increment(ref _portCounter);
-        }
 
         public void Dispose()
         {
             _healthCheckService?.Dispose();
             _smtpServer?.Dispose();
-            _httpClient?.Dispose();
+            _httpClient.Dispose();
         }
 
         [Fact]
@@ -34,13 +29,13 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort(),
+                Port = TestHelper.GetAvailablePort(),
                 ServerName = "Test SMTP Server"
             };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -67,12 +62,12 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort(),
+                Port = TestHelper.GetAvailablePort(),
                 ServerName = "Test SMTP Server"
             };
             _smtpServer = new SmtpServer(config);
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -93,9 +88,9 @@ namespace Zetian.HealthCheck.Tests
         public async Task LivenessCheck_AlwaysReturnsOK()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = GetNextPort() };
+            SmtpServerConfiguration config = new() { Port = TestHelper.GetAvailablePort() };
             _smtpServer = new SmtpServer(config);
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -116,11 +111,11 @@ namespace Zetian.HealthCheck.Tests
         public async Task CustomHealthCheck_CanBeAdded()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = GetNextPort() };
+            SmtpServerConfiguration config = new() { Port = TestHelper.GetAvailablePort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
 
             // Add custom health check
@@ -159,7 +154,7 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort(),
+                Port = TestHelper.GetAvailablePort(),
                 MaxConnections = 100,
                 MaxMessageSize = 10485760, // 10MB
                 RequireAuthentication = true,
@@ -168,7 +163,7 @@ namespace Zetian.HealthCheck.Tests
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();  // Use incremental port to avoid conflicts
+            int healthCheckPort = TestHelper.GetAvailablePort();  // Use incremental port to avoid conflicts
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -200,12 +195,12 @@ namespace Zetian.HealthCheck.Tests
             // Arrange
             SmtpServerConfiguration config = new()
             {
-                Port = GetNextPort()
+                Port = TestHelper.GetAvailablePort()
             };
             _smtpServer = new SmtpServer(config);
 
             // Act
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = await _smtpServer.StartWithHealthCheckAsync(healthCheckPort);
 
             // Assert
@@ -222,13 +217,13 @@ namespace Zetian.HealthCheck.Tests
         public async Task HealthCheck_WithIPBinding_Works()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = GetNextPort() };
+            SmtpServerConfiguration config = new() { Port = TestHelper.GetAvailablePort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
             // Act - Bind to specific IP
             IPAddress ipAddress = IPAddress.Loopback;
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(ipAddress, healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -244,12 +239,12 @@ namespace Zetian.HealthCheck.Tests
         public async Task HealthCheck_WithHostnameBinding_Works()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = GetNextPort() };
+            SmtpServerConfiguration config = new() { Port = TestHelper.GetAvailablePort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
             // Act - Bind to hostname
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck("localhost", healthCheckPort);
             await _healthCheckService.StartAsync();
 
@@ -265,11 +260,11 @@ namespace Zetian.HealthCheck.Tests
         public async Task HealthCheckService_CanBeStopped()
         {
             // Arrange
-            SmtpServerConfiguration config = new() { Port = GetNextPort() };
+            SmtpServerConfiguration config = new() { Port = TestHelper.GetAvailablePort() };
             _smtpServer = new SmtpServer(config);
             await _smtpServer.StartAsync();
 
-            int healthCheckPort = GetNextPort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             _healthCheckService = _smtpServer.EnableHealthCheck(healthCheckPort);
             await _healthCheckService.StartAsync();
 

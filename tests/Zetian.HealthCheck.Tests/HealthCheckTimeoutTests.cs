@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Sockets;
 using System.Text.Json;
 using Xunit;
 using Zetian.Configuration;
@@ -9,6 +8,7 @@ using Zetian.HealthCheck.Extensions;
 using Zetian.HealthCheck.Models;
 using Zetian.HealthCheck.Options;
 using Zetian.HealthCheck.Services;
+using Zetian.HealthCheck.Tests.Helpers;
 using Zetian.Server;
 
 namespace Zetian.HealthCheck.Tests
@@ -29,7 +29,7 @@ namespace Zetian.HealthCheck.Tests
 
             SmtpServerConfiguration config = new()
             {
-                Port = GetAvailablePort(),
+                Port = TestHelper.GetAvailablePort(),
                 ServerName = "Test SMTP Server",
                 LoggerFactory = _loggerFactory
             };
@@ -50,7 +50,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task IndividualHealthCheck_TimesOut_WhenExceedsIndividualTimeout()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             HealthCheckServiceOptions options = new()
             {
@@ -103,7 +103,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task TotalTimeout_StopsAllChecks_WhenExceeded()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             HealthCheckServiceOptions options = new()
             {
@@ -165,7 +165,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task FailFastOnTimeout_StopsProcessing_OnFirstTimeout()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             HealthCheckServiceOptions options = new()
             {
@@ -228,7 +228,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task TimeoutStatusCode_IsUsed_WhenTimeout()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             int customStatusCode = 504; // Gateway Timeout
 
             HealthCheckServiceOptions options = new()
@@ -265,7 +265,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task ParallelExecution_CompletesQuicker_ThanSequential()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             HealthCheckServiceOptions options = new()
             {
@@ -311,7 +311,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task ReadinessCheck_RespectsTimeout_Configuration()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             HealthCheckServiceOptions options = new()
             {
@@ -360,7 +360,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task CancellationToken_ProperlyCancelsChecks_OnTimeout()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
             bool cancellationReceived = false;
 
             HealthCheckServiceOptions options = new()
@@ -407,7 +407,7 @@ namespace Zetian.HealthCheck.Tests
         public async Task MixedHealthChecks_HandleTimeoutAndSuccess_Correctly()
         {
             // Arrange
-            int healthCheckPort = GetAvailablePort();
+            int healthCheckPort = TestHelper.GetAvailablePort();
 
             HealthCheckServiceOptions options = new()
             {
@@ -467,15 +467,6 @@ namespace Zetian.HealthCheck.Tests
             // Cleanup
             await healthService.StopAsync();
             await _smtpServer.StopAsync();
-        }
-
-        private static int GetAvailablePort()
-        {
-            TcpListener listener = new(IPAddress.Loopback, 0);
-            listener.Start();
-            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-            return port;
         }
 
         public void Dispose()

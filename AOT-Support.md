@@ -176,6 +176,6 @@ JsonSerializer.Serialize(data, JsonContext.Default.HealthCheckResponse);
 
 ## Resources
 
-- [Trimming Documentation](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming)
+- [AOT Compatibility](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot#aot-compatibility-analyzers)
+- [Trimming Documentation](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-self-contained)
 - [.NET Native AOT Documentation](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot)
-- [AOT Compatibility](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/api-compatibility)

@@ -5,8 +5,8 @@ This example demonstrates how to use Zetian SMTP Server with Native AOT compilat
 ## Features Demonstrated
 
 - ✅ Trimming-compatible code
-- ✅ SMTP Server with AOT compilation
 - ✅ Event handling without reflection
+- ✅ SMTP Server with AOT compilation
 - ✅ Minimal reflection usage (only for JSON)
 - ✅ Health Check service with reflection-based JSON serialization
 
@@ -83,9 +83,9 @@ The example includes hybrid AOT optimizations:
 ## Why Hybrid AOT?
 
 The hybrid approach provides:
-- **Flexibility**: Use anonymous types and dynamic JSON
 - **Simplicity**: No need for source generators
 - **Compatibility**: Works with existing JSON code
+- **Flexibility**: Use anonymous types and dynamic JSON
 - **Performance**: Core SMTP functionality still AOT-optimized
 
 ## Notes

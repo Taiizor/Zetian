@@ -36,8 +36,9 @@ namespace Zetian.HealthCheck.Examples
             Console.WriteLine("3. Health Check with IP/Hostname Binding (may require admin)");
             Console.WriteLine("4. Health Check with Custom Path (/status/ instead of /health/)");
             Console.WriteLine("5. Readiness Check Example (Kubernetes-style readiness probes)");
+            Console.WriteLine("6. Timeout Configuration Example (demonstrates timeout handling)");
             Console.WriteLine();
-            Console.Write("Select an example (1-5): ");
+            Console.Write("Select an example (1-6): ");
 
             string? choice = Console.ReadLine();
 
@@ -59,6 +60,9 @@ namespace Zetian.HealthCheck.Examples
                         break;
                     case "5":
                         await ReadinessCheckExample.RunAsync();
+                        break;
+                    case "6":
+                        await TimeoutHealthCheckExample.RunAsync();
                         break;
                     default:
                         Console.WriteLine("Invalid choice");

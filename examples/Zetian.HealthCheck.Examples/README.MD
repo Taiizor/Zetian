@@ -35,6 +35,14 @@ This project contains examples demonstrating the health check functionality of Z
 - Database, cache, and warmup checks
 - Shows difference between liveness and readiness
 
+### 6. Timeout Configuration Example
+- Total timeout for all checks
+- Fail-fast behavior on timeout
+- Custom timeout status codes
+- Parallel health check execution
+- Timeout handling in response JSON
+- Individual health check timeout (per check)
+
 ## Running the Examples
 
 ```bash

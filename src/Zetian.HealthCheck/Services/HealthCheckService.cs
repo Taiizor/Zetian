@@ -254,51 +254,139 @@ namespace Zetian.HealthCheck.Services
         {
             Dictionary<string, object> results = new();
             HealthStatus overallStatus = HealthStatus.Healthy;
+            bool timedOut = false;
+
+            // Create timeout cancellation token for total timeout
+            using CancellationTokenSource totalTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            totalTimeoutCts.CancelAfter(_options.TotalTimeout);
+
+            List<Task> healthCheckTasks = new();
+            Dictionary<string, CancellationTokenSource> checkTimeoutTokens = new();
 
             foreach (KeyValuePair<string, IHealthCheck> kvp in _healthChecks)
             {
-                try
+                string checkName = kvp.Key;
+                IHealthCheck healthCheck = kvp.Value;
+
+                // Create individual timeout for this check
+                CancellationTokenSource individualTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(totalTimeoutCts.Token);
+                individualTimeoutCts.CancelAfter(_options.IndividualCheckTimeout);
+                checkTimeoutTokens[checkName] = individualTimeoutCts;
+
+                Task checkTask = Task.Run(async () =>
                 {
-                    HealthCheckResult result = await kvp.Value.CheckHealthAsync(cancellationToken);
-
-                    results[kvp.Key] = new
+                    try
                     {
-                        status = result.Status.ToString(),
-                        description = result.Description,
-                        data = result.Data
-                    };
+                        HealthCheckResult result = await healthCheck.CheckHealthAsync(individualTimeoutCts.Token);
 
-                    if (result.Status > overallStatus)
+                        lock (results)
+                        {
+                            results[checkName] = new
+                            {
+                                status = result.Status.ToString(),
+                                description = result.Description,
+                                data = result.Data
+                            };
+
+                            if (result.Status > overallStatus)
+                            {
+                                overallStatus = result.Status;
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException) when (individualTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
                     {
-                        overallStatus = result.Status;
+                        lock (results)
+                        {
+                            results[checkName] = new
+                            {
+                                status = "Timeout",
+                                error = $"Health check timed out after {_options.IndividualCheckTimeout.TotalSeconds} seconds"
+                            };
+                            overallStatus = HealthStatus.Unhealthy;
+                            timedOut = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (results)
+                        {
+                            results[checkName] = new
+                            {
+                                status = "Unhealthy",
+                                error = ex.Message
+                            };
+                            overallStatus = HealthStatus.Unhealthy;
+                        }
+                    }
+                }, individualTimeoutCts.Token);
+
+                healthCheckTasks.Add(checkTask);
+
+                // If fail fast is enabled and we have a timeout, stop processing more checks
+                if (_options.FailFastOnTimeout && timedOut)
+                {
+                    break;
+                }
+            }
+
+            // Wait for all health checks to complete or timeout
+            try
+            {
+                await Task.WhenAll(healthCheckTasks);
+            }
+            catch (OperationCanceledException) when (totalTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                timedOut = true;
+                overallStatus = HealthStatus.Unhealthy;
+
+                // Mark any incomplete checks as timed out
+                foreach (KeyValuePair<string, IHealthCheck> kvp in _healthChecks)
+                {
+                    if (!results.ContainsKey(kvp.Key))
+                    {
+                        results[kvp.Key] = new
+                        {
+                            status = "Timeout",
+                            error = $"Total health check timeout exceeded ({_options.TotalTimeout.TotalSeconds} seconds)"
+                        };
                     }
                 }
-                catch (Exception ex)
-                {
-                    results[kvp.Key] = new
-                    {
-                        status = "Unhealthy",
-                        error = ex.Message
-                    };
-                    overallStatus = HealthStatus.Unhealthy;
-                }
+            }
+            catch
+            {
+                // Ignore other exceptions as they are handled in the tasks
+            }
+
+            // Cleanup timeout tokens
+            foreach (CancellationTokenSource cts in checkTimeoutTokens.Values)
+            {
+                cts.Dispose();
             }
 
             var responseData = new
             {
                 status = overallStatus.ToString(),
                 timestamp = DateTimeOffset.UtcNow,
-                checks = results
+                checks = results,
+                timedOut = timedOut
             };
 
-            // Set status code based on health
-            response.StatusCode = overallStatus switch
+            // Set status code based on health or timeout
+            if (timedOut)
             {
-                HealthStatus.Healthy => (int)HttpStatusCode.OK,
-                HealthStatus.Degraded => _options.DegradedStatusCode,
-                HealthStatus.Unhealthy => (int)HttpStatusCode.ServiceUnavailable,
-                _ => (int)HttpStatusCode.ServiceUnavailable
-            };
+                response.StatusCode = _options.TimeoutStatusCode;
+            }
+            else
+            {
+                response.StatusCode = overallStatus switch
+                {
+                    HealthStatus.Healthy => (int)HttpStatusCode.OK,
+                    HealthStatus.Degraded => _options.DegradedStatusCode,
+                    HealthStatus.Unhealthy => (int)HttpStatusCode.ServiceUnavailable,
+                    _ => (int)HttpStatusCode.ServiceUnavailable
+                };
+            }
 
             await WriteJsonResponse(response, responseData);
         }
@@ -307,38 +395,118 @@ namespace Zetian.HealthCheck.Services
         {
             Dictionary<string, object> results = new();
             HealthStatus overallStatus = HealthStatus.Healthy;
+            bool timedOut = false;
 
             // First check all readiness-specific checks
             Dictionary<string, IHealthCheck> checksToRun = _readinessChecks.Count > 0 ? _readinessChecks : _healthChecks;
 
+            // Create timeout cancellation token for total timeout
+            using CancellationTokenSource totalTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            totalTimeoutCts.CancelAfter(_options.TotalTimeout);
+
+            List<Task> readinessCheckTasks = new();
+            Dictionary<string, CancellationTokenSource> checkTimeoutTokens = new();
+
             foreach (KeyValuePair<string, IHealthCheck> kvp in checksToRun)
             {
-                try
+                string checkName = kvp.Key;
+                IHealthCheck healthCheck = kvp.Value;
+
+                // Create individual timeout for this check
+                CancellationTokenSource individualTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(totalTimeoutCts.Token);
+                individualTimeoutCts.CancelAfter(_options.IndividualCheckTimeout);
+                checkTimeoutTokens[checkName] = individualTimeoutCts;
+
+                Task checkTask = Task.Run(async () =>
                 {
-                    HealthCheckResult result = await kvp.Value.CheckHealthAsync(cancellationToken);
-
-                    results[kvp.Key] = new
+                    try
                     {
-                        status = result.Status.ToString(),
-                        description = result.Description,
-                        data = result.Data
-                    };
+                        HealthCheckResult result = await healthCheck.CheckHealthAsync(individualTimeoutCts.Token);
 
-                    // Readiness is more strict - degraded services are not ready
-                    if (result.Status != HealthStatus.Healthy)
+                        lock (results)
+                        {
+                            results[checkName] = new
+                            {
+                                status = result.Status.ToString(),
+                                description = result.Description,
+                                data = result.Data
+                            };
+
+                            // Readiness is more strict - degraded services are not ready
+                            if (result.Status != HealthStatus.Healthy)
+                            {
+                                overallStatus = HealthStatus.Unhealthy;
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException) when (individualTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
                     {
-                        overallStatus = HealthStatus.Unhealthy;
+                        lock (results)
+                        {
+                            results[checkName] = new
+                            {
+                                status = "Timeout",
+                                error = $"Readiness check timed out after {_options.IndividualCheckTimeout.TotalSeconds} seconds"
+                            };
+                            overallStatus = HealthStatus.Unhealthy;
+                            timedOut = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (results)
+                        {
+                            results[checkName] = new
+                            {
+                                status = "Unhealthy",
+                                error = ex.Message
+                            };
+                            overallStatus = HealthStatus.Unhealthy;
+                        }
+                    }
+                }, individualTimeoutCts.Token);
+
+                readinessCheckTasks.Add(checkTask);
+
+                // If fail fast is enabled and we have a timeout, stop processing more checks
+                if (_options.FailFastOnTimeout && timedOut)
+                {
+                    break;
+                }
+            }
+
+            // Wait for all readiness checks to complete or timeout
+            try
+            {
+                await Task.WhenAll(readinessCheckTasks);
+            }
+            catch (OperationCanceledException) when (totalTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                timedOut = true;
+                overallStatus = HealthStatus.Unhealthy;
+
+                // Mark any incomplete checks as timed out
+                foreach (KeyValuePair<string, IHealthCheck> kvp in checksToRun)
+                {
+                    if (!results.ContainsKey(kvp.Key))
+                    {
+                        results[kvp.Key] = new
+                        {
+                            status = "Timeout",
+                            error = $"Total readiness check timeout exceeded ({_options.TotalTimeout.TotalSeconds} seconds)"
+                        };
                     }
                 }
-                catch (Exception ex)
-                {
-                    results[kvp.Key] = new
-                    {
-                        status = "Unhealthy",
-                        error = ex.Message
-                    };
-                    overallStatus = HealthStatus.Unhealthy;
-                }
+            }
+            catch
+            {
+                // Ignore other exceptions as they are handled in the tasks
+            }
+
+            // Cleanup timeout tokens
+            foreach (CancellationTokenSource cts in checkTimeoutTokens.Values)
+            {
+                cts.Dispose();
             }
 
             var responseData = new
@@ -346,13 +514,21 @@ namespace Zetian.HealthCheck.Services
                 status = overallStatus == HealthStatus.Healthy ? "Ready" : "NotReady",
                 timestamp = DateTimeOffset.UtcNow,
                 checks = results,
-                ready = overallStatus == HealthStatus.Healthy
+                ready = overallStatus == HealthStatus.Healthy,
+                timedOut = timedOut
             };
 
-            // Set status code based on readiness
-            response.StatusCode = overallStatus == HealthStatus.Healthy
-                ? (int)HttpStatusCode.OK
-                : (int)HttpStatusCode.ServiceUnavailable;
+            // Set status code based on readiness or timeout
+            if (timedOut)
+            {
+                response.StatusCode = _options.TimeoutStatusCode;
+            }
+            else
+            {
+                response.StatusCode = overallStatus == HealthStatus.Healthy
+                    ? (int)HttpStatusCode.OK
+                    : (int)HttpStatusCode.ServiceUnavailable;
+            }
 
             await WriteJsonResponse(response, responseData);
         }

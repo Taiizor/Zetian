@@ -11,7 +11,7 @@ namespace Zetian.Benchmarks
     /// <summary>
     /// Benchmarks for different message storage strategies
     /// </summary>
-    [SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 3, iterationCount: 5)]
+    [SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 2, iterationCount: 3)]
     [MemoryDiagnoser]
     public class StorageBenchmarks
     {

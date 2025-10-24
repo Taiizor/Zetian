@@ -9,7 +9,7 @@ using Zetian.Models;
 namespace Zetian.Benchmarks
 {
     [MemoryDiagnoser]
-    [SimpleJob(warmupCount: 3, iterationCount: 10)]
+    [SimpleJob(launchCount: 1, warmupCount: 2, iterationCount: 3)]
     public class AuthenticationBenchmarks
     {
         private PlainAuthenticator _plainAuthenticator = null!;

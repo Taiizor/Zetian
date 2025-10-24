@@ -5,7 +5,7 @@ using System.Text;
 namespace Zetian.Benchmarks
 {
     [MemoryDiagnoser]
-    [SimpleJob(warmupCount: 3, iterationCount: 10)]
+    [SimpleJob(launchCount: 1, warmupCount: 2, iterationCount: 3)]
     public class SmtpSessionBenchmarks
     {
         private byte[] _testData = null!;

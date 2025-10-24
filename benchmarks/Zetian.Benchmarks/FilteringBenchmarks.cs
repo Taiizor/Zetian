@@ -13,7 +13,7 @@ namespace Zetian.Benchmarks
     /// <summary>
     /// Benchmarks for comparing Protocol-Level vs Event-Based filtering performance
     /// </summary>
-    [SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 3, iterationCount: 5)]
+    [SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 2, iterationCount: 3)]
     [MemoryDiagnoser]
     public class FilteringBenchmarks
     {

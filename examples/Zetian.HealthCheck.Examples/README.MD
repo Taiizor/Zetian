@@ -6,8 +6,8 @@ This project contains examples demonstrating the health check functionality of Z
 
 ### 1. Basic Health Check
 - Simple health check setup on localhost
-- All three endpoints: `/health/`, `/livez`, `/readyz`
 - Custom health checks (disk space, database simulation)
+- All three endpoints: `/health`, `/health/livez`, `/health/readyz`
 
 ### 2. Health Check with Custom Options
 - Memory usage tracking
@@ -116,7 +116,7 @@ Once running, you can test the health check endpoints:
 
 ```bash
 # Full health check
-curl http://localhost:8080/health/
+curl http://localhost:8080/health
 
 # Liveness probe
 curl http://localhost:8080/health/livez
@@ -126,7 +126,7 @@ curl http://localhost:8080/health/readyz
 ```
 
 Or use a web browser:
-- http://localhost:8080/health/
+- http://localhost:8080/health
 - http://localhost:8080/health/livez
 - http://localhost:8080/health/readyz
 

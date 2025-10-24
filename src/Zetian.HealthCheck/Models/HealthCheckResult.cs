@@ -30,7 +30,7 @@ namespace Zetian.HealthCheck.Models
         /// <summary>
         /// Gets additional data
         /// </summary>
-        public Dictionary<string, object> Data { get; } = data ?? new();
+        public Dictionary<string, object> Data { get; } = data ?? [];
 
         /// <summary>
         /// Creates a healthy result

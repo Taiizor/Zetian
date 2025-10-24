@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Mail;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -13,8 +12,9 @@ namespace Zetian.Internal
     internal class SmtpMessage : ISmtpMessage
     {
         private readonly byte[] _rawData;
-        private readonly Dictionary<string, List<string>> _headers;
+        private Dictionary<string, List<string>>? _headers; // Lazy init
         private bool _parsed;
+        private bool _headersParsed;
 
         public SmtpMessage(string sessionId, string? from, IEnumerable<string> recipients, byte[] rawData)
         {
@@ -22,8 +22,6 @@ namespace Zetian.Internal
             SessionId = sessionId;
             _rawData = rawData ?? throw new ArgumentNullException(nameof(rawData));
             Size = _rawData.Length;
-
-            _headers = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
             // Parse sender
             if (!string.IsNullOrWhiteSpace(from))
@@ -38,25 +36,60 @@ namespace Zetian.Internal
                 }
             }
 
-            // Parse recipients
-            List<MailAddress> recipientList = new();
+            // Parse recipients - optimized for ArraySegment
             if (recipients != null)
             {
-                foreach (string recipient in recipients)
+                // Check if it's already an array or ArraySegment to avoid allocation
+                int recipientCount;
+                IList<string> recipientList;
+
+                if (recipients is ArraySegment<string> segment)
+                {
+                    recipientCount = segment.Count;
+                    recipientList = segment;
+                }
+                else if (recipients is string[] array)
+                {
+                    recipientCount = array.Length;
+                    recipientList = array;
+                }
+                else if (recipients is ICollection<string> collection)
+                {
+                    recipientCount = collection.Count;
+                    recipientList = collection as IList<string> ?? [.. recipients];
+                }
+                else
+                {
+                    string[] temp = [.. recipients];
+                    recipientCount = temp.Length;
+                    recipientList = temp;
+                }
+
+                MailAddress[] validRecipients = new MailAddress[recipientCount];
+                int count = 0;
+
+                for (int i = 0; i < recipientCount; i++)
                 {
                     try
                     {
-                        recipientList.Add(new MailAddress(recipient));
+                        validRecipients[count++] = new MailAddress(recipientList[i]);
                     }
                     catch
                     {
                         // Invalid address
                     }
                 }
-            }
-            Recipients = recipientList.AsReadOnly();
 
-            ParseHeaders();
+                if (count < recipientCount)
+                {
+                    Array.Resize(ref validRecipients, count);
+                }
+                Recipients = validRecipients;
+            }
+            else
+            {
+                Recipients = [];
+            }
         }
 
         public string Id { get; }
@@ -126,13 +159,27 @@ namespace Zetian.Internal
         {
             get
             {
-                Dictionary<string, string> result = new(StringComparer.OrdinalIgnoreCase);
-                foreach (KeyValuePair<string, List<string>> kvp in _headers)
+                if (field == null)
                 {
-                    result[kvp.Key] = string.Join(", ", kvp.Value);
+                    EnsureHeadersParsed();
+                    if (_headers != null)
+                    {
+                        Dictionary<string, string> result = new(_headers.Count, StringComparer.OrdinalIgnoreCase);
+                        foreach (KeyValuePair<string, List<string>> kvp in _headers)
+                        {
+                            result[kvp.Key] = string.Join(", ", kvp.Value);
+                        }
+                        field = result;
+                    }
+                    else
+                    {
+                        field = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    }
                 }
-                return result;
+                return field;
             }
+
+            private set;
         }
 
         public Stream GetRawDataStream()
@@ -142,7 +189,7 @@ namespace Zetian.Internal
 
         public byte[] GetRawData()
         {
-            return (byte[])_rawData.Clone();
+            return _rawData;
         }
 
         public Task<byte[]> GetRawDataAsync()
@@ -152,7 +199,8 @@ namespace Zetian.Internal
 
         public string? GetHeader(string name)
         {
-            if (_headers.TryGetValue(name, out List<string>? values) && values.Count > 0)
+            EnsureHeadersParsed();
+            if (_headers != null && _headers.TryGetValue(name, out List<string>? values) && values.Count > 0)
             {
                 return values[0];
             }
@@ -162,12 +210,13 @@ namespace Zetian.Internal
 
         public IEnumerable<string> GetHeaders(string name)
         {
-            if (_headers.TryGetValue(name, out List<string>? values))
+            EnsureHeadersParsed();
+            if (_headers != null && _headers.TryGetValue(name, out List<string>? values))
             {
                 return values;
             }
 
-            return Enumerable.Empty<string>();
+            return [];
         }
 
         public void SaveToFile(string path)
@@ -190,8 +239,19 @@ namespace Zetian.Internal
             await stream.WriteAsync(_rawData).ConfigureAwait(false);
         }
 
+        private void EnsureHeadersParsed()
+        {
+            if (_headersParsed)
+            {
+                return;
+            }
+            _headersParsed = true;
+            ParseHeaders();
+        }
+
         private void ParseHeaders()
         {
+            _headers = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             using MemoryStream stream = new(_rawData);
             using StreamReader reader = new(stream, Encoding.ASCII);
 
@@ -248,9 +308,10 @@ namespace Zetian.Internal
 
         private void AddHeader(string name, string value)
         {
+            _headers ??= new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             if (!_headers.TryGetValue(name, out List<string>? values))
             {
-                values = new List<string>();
+                values = [];
                 _headers[name] = values;
             }
             values.Add(value);
@@ -304,7 +365,7 @@ namespace Zetian.Internal
 
         private void ParseMultipartBody(string body, string boundary)
         {
-            string[] parts = body.Split(new[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = body.Split(["--" + boundary], StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string part in parts)
             {

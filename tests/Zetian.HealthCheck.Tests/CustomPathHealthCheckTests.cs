@@ -42,10 +42,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/status/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -78,10 +78,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/api/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -112,10 +112,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/monitoring/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -143,10 +143,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/custom/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -192,10 +192,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}{customPath}"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -223,12 +223,12 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/health/",
                     $"http://localhost:{healthCheckPort}/status/",
                     $"http://127.0.0.1:{healthCheckPort}/api/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -265,10 +265,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/metrics/"
-                },
+                ],
                 DegradedStatusCode = 218  // Custom degraded status code
             };
 
@@ -311,10 +311,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/status/"  // With trailing slash
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -346,10 +346,10 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/diagnostics/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
@@ -413,10 +413,10 @@ namespace Zetian.HealthCheck.Tests
             await _smtpServer.StartAsync();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{customHealthCheckPort}/status/"
-                }
+                ]
             };
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);
             await _healthCheckService.StartAsync();

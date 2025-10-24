@@ -18,7 +18,7 @@ namespace Zetian.Tests
             const int maxConnectionsPerIp = 3;
             ConnectionTracker tracker = new(maxConnectionsPerIp, _logger);
             IPAddress ipAddress = IPAddress.Parse("192.168.1.1");
-            List<ConnectionTracker.ConnectionHandle?> handles = new();
+            List<ConnectionTracker.ConnectionHandle?> handles = [];
 
             try
             {
@@ -56,7 +56,7 @@ namespace Zetian.Tests
             const int numThreads = 20;
             ConnectionTracker tracker = new(maxConnectionsPerIp, _logger);
             IPAddress ipAddress = IPAddress.Parse("10.0.0.1");
-            ConcurrentBag<ConnectionTracker.ConnectionHandle> successfulHandles = new();
+            ConcurrentBag<ConnectionTracker.ConnectionHandle> successfulHandles = [];
             Barrier barrier = new(numThreads);
 
             try
@@ -170,7 +170,7 @@ namespace Zetian.Tests
                 Assert.Equal(0, tracker.GetConnectionCount(ipAddress));
 
                 // Verify we can acquire max connections again
-                List<ConnectionTracker.ConnectionHandle?> handles = new();
+                List<ConnectionTracker.ConnectionHandle?> handles = [];
                 for (int i = 0; i < maxConnectionsPerIp; i++)
                 {
                     ConnectionTracker.ConnectionHandle? handle = await tracker.TryAcquireAsync(ipAddress);
@@ -203,7 +203,7 @@ namespace Zetian.Tests
             try
             {
                 // Act - Acquire connections for different IPs
-                List<ConnectionTracker.ConnectionHandle?> handles = new();
+                List<ConnectionTracker.ConnectionHandle?> handles = [];
 
                 // Fill up IP1
                 for (int i = 0; i < maxConnectionsPerIp; i++)

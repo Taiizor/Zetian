@@ -60,7 +60,7 @@ namespace Zetian.HealthCheck.Extensions
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://{hostname}:{port}{path}" }
+                Prefixes = [$"http://{hostname}:{port}{path}"]
             };
 
             HealthCheckService service = new(options, server.Configuration.LoggerFactory);

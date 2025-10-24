@@ -57,7 +57,7 @@ namespace Zetian.Tests
             // Arrange
             _server = await CreateAndStartServerAsync();
             const int attemptCount = 20;
-            ConcurrentBag<TcpClient> successfulConnections = new();
+            ConcurrentBag<TcpClient> successfulConnections = [];
             Barrier barrier = new(attemptCount);
             int successCount = 0;
 
@@ -126,7 +126,7 @@ namespace Zetian.Tests
             _server = await CreateAndStartServerAsync(_testPort + 1); // Use different port
 
             // First, quickly max out connections
-            List<TcpClient> firstBatch = new();
+            List<TcpClient> firstBatch = [];
             try
             {
                 Task<TcpClient>[] connectionTasks = Enumerable.Range(0, MaxConnectionsPerIp).Select(async i =>
@@ -235,9 +235,9 @@ namespace Zetian.Tests
             // Arrange
             _server = await CreateAndStartServerAsync(_testPort + 2); // Use different port
             const int attemptCount = 10; // Reduced for faster test
-            List<Task<bool>> tasks = new();
+            List<Task<bool>> tasks = [];
             int successCount = 0;
-            ConcurrentBag<string> failureMessages = new();
+            ConcurrentBag<string> failureMessages = [];
             Barrier barrier = new(attemptCount);
 
             // Act
@@ -306,14 +306,14 @@ namespace Zetian.Tests
             _server = await CreateAndStartServerAsync(_testPort + 3); // Use different port
             const int iterations = 3; // Reduced for faster test
             const int concurrentAttempts = 15; // Reduced for faster test
-            List<int> allSuccessCounts = new();
+            List<int> allSuccessCounts = [];
 
             // Act - Run multiple rounds to catch intermittent race conditions
             for (int round = 0; round < iterations; round++)
             {
                 int successCount = 0;
                 Barrier barrier = new(concurrentAttempts);
-                ConcurrentBag<TcpClient> clients = new();
+                ConcurrentBag<TcpClient> clients = [];
 
                 Task<bool>[] tasks = Enumerable.Range(0, concurrentAttempts).Select(_ => Task.Run(async () =>
                 {

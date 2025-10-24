@@ -70,7 +70,7 @@ namespace Zetian.Benchmarks
         public async Task InMemoryStorage()
         {
             // Simulate in-memory storage
-            Dictionary<string, byte[]> storage = new();
+            Dictionary<string, byte[]> storage = [];
             await Task.Run(() =>
             {
                 storage[_mockMessage.Id] = _mockMessage.GetRawData();

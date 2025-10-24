@@ -32,10 +32,10 @@ namespace Zetian.HealthCheck.Examples
             // Configure health check with custom path "/status/"
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     "http://localhost:8080/status/"
-                }
+                ]
             };
 
             Console.WriteLine("Configuring health check with custom path:");

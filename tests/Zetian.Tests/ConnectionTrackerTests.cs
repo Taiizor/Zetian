@@ -30,7 +30,7 @@ namespace Zetian.Tests
         {
             // Arrange
             const int maxConnections = 5;
-            List<ConnectionTracker.ConnectionHandle> handles = new();
+            List<ConnectionTracker.ConnectionHandle> handles = [];
 
             // Act - Acquire max connections
             for (int i = 0; i < maxConnections; i++)
@@ -74,8 +74,8 @@ namespace Zetian.Tests
         {
             // Arrange
             const int maxConnections = 5;
-            List<ConnectionTracker.ConnectionHandle> handles1 = new();
-            List<ConnectionTracker.ConnectionHandle> handles2 = new();
+            List<ConnectionTracker.ConnectionHandle> handles1 = [];
+            List<ConnectionTracker.ConnectionHandle> handles2 = [];
 
             // Act - Fill up connections for first IP
             for (int i = 0; i < maxConnections; i++)
@@ -115,7 +115,7 @@ namespace Zetian.Tests
             const int maxConnections = 5;
             const int totalAttempts = 10; // Further reduced for faster test
             int successCount = 0;
-            ConcurrentBag<ConnectionTracker.ConnectionHandle> handles = new();
+            ConcurrentBag<ConnectionTracker.ConnectionHandle> handles = [];
             TaskCompletionSource<bool> startSignal = new();
 
             // Act - Many concurrent attempts
@@ -170,7 +170,7 @@ namespace Zetian.Tests
         public void GetConnectionCount_ShouldReturnCorrectCount()
         {
             // Arrange
-            List<ConnectionTracker.ConnectionHandle> handles = new();
+            List<ConnectionTracker.ConnectionHandle> handles = [];
 
             // Initially should be 0
             Assert.Equal(0, _tracker.GetConnectionCount(_testIp));
@@ -222,7 +222,7 @@ namespace Zetian.Tests
         {
             // Arrange
             using ConnectionTracker customTracker = new(maxConnections, NullLogger.Instance);
-            List<ConnectionTracker.ConnectionHandle> handles = new();
+            List<ConnectionTracker.ConnectionHandle> handles = [];
 
             // Act - Acquire max connections
             for (int i = 0; i < maxConnections; i++)

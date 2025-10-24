@@ -13,7 +13,7 @@ namespace Zetian.Tests
     /// </summary>
     public class RateLimiterIntegrationTests : IDisposable
     {
-        private readonly List<InMemoryRateLimiter> _limiters = new();
+        private readonly List<InMemoryRateLimiter> _limiters = [];
 
         public void Dispose()
         {
@@ -39,7 +39,7 @@ namespace Zetian.Tests
             string key = "concurrent-key";
             int threadCount = 10;
             int requestsPerThread = 20;
-            ConcurrentBag<bool> results = new();
+            ConcurrentBag<bool> results = [];
 
             // Act
             Task[] tasks = Enumerable.Range(0, threadCount)
@@ -78,7 +78,7 @@ namespace Zetian.Tests
             string key = "burst-key";
 
             // Act - Send burst of requests
-            List<bool> results = new();
+            List<bool> results = [];
             for (int i = 0; i < 15; i++)
             {
                 bool allowed = await limiter.IsAllowedAsync(key);

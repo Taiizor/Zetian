@@ -116,12 +116,12 @@ namespace Zetian.HealthCheck.Tests
             int healthCheckPort = TestHelper.GetAvailablePort();
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     $"http://localhost:{healthCheckPort}/v1/",
                     $"http://localhost:{healthCheckPort}/api/v1/",
                     $"http://127.0.0.1:{healthCheckPort}/status/"
-                }
+                ]
             };
 
             _healthCheckService = _smtpServer.EnableHealthCheck(serviceOptions);

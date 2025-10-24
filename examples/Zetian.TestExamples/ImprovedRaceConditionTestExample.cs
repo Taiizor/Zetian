@@ -60,7 +60,7 @@ namespace Zetian.TestExamples
             Console.WriteLine($"Opening {ConcurrentAttempts} connections and keeping them open...");
             Console.WriteLine();
 
-            ConcurrentBag<TcpClient> successfulClients = new();
+            ConcurrentBag<TcpClient> successfulClients = [];
             Barrier barrier = new(ConcurrentAttempts);
             int successCount = 0;
             int failureCount = 0;

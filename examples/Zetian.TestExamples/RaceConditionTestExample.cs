@@ -62,8 +62,8 @@ namespace Zetian.TestExamples
             Console.WriteLine("Expected behavior: Only 5 connections should succeed, others should be rejected");
             Console.WriteLine();
 
-            List<Task<bool>> tasks = new();
-            List<SmtpClient> clients = new();
+            List<Task<bool>> tasks = [];
+            List<SmtpClient> clients = [];
             int successCount = 0;
             int failureCount = 0;
             Stopwatch sw = Stopwatch.StartNew();
@@ -80,8 +80,10 @@ namespace Zetian.TestExamples
                     SmtpClient? client = null;
                     try
                     {
-                        client = new SmtpClient("localhost", Port);
-                        client.Timeout = 5000;
+                        client = new SmtpClient("localhost", Port)
+                        {
+                            Timeout = 5000
+                        };
 
                         // Wait for all tasks to be ready
                         barrier.SignalAndWait();

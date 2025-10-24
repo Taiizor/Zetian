@@ -42,7 +42,7 @@ namespace Zetian.HealthCheck.Examples
             // Configure health check with custom timeout settings
             HealthCheckServiceOptions healthCheckOptions = new()
             {
-                Prefixes = new() { "http://localhost:8080/health/" },
+                Prefixes = ["http://localhost:8080/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(5),         // Total timeout for all checks
                 IndividualCheckTimeout = TimeSpan.FromSeconds(2), // Timeout per check
                 FailFastOnTimeout = true,                        // Stop on first timeout

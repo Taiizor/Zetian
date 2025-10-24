@@ -22,8 +22,8 @@ namespace Zetian.Benchmarks
     {
         private SmtpServer _protocolFilterServer = null!;
         private SmtpServer _eventFilterServer = null!;
-        private readonly List<string> _testDomains = new() { "spam.com", "junk.org", "phishing.net", "malware.org", "badsite.com" };
-        private readonly List<string> _goodDomains = new() { "example.com", "trusted.com", "company.com" };
+        private readonly List<string> _testDomains = ["spam.com", "junk.org", "phishing.net", "malware.org", "badsite.com"];
+        private readonly List<string> _goodDomains = ["example.com", "trusted.com", "company.com"];
 
         [GlobalSetup]
         public void Setup()

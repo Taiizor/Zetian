@@ -34,7 +34,7 @@ namespace Zetian.HealthCheck.Options
         /// <summary>
         /// Gets or sets the HTTP prefixes to listen on
         /// </summary>
-        public List<string> Prefixes { get; set; } = new() { "http://localhost:8080/health/" };
+        public List<string> Prefixes { get; set; } = ["http://localhost:8080/health/"];
 
         /// <summary>
         /// Gets or sets the timeout for individual health checks

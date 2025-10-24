@@ -43,7 +43,7 @@ namespace Zetian.Benchmarks
             _memoryStream.Position = 0;
             using StreamReader reader = new(_memoryStream, Encoding.ASCII, leaveOpen: true);
 
-            List<string> lines = new();
+            List<string> lines = [];
             string? line;
             while ((line = await reader.ReadLineAsync()) != null)
             {
@@ -60,7 +60,7 @@ namespace Zetian.Benchmarks
             using BufferedStream bufferedStream = new(_memoryStream, 4096);
             using StreamReader reader = new(bufferedStream, Encoding.ASCII, leaveOpen: true);
 
-            List<string> lines = new();
+            List<string> lines = [];
             string? line;
             while ((line = await reader.ReadLineAsync()) != null)
             {
@@ -74,7 +74,7 @@ namespace Zetian.Benchmarks
         public async Task<List<string>> ReadWithArrayPool()
         {
             _memoryStream.Position = 0;
-            List<string> lines = new();
+            List<string> lines = [];
             byte[] buffer = ArrayPool<byte>.Shared.Rent(4096);
             try
             {

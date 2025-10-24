@@ -35,8 +35,8 @@ namespace Zetian.HealthCheck.Services
         public HealthCheckService(HealthCheckServiceOptions? options = null, ILoggerFactory? loggerFactory = null)
         {
             _options = options ?? new HealthCheckServiceOptions();
-            _readinessChecks = new();
-            _healthChecks = new();
+            _readinessChecks = [];
+            _healthChecks = [];
 
             loggerFactory ??= NullLoggerFactory.Instance;
             _logger = loggerFactory.CreateLogger<HealthCheckService>();
@@ -252,7 +252,7 @@ namespace Zetian.HealthCheck.Services
 
         private async Task HandleHealthCheckAsync(HttpListenerResponse response, CancellationToken cancellationToken)
         {
-            Dictionary<string, object> results = new();
+            Dictionary<string, object> results = [];
             HealthStatus overallStatus = HealthStatus.Healthy;
             bool timedOut = false;
 
@@ -260,8 +260,8 @@ namespace Zetian.HealthCheck.Services
             using CancellationTokenSource totalTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             totalTimeoutCts.CancelAfter(_options.TotalTimeout);
 
-            List<Task> healthCheckTasks = new();
-            Dictionary<string, CancellationTokenSource> checkTimeoutTokens = new();
+            List<Task> healthCheckTasks = [];
+            Dictionary<string, CancellationTokenSource> checkTimeoutTokens = [];
 
             foreach (KeyValuePair<string, IHealthCheck> kvp in _healthChecks)
             {
@@ -417,7 +417,7 @@ namespace Zetian.HealthCheck.Services
 
         private async Task HandleReadinessCheckAsync(HttpListenerResponse response, CancellationToken cancellationToken)
         {
-            Dictionary<string, object> results = new();
+            Dictionary<string, object> results = [];
             HealthStatus overallStatus = HealthStatus.Healthy;
             bool timedOut = false;
 
@@ -428,8 +428,8 @@ namespace Zetian.HealthCheck.Services
             using CancellationTokenSource totalTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             totalTimeoutCts.CancelAfter(_options.TotalTimeout);
 
-            List<Task> readinessCheckTasks = new();
-            Dictionary<string, CancellationTokenSource> checkTimeoutTokens = new();
+            List<Task> readinessCheckTasks = [];
+            Dictionary<string, CancellationTokenSource> checkTimeoutTokens = [];
 
             foreach (KeyValuePair<string, IHealthCheck> kvp in checksToRun)
             {

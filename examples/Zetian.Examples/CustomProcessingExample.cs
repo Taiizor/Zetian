@@ -9,7 +9,7 @@ namespace Zetian.Examples
     /// </summary>
     public static class CustomProcessingExample
     {
-        private static readonly Dictionary<string, List<ISmtpMessage>> _mailboxes = new();
+        private static readonly Dictionary<string, List<ISmtpMessage>> _mailboxes = [];
         private static readonly object _lock = new();
 
         public static async Task RunAsync()
@@ -125,7 +125,7 @@ namespace Zetian.Examples
 
                     if (!_mailboxes.ContainsKey(mailbox))
                     {
-                        _mailboxes[mailbox] = new List<ISmtpMessage>();
+                        _mailboxes[mailbox] = [];
                     }
 
                     _mailboxes[mailbox].Add(message);

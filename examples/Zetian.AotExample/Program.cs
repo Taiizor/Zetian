@@ -33,10 +33,10 @@ namespace Zetian.AotExample
             // Create health check service (uses reflection for JSON - marked with attributes)
             HealthCheckServiceOptions healthOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     "http://localhost:8080/"
-                }
+                ]
             };
 
             HealthCheckService healthService = new(healthOptions);

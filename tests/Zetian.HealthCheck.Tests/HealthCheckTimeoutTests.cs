@@ -54,7 +54,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(10),
                 IndividualCheckTimeout = TimeSpan.FromSeconds(2),
                 FailFastOnTimeout = false,
@@ -107,7 +107,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(2), // Short total timeout
                 IndividualCheckTimeout = TimeSpan.FromSeconds(5),
                 FailFastOnTimeout = false,
@@ -169,7 +169,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(10),
                 IndividualCheckTimeout = TimeSpan.FromSeconds(1),
                 FailFastOnTimeout = true, // Fail fast enabled
@@ -178,7 +178,7 @@ namespace Zetian.HealthCheck.Tests
 
             using HealthCheckService healthService = new(options, _loggerFactory);
 
-            List<string> executedChecks = new();
+            List<string> executedChecks = [];
 
             // Add checks with different delays
             healthService.AddHealthCheck("check_1", async (ct) =>
@@ -233,7 +233,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(2),
                 IndividualCheckTimeout = TimeSpan.FromSeconds(1),
                 TimeoutStatusCode = customStatusCode
@@ -269,7 +269,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(10),
                 IndividualCheckTimeout = TimeSpan.FromSeconds(5),
                 FailFastOnTimeout = false
@@ -315,7 +315,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(2),
                 IndividualCheckTimeout = TimeSpan.FromSeconds(1),
                 TimeoutStatusCode = 503
@@ -365,7 +365,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 IndividualCheckTimeout = TimeSpan.FromSeconds(1)
             };
 
@@ -411,7 +411,7 @@ namespace Zetian.HealthCheck.Tests
 
             HealthCheckServiceOptions options = new()
             {
-                Prefixes = new() { $"http://localhost:{healthCheckPort}/health/" },
+                Prefixes = [$"http://localhost:{healthCheckPort}/health/"],
                 TotalTimeout = TimeSpan.FromSeconds(5),
                 IndividualCheckTimeout = TimeSpan.FromSeconds(2),
                 FailFastOnTimeout = false

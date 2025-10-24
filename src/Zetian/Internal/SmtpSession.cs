@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -26,14 +27,15 @@ namespace Zetian.Internal
         private readonly TcpClient _client;
         private readonly SmtpServerConfiguration _configuration;
         private readonly ILogger _logger;
-        private readonly Dictionary<string, object> _properties;
+        private Dictionary<string, object>? _properties;
 
         private Stream _stream;
         private StreamReader _reader;
         private StreamWriter _writer;
         private SmtpMessage? _currentMessage;
         private string? _mailFrom;
-        private readonly List<string> _recipients;
+        private string? _singleRecipient; // Optimize for single recipient case
+        private List<string>? _multipleRecipients; // Only allocate for multiple recipients
         private SmtpSessionState _state;
         private bool _disposed;
 
@@ -49,8 +51,9 @@ namespace Zetian.Internal
             RemoteEndPoint = _client.Client.RemoteEndPoint ?? new IPEndPoint(IPAddress.None, 0);
             LocalEndPoint = _client.Client.LocalEndPoint ?? new IPEndPoint(IPAddress.None, 0);
 
-            _properties = new();
-            _recipients = new();
+            _properties = null; // Lazy initialization
+            _singleRecipient = null;
+            _multipleRecipients = null;
             _state = SmtpSessionState.Connected;
 
             MaxMessageSize = _configuration.MaxMessageSize;
@@ -59,8 +62,9 @@ namespace Zetian.Internal
             BinaryMimeEnabled = _configuration.EnableBinaryMime;
 
             _stream = _client.GetStream();
-            _reader = new StreamReader(_stream, Encoding.ASCII);
-            _writer = new StreamWriter(_stream, Encoding.ASCII) { AutoFlush = true };
+            // Use minimal buffer sizes to reduce memory usage
+            _reader = new StreamReader(_stream, Encoding.ASCII, false, 256);
+            _writer = new StreamWriter(_stream, Encoding.ASCII, 256) { AutoFlush = true };
         }
 
         public string Id { get; }
@@ -71,7 +75,8 @@ namespace Zetian.Internal
         public string? AuthenticatedIdentity { get; private set; }
         public string? ClientDomain { get; private set; }
         public DateTime StartTime { get; }
-        public IDictionary<string, object> Properties => _properties;
+        private static readonly IDictionary<string, object> EmptyProperties = new Dictionary<string, object>(0);
+        public IDictionary<string, object> Properties => _properties ?? EmptyProperties;
         public X509Certificate2? ClientCertificate { get; private set; }
         public int MessageCount { get; private set; }
         public bool PipeliningEnabled { get; set; }
@@ -229,57 +234,72 @@ namespace Zetian.Internal
             _state = SmtpSessionState.Hello;
             ResetMessage();
 
-            List<string> lines = new()
-            {
-                $"{_configuration.ServerName} Hello {ClientDomain}"
-            };
+            // Pre-allocated extension strings
+            const string EXTENSION_PIPELINING = "PIPELINING";
+            const string EXTENSION_8BITMIME = "8BITMIME";
+            const string EXTENSION_BINARYMIME = "BINARYMIME";
+            const string EXTENSION_CHUNKING = "CHUNKING";
+            const string EXTENSION_SMTPUTF8 = "SMTPUTF8";
+            const string EXTENSION_STARTTLS = "STARTTLS";
+            const string EXTENSION_ENHANCEDSTATUSCODES = "ENHANCEDSTATUSCODES";
+            const string EXTENSION_HELP = "HELP";
+
+            // Use stack-allocated list to avoid heap allocation
+            string[] lines = new string[12]; // Max possible extensions
+            int lineCount = 0;
+
+            lines[lineCount++] = $"{_configuration.ServerName} Hello {ClientDomain}";
 
             // Add supported extensions
             if (_configuration.EnableSizeExtension)
             {
-                lines.Add($"SIZE {_configuration.MaxMessageSize}");
+                lines[lineCount++] = $"SIZE {_configuration.MaxMessageSize}";
             }
 
             if (_configuration.EnablePipelining)
             {
-                lines.Add("PIPELINING");
+                lines[lineCount++] = EXTENSION_PIPELINING;
             }
 
             if (_configuration.Enable8BitMime)
             {
-                lines.Add("8BITMIME");
+                lines[lineCount++] = EXTENSION_8BITMIME;
             }
 
             if (_configuration.EnableBinaryMime)
             {
-                lines.Add("BINARYMIME");
+                lines[lineCount++] = EXTENSION_BINARYMIME;
             }
 
             if (_configuration.EnableChunking)
             {
-                lines.Add("CHUNKING");
+                lines[lineCount++] = EXTENSION_CHUNKING;
             }
 
             if (_configuration.EnableSmtpUtf8)
             {
-                lines.Add("SMTPUTF8");
+                lines[lineCount++] = EXTENSION_SMTPUTF8;
             }
 
             if (_configuration.Certificate != null && !IsSecure)
             {
-                lines.Add("STARTTLS");
+                lines[lineCount++] = EXTENSION_STARTTLS;
             }
 
             if (_configuration.AuthenticationMechanisms.Count > 0)
             {
                 string authMechanisms = string.Join(" ", _configuration.AuthenticationMechanisms);
-                lines.Add($"AUTH {authMechanisms}");
+                lines[lineCount++] = $"AUTH {authMechanisms}";
             }
 
-            lines.Add("ENHANCEDSTATUSCODES");
-            lines.Add("HELP");
+            lines[lineCount++] = EXTENSION_ENHANCEDSTATUSCODES;
+            lines[lineCount++] = EXTENSION_HELP;
 
-            SmtpResponse response = new(250, lines.ToArray());
+            // Create array with exact size
+            string[] finalLines = new string[lineCount];
+            Array.Copy(lines, finalLines, lineCount);
+
+            SmtpResponse response = new(250, finalLines);
             await SendResponseAsync(response).ConfigureAwait(false);
         }
 
@@ -360,7 +380,11 @@ namespace Zetian.Internal
                 return;
             }
 
-            if (_recipients.Count >= _configuration.MaxRecipients)
+            // Check recipient count
+            int currentCount = _singleRecipient != null ? 1 : 0;
+            currentCount += _multipleRecipients?.Count ?? 0;
+
+            if (currentCount >= _configuration.MaxRecipients)
             {
                 await SendResponseAsync(SmtpResponse.TooManyRecipients).ConfigureAwait(false);
                 return;
@@ -377,7 +401,21 @@ namespace Zetian.Internal
                 }
             }
 
-            _recipients.Add(rcptTo);
+            // Optimize for single recipient (common case)
+            if (_singleRecipient == null && _multipleRecipients == null)
+            {
+                _singleRecipient = rcptTo;
+            }
+            else if (_singleRecipient != null && _multipleRecipients == null)
+            {
+                // Convert to multiple recipients
+                _multipleRecipients = new List<string>(4) { _singleRecipient, rcptTo };
+                _singleRecipient = null;
+            }
+            else
+            {
+                _multipleRecipients!.Add(rcptTo);
+            }
             _state = SmtpSessionState.Recipient;
 
             await SendResponseAsync(SmtpResponse.Ok).ConfigureAwait(false);
@@ -403,7 +441,22 @@ namespace Zetian.Internal
 
             try
             {
-                _currentMessage = new SmtpMessage(Id, _mailFrom, _recipients, messageData);
+                // Build recipients list efficiently
+                IEnumerable<string> recipients;
+                if (_multipleRecipients != null)
+                {
+                    recipients = _multipleRecipients;
+                }
+                else if (_singleRecipient != null)
+                {
+                    recipients = [_singleRecipient];
+                }
+                else
+                {
+                    recipients = [];
+                }
+
+                _currentMessage = new SmtpMessage(Id, _mailFrom, recipients, messageData);
                 MessageCount++;
 
                 // Save message if message store is configured
@@ -440,66 +493,79 @@ namespace Zetian.Internal
 
         private async Task<byte[]?> ReadMessageDataAsync(CancellationToken cancellationToken)
         {
-            using MemoryStream ms = new();
-            byte[] buffer = new byte[4096];
-            Encoding encoding = Encoding.ASCII;
-            StringBuilder lineBuilder = new();
-            bool previousWasCr = false;
+            // Use MemoryStream with smaller initial capacity
+            using MemoryStream ms = new(512);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(256); // Even smaller buffer
 
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                int bytesRead = await _stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-                if (bytesRead == 0)
+                bool previousWasCr = false;
+                List<byte> currentLine = new(64); // Smaller initial capacity
+
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    return null;
-                }
-
-                for (int i = 0; i < bytesRead; i++)
-                {
-                    byte b = buffer[i];
-
-                    if (previousWasCr && b == '\n')
+                    int bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), cancellationToken).ConfigureAwait(false);
+                    if (bytesRead == 0)
                     {
-                        string line = lineBuilder.ToString();
-                        lineBuilder.Clear();
-
-                        if (line == ".")
-                        {
-                            return ms.ToArray();
-                        }
-
-                        // Remove dot-stuffing
-                        if (line.StartsWith(".."))
-                        {
-                            line = line[1..];
-                        }
-
-                        byte[] lineBytes = encoding.GetBytes(line + "\r\n");
-                        await ms.WriteAsync(lineBytes, cancellationToken).ConfigureAwait(false);
-                        previousWasCr = false;
+                        return null;
                     }
-                    else if (b == '\r')
+
+                    for (int i = 0; i < bytesRead; i++)
                     {
-                        previousWasCr = true;
-                    }
-                    else
-                    {
-                        if (previousWasCr)
+                        byte b = buffer[i];
+
+                        if (previousWasCr && b == '\n')
                         {
-                            lineBuilder.Append('\r');
+                            // Check for end of message (single dot)
+                            if (currentLine.Count == 1 && currentLine[0] == '.')
+                            {
+                                return ms.ToArray();
+                            }
+
+                            // Remove dot-stuffing
+                            int startIndex = 0;
+                            if (currentLine.Count >= 2 && currentLine[0] == '.' && currentLine[1] == '.')
+                            {
+                                startIndex = 1;
+                            }
+
+                            // Write line to stream
+                            for (int j = startIndex; j < currentLine.Count; j++)
+                            {
+                                ms.WriteByte(currentLine[j]);
+                            }
+                            ms.WriteByte((byte)'\r');
+                            ms.WriteByte((byte)'\n');
+                            currentLine.Clear();
                             previousWasCr = false;
                         }
-                        lineBuilder.Append((char)b);
-                    }
+                        else if (b == '\r')
+                        {
+                            previousWasCr = true;
+                        }
+                        else
+                        {
+                            if (previousWasCr)
+                            {
+                                currentLine.Add((byte)'\r');
+                                previousWasCr = false;
+                            }
+                            currentLine.Add(b);
+                        }
 
-                    if (ms.Length > _configuration.MaxMessageSize)
-                    {
-                        throw new InvalidOperationException("Message size exceeds maximum");
+                        if (ms.Length > _configuration.MaxMessageSize)
+                        {
+                            throw new InvalidOperationException("Message size exceeds maximum");
+                        }
                     }
                 }
-            }
 
-            return null;
+                return null;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         private async Task ProcessRsetAsync()
@@ -548,8 +614,8 @@ namespace Zetian.Internal
                 ).ConfigureAwait(false);
 
                 _stream = sslStream;
-                _reader = new StreamReader(_stream, Encoding.ASCII);
-                _writer = new StreamWriter(_stream, Encoding.ASCII) { AutoFlush = true };
+                _reader = new StreamReader(_stream, Encoding.ASCII, false, 512);
+                _writer = new StreamWriter(_stream, Encoding.ASCII, 512) { AutoFlush = true };
 
                 IsSecure = true;
 
@@ -619,25 +685,26 @@ namespace Zetian.Internal
         private void ResetMessage()
         {
             _mailFrom = null;
-            _recipients.Clear();
+            _singleRecipient = null;
+            _multipleRecipients?.Clear(); // Clear but keep the list for reuse
             _currentMessage = null;
         }
 
         private string? ExtractEmailAddress(string input)
         {
-            input = input.Trim();
+            ReadOnlySpan<char> span = input.AsSpan().Trim();
 
-            if (input.StartsWith('<') && input.EndsWith('>'))
+            if (span.Length > 2 && span[0] == '<' && span[^1] == '>')
             {
-                return input[1..^1];
+                return new string(span[1..^1]);
             }
 
-            int angleStart = input.IndexOf('<');
-            int angleEnd = input.IndexOf('>');
+            int angleStart = span.IndexOf('<');
+            int angleEnd = span.IndexOf('>');
 
             if (angleStart >= 0 && angleEnd > angleStart)
             {
-                return input.Substring(angleStart + 1, angleEnd - angleStart - 1);
+                return new string(span.Slice(angleStart + 1, angleEnd - angleStart - 1));
             }
 
             return null;
@@ -701,6 +768,11 @@ namespace Zetian.Internal
             }
 
             _disposed = true;
+
+            // Clear recipients
+            _singleRecipient = null;
+            _multipleRecipients?.Clear();
+            _multipleRecipients = null;
 
             try
             {

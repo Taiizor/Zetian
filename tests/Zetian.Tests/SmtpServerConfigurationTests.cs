@@ -255,11 +255,12 @@ namespace Zetian.Tests
         public void CustomMessages_CanBeSet()
         {
             // Arrange
-            SmtpServerConfiguration config = new();
-
-            // Act
-            config.Banner = "Custom Banner";
-            config.Greeting = "Custom Greeting";
+            SmtpServerConfiguration config = new()
+            {
+                // Act
+                Banner = "Custom Banner",
+                Greeting = "Custom Greeting"
+            };
 
             // Assert
             config.Banner.Should().Be("Custom Banner");

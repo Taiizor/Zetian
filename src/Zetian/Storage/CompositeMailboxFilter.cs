@@ -18,7 +18,7 @@ namespace Zetian.Storage
     /// <param name="filters">Initial filters to add</param>
     public class CompositeMailboxFilter(CompositeMode mode = CompositeMode.All, params IMailboxFilter[] filters) : IMailboxFilter
     {
-        private readonly List<IMailboxFilter> _filters = new(filters ?? Array.Empty<IMailboxFilter>());
+        private readonly List<IMailboxFilter> _filters = [.. filters ?? Array.Empty<IMailboxFilter>()];
 
         /// <summary>
         /// Add a filter to the composite

@@ -21,7 +21,7 @@ namespace Zetian.Tests
         public async Task TryAcquireAsync_ShouldBeThreadSafe()
         {
             // Test concurrent acquisition from same IP
-            List<Task<ConnectionTracker.ConnectionHandle?>> tasks = new();
+            List<Task<ConnectionTracker.ConnectionHandle?>> tasks = [];
             int successCount = 0;
 
             // Try to acquire 10 connections concurrently (limit is 5)
@@ -51,7 +51,7 @@ namespace Zetian.Tests
         public async Task ReleaseConnection_ShouldBeThreadSafe()
         {
             // Acquire all 5 connections
-            List<ConnectionTracker.ConnectionHandle?> handles = new();
+            List<ConnectionTracker.ConnectionHandle?> handles = [];
             for (int i = 0; i < 5; i++)
             {
                 ConnectionTracker.ConnectionHandle? handle = await _tracker.TryAcquireAsync(_testIp);
@@ -81,7 +81,7 @@ namespace Zetian.Tests
             Assert.Equal(0, count);
 
             // Acquire 3 connections
-            List<ConnectionTracker.ConnectionHandle?> handles = new();
+            List<ConnectionTracker.ConnectionHandle?> handles = [];
             for (int i = 0; i < 3; i++)
             {
                 handles.Add(await _tracker.TryAcquireAsync(_testIp));
@@ -127,7 +127,7 @@ namespace Zetian.Tests
         public async Task ConcurrentAcquireRelease_ShouldMaintainConsistency()
         {
             CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
-            ConcurrentBag<Exception> errors = new();
+            ConcurrentBag<Exception> errors = [];
             int operations = 0;
 
             // Multiple threads continuously acquiring and releasing

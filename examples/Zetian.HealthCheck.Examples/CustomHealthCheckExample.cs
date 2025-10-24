@@ -39,10 +39,10 @@ namespace Zetian.HealthCheck.Examples
 
             HealthCheckServiceOptions serviceOptions = new()
             {
-                Prefixes = new()
-                {
+                Prefixes =
+                [
                     "http://localhost:8080/health/"
-                },
+                ],
                 DegradedStatusCode = 218  // "This is fine" status code
             };
 

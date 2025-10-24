@@ -194,11 +194,11 @@ namespace Zetian.Tests
             MessageEventArgs? capturedArgs = null;
             EventHandler<MessageEventArgs>? messageHandler = null;
 
-            List<MailAddress> recipients = new()
-            {
+            List<MailAddress> recipients =
+            [
                 new MailAddress("user@example.com"),
                 new MailAddress("admin@invalid.org")
-            };
+            ];
 
             _messageMock.Setup(m => m.Recipients).Returns(recipients);
 
@@ -292,11 +292,11 @@ namespace Zetian.Tests
             MessageEventArgs? capturedArgs = null;
             EventHandler<MessageEventArgs>? messageHandler = null;
 
-            List<MailAddress> recipients = new()
-            {
+            List<MailAddress> recipients =
+            [
                 new MailAddress("valid.user@example.com"),
                 new MailAddress("invalid@example.com")
-            };
+            ];
 
             _messageMock.Setup(m => m.Recipients).Returns(recipients);
 

@@ -178,7 +178,7 @@ namespace Zetian.Internal
         {
             try
             {
-                List<IPAddress> keysToRemove = new();
+                List<IPAddress> keysToRemove = [];
 
                 // Identify candidates for removal
                 foreach (KeyValuePair<IPAddress, ConnectionInfo> kvp in _connections)

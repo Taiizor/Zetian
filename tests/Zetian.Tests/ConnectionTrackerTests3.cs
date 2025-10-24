@@ -23,7 +23,7 @@ namespace Zetian.Tests
 
             using ConnectionTracker tracker = new(maxConnectionsPerIp, _logger);
             IPAddress ipAddress = IPAddress.Parse("192.168.1.1");
-            List<Exception> errors = new();
+            List<Exception> errors = [];
             int successCount = 0;
 
             // Act
@@ -79,7 +79,7 @@ namespace Zetian.Tests
             const int maxConnectionsPerIp = 5;
             using ConnectionTracker tracker = new(maxConnectionsPerIp, _logger);
             IPAddress ipAddress = IPAddress.Parse("10.0.0.1");
-            List<ConnectionTracker.ConnectionHandle?> handles = new();
+            List<ConnectionTracker.ConnectionHandle?> handles = [];
 
             // Act - Acquire up to the maximum
             for (int i = 0; i < maxConnectionsPerIp; i++)
@@ -156,7 +156,7 @@ namespace Zetian.Tests
             IPAddress ipAddress = IPAddress.Parse("172.16.0.1");
             const int readerThreads = 20;
             const int writerThreads = 10;
-            List<Exception> errors = new();
+            List<Exception> errors = [];
             CancellationTokenSource cancellationTokenSource = new();
 
             // Act - Start writer threads

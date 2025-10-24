@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+        <LangVersion>preview</LangVersion>
+        <AnalysisLevel>preview</AnalysisLevel>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>Zetian.Compare.Benchmarks</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Zetian\Zetian.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MailKit" Version="4.14.1" />
+        <PackageReference Include="MimeKit" Version="4.14.0" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.15.4" />
+        <PackageReference Include="SmtpServer" Version="11.1.0-beta2" />
+    </ItemGroup>
+
+</Project>

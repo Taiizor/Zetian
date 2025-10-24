@@ -99,7 +99,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Zetian.HealthCheck.Tests" />
-        <InternalsVisibleTo Include="Zetian.HealthCheck.Benchmarks" />
     </ItemGroup>
 
 </Project>

@@ -13,14 +13,14 @@ namespace Zetian.Models
         public int MaxRequests { get; set; } = 100;
 
         /// <summary>
-        /// Gets or sets the time window
-        /// </summary>
-        public TimeSpan Window { get; set; } = TimeSpan.FromHours(1);
-
-        /// <summary>
         /// Gets or sets whether to use sliding window
         /// </summary>
         public bool UseSlidingWindow { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the time window
+        /// </summary>
+        public TimeSpan Window { get; set; } = TimeSpan.FromHours(1);
 
         /// <summary>
         /// Creates a per-minute rate limit

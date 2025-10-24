@@ -1,3 +1,4 @@
+using System.Net;
 using Zetian.Extensions;
 using Zetian.Models;
 using Zetian.RateLimiting;
@@ -25,6 +26,7 @@ namespace Zetian.Examples
             using SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .ServerName("Rate Limited SMTP Server")
+                .MaxConnections(5)
                 .MaxMessageSizeMB(10)
                 .Build();
 
@@ -32,14 +34,25 @@ namespace Zetian.Examples
             server.AddRateLimiting(rateLimiter);
 
             // Subscribe to events
-            server.SessionCreated += (sender, e) =>
+            server.SessionCreated += async (sender, e) =>
             {
                 Console.WriteLine($"[SESSION] New connection from {e.Session.RemoteEndPoint}");
+
+                // Check rate limit on connection
+                if (e.Session.RemoteEndPoint is IPEndPoint ipEndPoint)
+                {
+                    int remaining = await rateLimiter.GetRemainingAsync(ipEndPoint.Address.ToString());
+                    if (remaining <= 0)
+                    {
+                        Console.WriteLine($"  [RATE LIMIT] Connection from {ipEndPoint.Address} rejected - rate limit exceeded!");
+                    }
+                }
             };
 
             server.MessageReceived += async (sender, e) =>
             {
-                if (e.Session.RemoteEndPoint is System.Net.IPEndPoint ipEndPoint)
+                // Only log if message wasn't cancelled by rate limiting
+                if (!e.Cancel && e.Session.RemoteEndPoint is IPEndPoint ipEndPoint)
                 {
                     int remaining = await rateLimiter.GetRemainingAsync(ipEndPoint.Address.ToString());
 
@@ -48,10 +61,16 @@ namespace Zetian.Examples
                     Console.WriteLine($"  Subject: {e.Message.Subject}");
                     Console.WriteLine($"  Remaining quota: {remaining} messages");
 
-                    if (remaining <= 0)
+                    // Check if this was the last allowed message
+                    if (remaining == 0)
                     {
-                        Console.WriteLine($"  [RATE LIMIT] IP {ipEndPoint.Address} has exceeded rate limit!");
+                        Console.WriteLine($"  [WARNING] IP {ipEndPoint.Address} has reached rate limit!");
                     }
+                    Console.WriteLine();
+                }
+                else if (e.Cancel && e.Session.RemoteEndPoint is IPEndPoint rejectedIp)
+                {
+                    Console.WriteLine($"[MESSAGE] Rejected message from {rejectedIp.Address} - rate limit exceeded");
                     Console.WriteLine();
                 }
             };

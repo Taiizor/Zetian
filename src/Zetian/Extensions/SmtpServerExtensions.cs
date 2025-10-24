@@ -44,6 +44,7 @@ namespace Zetian.Extensions
             {
                 if (e.Session.RemoteEndPoint is IPEndPoint ipEndPoint)
                 {
+                    // Check if rate limit already exceeded from SessionCreated
                     if (e.Session.Properties.TryGetValue("RateLimitExceeded", out object? exceeded) &&
                         exceeded is bool && (bool)exceeded)
                     {
@@ -52,6 +53,15 @@ namespace Zetian.Extensions
                         return;
                     }
 
+                    // Check current rate limit before processing message
+                    if (!await rateLimiter.IsAllowedAsync(ipEndPoint.Address))
+                    {
+                        e.Cancel = true;
+                        e.Response = new SmtpResponse(421, "Rate limit exceeded. Please try again later.");
+                        return;
+                    }
+
+                    // Only record request if message is allowed
                     await rateLimiter.RecordRequestAsync(ipEndPoint.Address);
                 }
             };

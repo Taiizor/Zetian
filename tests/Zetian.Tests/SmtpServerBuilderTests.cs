@@ -513,7 +513,7 @@ namespace Zetian.Tests
             SmtpServer server = new SmtpServerBuilder()
                 .Port(587)
                 .EnableSmtpUtf8()
-                .WithFileMessageStore(@"C:\temp\mail", true)
+                .WithFileMessageStore(Path.Combine(Path.GetTempPath(), $"zetian_test_{Guid.NewGuid()}"), true)
                 .WithSenderDomainWhitelist("trusted.com")
                 .WithSenderDomainBlacklist("spam.com")
                 .WithRecipientDomainWhitelist("mydomain.com")

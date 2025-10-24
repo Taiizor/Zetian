@@ -45,9 +45,11 @@ namespace Zetian.Protocol
 
             Verb = verb.ToUpperInvariant();
             Argument = argument?.Trim();
-            Parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            ParseParameters();
+            if (Verb is Commands.MAIL or Commands.RCPT && Argument != null)
+            {
+                ParseParameters();
+            }
         }
 
         /// <summary>
@@ -63,7 +65,7 @@ namespace Zetian.Protocol
         /// <summary>
         /// Gets the command parameters
         /// </summary>
-        public IDictionary<string, string> Parameters { get; }
+        public IDictionary<string, string> Parameters { get => field ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); private set; }
 
         /// <summary>
         /// Parses a command line

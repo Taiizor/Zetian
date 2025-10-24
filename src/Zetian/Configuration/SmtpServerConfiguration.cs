@@ -38,7 +38,7 @@ namespace Zetian.Configuration
             RequireSecureConnection = false;
             AllowPlainTextAuthentication = false;
             SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
-            AuthenticationMechanisms = new List<string> { "PLAIN", "LOGIN" };
+            AuthenticationMechanisms = new List<string>(2) { "PLAIN", "LOGIN" };
             Banner = null;
             Greeting = null;
         }

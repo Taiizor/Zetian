@@ -11,7 +11,7 @@ A lightweight health monitoring extension for Zetian SMTP Server, providing HTTP
 - 🔄 **Real-time Status** - Live server health monitoring
 - 📈 **JSON Response** - Structured health data for monitoring tools
 - ☸️ **Kubernetes Ready** - Built for K8s liveness and readiness probes
-- 🔍 **Multiple Endpoints** - `/health/`, `/health/livez`, `/health/readyz`
+- 🔍 **Multiple Endpoints** - `/health`, `/health/livez`, `/health/readyz`
 - 🌐 **Flexible Binding** - Support for localhost, specific IPs, hostnames, IPv6
 - 🚀 **Zero Dependencies** - Lightweight, uses only .NET built-in HttpListener
 - 🎯 **Custom Checks** - Add your own health checks (database, disk, services)
@@ -333,14 +333,13 @@ WORKDIR /app
 COPY . .
 EXPOSE 25 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health/ || exit 1
+  CMD curl -f http://localhost:8080/health || exit 1
 ENTRYPOINT ["dotnet", "MySmtpServer.dll"]
 ```
 
 ### Docker Compose
 
 ```yaml
-version: '3.8'
 services:
   smtp:
     image: mysmtp:latest
@@ -348,7 +347,7 @@ services:
       - "25:25"
       - "8080:8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -399,7 +398,7 @@ Use the JSON endpoints to collect metrics:
 
 ```bash
 # Collect health data
-curl http://localhost:8080/health/ | jq '.checks.smtp_server.data'
+curl http://localhost:8080/health | jq '.checks.smtp_server.data'
 
 # Check liveness
 curl -f http://localhost:8080/health/livez

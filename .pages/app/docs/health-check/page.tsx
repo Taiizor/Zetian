@@ -190,7 +190,7 @@ spec:
         # Liveness probe - restart if unhealthy
         livenessProbe:
           httpGet:
-            path: /livez
+            path: /health//livez
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -200,7 +200,7 @@ spec:
         # Readiness probe - remove from load balancer if not ready
         readinessProbe:
           httpGet:
-            path: /readyz
+            path: /health/readyz
             port: 8080
           initialDelaySeconds: 10
           periodSeconds: 5

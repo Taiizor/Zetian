@@ -10,5 +10,5 @@ IterationCount=3  LaunchCount=1  WarmupCount=2
 |----------------------------- |--------:|---------:|---------:|------:|-----:|----------:|------------:|
 | Zetian_SendSingleMessage     | 2.039 s | 0.1236 s | 0.0068 s |  1.00 |    1 |  69.57 KB |        1.00 |
 | SmtpServer_SendSingleMessage | 2.044 s | 0.0477 s | 0.0026 s |  1.00 |    1 |  67.89 KB |        0.98 |
-| Zetian_Send3Messages         | 6.097 s | 0.2220 s | 0.0122 s |  2.99 |    2 | 208.38 KB |        3.00 |
-| SmtpServer_Send3Messages     | 6.104 s | 0.2636 s | 0.0144 s |  2.99 |    2 | 195.84 KB |        2.81 |
+| Zetian_SendThreeMessage      | 6.097 s | 0.2220 s | 0.0122 s |  2.99 |    2 | 208.38 KB |        3.00 |
+| SmtpServer_SendThreeMessages | 6.104 s | 0.2636 s | 0.0144 s |  2.99 |    2 | 195.84 KB |        2.81 |

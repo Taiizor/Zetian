@@ -71,6 +71,24 @@ namespace Zetian.Compare.Benchmarks
             await SendMessage(_smtpServerPort);
         }
 
+        [Benchmark]
+        public async Task Zetian_SendThreeMessage()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                await SendMessage(_zetianPort);
+            }
+        }
+
+        [Benchmark]
+        public async Task SmtpServer_SendThreeMessage()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                await SendMessage(_smtpServerPort);
+            }
+        }
+
         private async Task SendMessage(int port)
         {
             using SmtpClient client = new();

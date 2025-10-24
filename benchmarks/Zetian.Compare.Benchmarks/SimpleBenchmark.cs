@@ -17,7 +17,6 @@ namespace Zetian.Compare.Benchmarks
         private Zetian.Server.SmtpServer? _zetianServer;
         private SmtpServer.SmtpServer? _smtpServer;
 
-        // Farklı portlar kullan
         private readonly int _zetianPort = 10025;
         private readonly int _smtpServerPort = 10026;
 

@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using BenchmarkDotNet.Order;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Zetian.Abstractions;
@@ -13,8 +14,10 @@ namespace Zetian.Benchmarks
     /// <summary>
     /// Benchmarks for comparing Protocol-Level vs Event-Based filtering performance
     /// </summary>
-    [SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 2, iterationCount: 3)]
+    [RankColumn]
     [MemoryDiagnoser]
+    [Orderer(SummaryOrderPolicy.FastestToSlowest)]
+    [SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 2, iterationCount: 3)]
     public class FilteringBenchmarks
     {
         private SmtpServer _protocolFilterServer = null!;

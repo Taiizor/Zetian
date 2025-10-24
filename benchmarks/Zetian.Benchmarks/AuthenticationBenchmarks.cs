@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Order;
 using Moq;
 using System.Text;
 using Zetian.Abstractions;
@@ -8,7 +9,9 @@ using Zetian.Models;
 
 namespace Zetian.Benchmarks
 {
+    [RankColumn]
     [MemoryDiagnoser]
+    [Orderer(SummaryOrderPolicy.FastestToSlowest)]
     [SimpleJob(launchCount: 1, warmupCount: 2, iterationCount: 3)]
     public class AuthenticationBenchmarks
     {

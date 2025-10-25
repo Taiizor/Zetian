@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
@@ -33,15 +33,15 @@
         <PackageId>Zetian.Storage</PackageId>
         <Authors>Taiizor</Authors>
         <Product>Zetian SMTP Server - Storage</Product>
-        <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>Storage abstraction layer for Zetian SMTP Server</Summary>
-        <Description>Core storage abstractions and base classes for Zetian SMTP Server</Description>
+        <Copyright>Copyright $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
+        <Summary>Core storage abstractions and interfaces for Zetian SMTP Server. Provides base classes and contracts for implementing custom message storage providers.</Summary>
+        <Description>Core storage abstraction layer for Zetian SMTP Server. Provides essential interfaces (IMessageStore) and base configurations for building custom storage providers. This package serves as the foundation for all Zetian storage implementations including SQL Server, PostgreSQL, MongoDB, Redis, and cloud storage providers.</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>zetian;smtp;email;storage;database;abstraction</PackageTags>
+        <PackageTags>storage;abstraction;interface;base;provider;message-store;database;persistence;smtp;email;server;zetian</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>

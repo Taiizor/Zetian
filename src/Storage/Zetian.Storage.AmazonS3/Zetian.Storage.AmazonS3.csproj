@@ -34,14 +34,14 @@
         <Authors>Taiizor</Authors>
         <Product>Zetian SMTP Server - Storage Amazon S3</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>Store SMTP messages in Amazon S3 or S3-compatible storage</Summary>
-        <Description>Amazon S3 and S3-compatible storage provider for Zetian SMTP Server</Description>
+        <Summary>Amazon S3 storage provider for Zetian SMTP Server. Enables cloud storage in AWS S3 or S3-compatible services with lifecycle management and encryption support.</Summary>
+        <Description>Amazon S3 and S3-compatible storage provider for Zetian SMTP Server. Delivers enterprise-grade cloud message persistence to AWS S3 or compatible services (MinIO, Wasabi, DigitalOcean Spaces) with advanced features including automatic lifecycle rules for cost optimization, server-side KMS encryption, object versioning, transfer acceleration, customizable storage classes, IAM role support, and built-in compression. Ideal for AWS-based deployments requiring durable, cost-effective message archival with 99.999999999% durability and global accessibility.</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>zetian;smtp;email;storage;aws;s3;cloud;minio;wasabi</PackageTags>
+        <PackageTags>aws;s3;amazon-s3;cloud;storage;lifecycle;kms;encryption;versioning;minio;wasabi;s3-compatible;transfer-acceleration;iam;durability;archive;glacier;compression;smtp;email;server;zetian</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>

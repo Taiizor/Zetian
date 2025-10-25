@@ -11,7 +11,8 @@ import {
   Github,
   Zap,
   ChevronRight,
-  Heart
+  Heart,
+  Database
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -70,6 +71,19 @@ const docCategories = [
       'Message Storage',
       'Filtering',
       'Forwarding'
+    ]
+  },
+  {
+    title: 'Storage Providers',
+    description: 'Message storage backends',
+    icon: Database,
+    href: '/docs/storage',
+    color: 'from-indigo-500 to-blue-600',
+    items: [
+      'SQL Server / Azure SQL',
+      'PostgreSQL / MongoDB',
+      'Redis Cache',
+      'S3 / Azure Blob'
     ]
   },
   {

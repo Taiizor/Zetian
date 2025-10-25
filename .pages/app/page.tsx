@@ -155,7 +155,7 @@ export default function Home() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">.NET Versions</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">10k+</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">100k+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Downloads</div>
               </div>
               <div>

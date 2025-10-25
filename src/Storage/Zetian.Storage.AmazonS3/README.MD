@@ -98,26 +98,31 @@ var server = new SmtpServerBuilder()
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| AccessKeyId | string | - | AWS Access Key ID |
-| SecretAccessKey | string | - | AWS Secret Access Key |
-| BucketName | string | - | S3 bucket name (required) |
-| Region | string | "us-east-1" | AWS region |
-| ServiceUrl | string | - | Custom endpoint for S3-compatible services |
-| ForcePathStyle | bool | false | Use path-style addressing |
-| KeyPrefix | string | "smtp/" | Prefix for all object keys |
-| NamingFormat | enum | DateHierarchy | Object naming strategy |
-| StorageClass | enum | Standard | S3 storage class |
-| EnableServerSideEncryption | bool | true | Enable encryption at rest |
-| KmsKeyId | string | - | KMS key ID for encryption |
-| AutoCreateBucket | bool | true | Create bucket if it doesn't exist |
-| EnableVersioning | bool | false | Enable object versioning |
-| UseTransferAcceleration | bool | false | Enable transfer acceleration |
-| EnableLifecycleRules | bool | false | Configure lifecycle rules |
-| TransitionToIADays | int | 30 | Days before moving to Infrequent Access |
-| TransitionToGlacierDays | int | 90 | Days before moving to Glacier |
-| ExpirationDays | int | 365 | Days before automatic deletion |
-| CompressMessageBody | bool | false | Compress message bodies |
-| MaxMessageSizeMB | double | 100 | Maximum message size in MB |
+| `AccessKeyId` | string | - | AWS Access Key ID |
+| `SecretAccessKey` | string | - | AWS Secret Access Key |
+| `BucketName` | string | - | S3 bucket name (required) |
+| `Region` | string | "us-east-1" | AWS region |
+| `ServiceUrl` | string | - | Custom endpoint for S3-compatible services |
+| `ForcePathStyle` | bool | false | Use path-style addressing |
+| `KeyPrefix` | string | "smtp/" | Prefix for all object keys |
+| `NamingFormat` | enum | DateHierarchy | Object naming format |
+| `StorageClass` | enum | Standard | S3 storage class |
+| `EnableServerSideEncryption` | bool | true | Enable server-side encryption |
+| `KmsKeyId` | string | - | KMS key ID for encryption |
+| `AutoCreateBucket` | bool | true | Create bucket if it doesn't exist |
+| `EnableVersioning` | bool | false | Enable object versioning |
+| `UseTransferAcceleration` | bool | false | Enable transfer acceleration |
+| `EnableLifecycleRules` | bool | false | Configure lifecycle rules |
+| `TransitionToIADays` | int | 30 | Days before moving to Infrequent Access |
+| `TransitionToGlacierDays` | int | 90 | Days before moving to Glacier |
+| `ExpirationDays` | int | 365 | Days before automatic deletion |
+| `CompressMessageBody` | bool | false | Compress message bodies |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `EnableRetry` | bool | true | Enable retry logic |
+| `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
+| `RetryDelayMs` | int | 1000 | Delay between retries |
+| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout |
+| `LogErrors` | bool | true | Whether to log errors |
 
 ## 🎯 Usage Examples
 
@@ -150,9 +155,8 @@ config.NamingFormat = S3NamingFormat.YearMonth;
 // Hourly partition: /2024/01/15/14/msg-123.eml
 config.NamingFormat = S3NamingFormat.HourlyPartition;
 
-// Custom format
-config.CustomNamingFunction = (messageId, date) => 
-    $"archive/{date:yyyy/MM}/{messageId}.eml";
+// Flat structure - all messages in prefix
+config.NamingFormat = S3NamingFormat.Flat;
 ```
 
 ## 🔐 Authentication Methods
@@ -203,8 +207,7 @@ config.CustomNamingFunction = (messageId, date) =>
     bucketName: "smtp-messages",
     config =>
     {
-        config.ForcePathStyle = true;
-        config.DisableSSL = true; // For local development
+        config.ForcePathStyle = true; // Required for MinIO
     })
 ```
 

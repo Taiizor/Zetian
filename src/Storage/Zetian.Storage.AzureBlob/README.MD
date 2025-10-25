@@ -89,19 +89,20 @@ var server = new SmtpServerBuilder()
 | `ConnectionString` | string | - | Azure Storage connection string |
 | `StorageAccountName` | string | - | Storage account name (for AD auth) |
 | `ContainerName` | string | "smtp-messages" | Container name for messages |
-| `NamingFormat` | enum | DateHierarchy | Blob naming strategy |
-| `BlobPrefix` | string | "messages/" | Prefix for all blobs |
+| `UseAzureAdAuthentication` | bool | false | Use Azure AD authentication |
+| `AutoCreateContainer` | bool | true | Auto-create container if needed |
+| `NamingFormat` | enum | DateHierarchy | Blob naming format |
 | `AccessTier` | enum | Hot | Default blob access tier |
-| `CompressMessageBody` | bool | false | Compress message bodies |
 | `StoreMetadataAsBlobProperties` | bool | true | Store metadata as blob properties |
 | `EnableSoftDelete` | bool | false | Enable soft delete feature |
 | `SoftDeleteRetentionDays` | int | 7 | Days to retain deleted blobs |
-| `EnableVersioning` | bool | false | Enable blob versioning |
-| `UseHierarchicalNamespace` | bool | false | Use Data Lake Gen2 features |
+| `CompressMessageBody` | bool | false | Compress message bodies |
 | `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
-| `UseManagedIdentity` | bool | false | Use Azure Managed Identity |
 | `EnableRetry` | bool | true | Enable retry logic |
 | `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
+| `RetryDelayMs` | int | 1000 | Delay between retries |
+| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout |
+| `LogErrors` | bool | true | Whether to log errors |
 
 ## 🎯 Usage Examples
 
@@ -134,9 +135,8 @@ config.NamingFormat = BlobNamingFormat.YearMonth;
 // Flat structure: /msg-123.eml
 config.NamingFormat = BlobNamingFormat.Flat;
 
-// Custom format
-config.CustomNamingFunction = (messageId, date) => 
-    $"{date:yyyy/MM/dd}/{messageId}.eml";
+// Domain-based naming
+config.NamingFormat = BlobNamingFormat.DomainBased;
 ```
 
 ## 🔐 Authentication Methods

@@ -55,10 +55,11 @@ var server = new SmtpServerBuilder()
         {
             config.TableName = "SmtpMessages";
             config.AttachmentsTableName = "SmtpAttachments";
-            config.AutoCreateTables = true;
-            config.EnableCompression = true;
+            config.SchemaName = "dbo";
+            config.AutoCreateTable = true;
+            config.StoreAttachmentsSeparately = true;
+            config.CompressMessageBody = true;
             config.MaxMessageSizeMB = 50;
-            config.UseJsonHeaders = true;
             config.EnableRetry = true;
             config.MaxRetryAttempts = 3;
         })
@@ -72,18 +73,16 @@ var server = new SmtpServerBuilder()
 | `ConnectionString` | string | *required* | SQL Server connection string |
 | `TableName` | string | "SmtpMessages" | Name of the messages table |
 | `SchemaName` | string | "dbo" | Database schema name |
-| `AutoCreateTable` | bool | true | Automatically create tables if they don't exist |
-| `CompressMessageBody` | bool | false | Compress message bodies using GZIP |
-| `MaxMessageSizeMB` | double | 25.0 | Maximum message size in MB (0 = unlimited) |
-| `StoreAttachmentsSeparately` | bool | false | Store attachments in separate table |
 | `AttachmentsTableName` | string | "SmtpAttachments" | Name of the attachments table |
-| `EnableRetry` | bool | true | Enable retry for transient failures |
-| `MaxRetryAttempts` | int | 3 | Maximum number of retry attempts |
-| `RetryDelayMs` | int | 1000 | Delay between retries in milliseconds |
-| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout in seconds |
-| `CommandTimeoutSeconds` | int | 30 | Command execution timeout |
-| `BulkCopyTimeoutSeconds` | int | 60 | Bulk copy operation timeout |
-| `LogErrors` | bool | true | Log database errors |
+| `AutoCreateTable` | bool | true | Auto-create table if it doesn't exist |
+| `StoreAttachmentsSeparately` | bool | false | Store attachments in separate table |
+| `CompressMessageBody` | bool | false | Enable GZIP compression |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `EnableRetry` | bool | true | Enable retry on transient failures |
+| `MaxRetryAttempts` | int | 3 | Number of retry attempts |
+| `RetryDelayMs` | int | 1000 | Delay between retries |
+| `ConnectionTimeoutSeconds` | int | 30 | Database connection timeout |
+| `LogErrors` | bool | true | Whether to log errors |
 
 ## 📏 Database Schema
 
@@ -191,9 +190,9 @@ var server = new SmtpServerBuilder()
         config =>
         {
             config.MaxMessageSizeMB = 100; // Allow up to 100MB
-            config.EnableCompression = true; // Enable compression
+            config.CompressMessageBody = true; // Enable compression
             config.StoreAttachmentsSeparately = true; // Store attachments separately
-            config.BulkCopyTimeoutSeconds = 120; // Increase timeout for large messages
+            config.ConnectionTimeoutSeconds = 120; // Increase timeout for large messages
         })
     .Build();
 ```

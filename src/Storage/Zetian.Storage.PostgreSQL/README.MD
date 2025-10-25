@@ -54,12 +54,13 @@ var server = new SmtpServerBuilder()
         config =>
         {
             config.TableName = "smtp_messages";
-            config.SchemaName = "mail";
-            config.AutoCreateTables = true;
+            config.SchemaName = "public";
+            config.AutoCreateTable = true;
             config.EnablePartitioning = true;
-            config.PartitioningStrategy = PartitioningStrategy.Monthly;
-            config.EnableCompression = true;
-            config.UseJsonbHeaders = true;
+            config.PartitionInterval = PartitionInterval.Monthly;
+            config.CompressMessageBody = true;
+            config.UseJsonbForHeaders = true;
+            config.CreateIndexes = true;
         })
     .Build();
 ```
@@ -71,18 +72,18 @@ var server = new SmtpServerBuilder()
 | `ConnectionString` | string | *required* | PostgreSQL connection string |
 | `TableName` | string | "smtp_messages" | Name of the messages table |
 | `SchemaName` | string | "public" | Database schema name |
-| `AutoCreateTable` | bool | true | Automatically create tables if they don't exist |
-| `UseJsonbForHeaders` | bool | true | Store headers as JSONB for advanced querying |
-| `EnablePartitioning` | bool | false | Enable time-based table partitioning |
+| `AutoCreateTable` | bool | true | Auto-create table and indexes |
+| `EnablePartitioning` | bool | false | Enable table partitioning |
 | `PartitionInterval` | enum | Monthly | Partition interval (Daily, Weekly, Monthly, Yearly) |
-| `CreateIndexes` | bool | true | Create database indexes automatically |
-| `CompressMessageBody` | bool | false | Compress message bodies using GZIP |
-| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
-| `EnableRetry` | bool | true | Enable retry for transient failures |
-| `MaxRetryAttempts` | int | 3 | Maximum number of retry attempts |
-| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout in seconds |
-| `CommandTimeoutSeconds` | int | 30 | Command execution timeout |
-| `LogErrors` | bool | true | Log database errors |
+| `UseJsonbForHeaders` | bool | true | Store headers as JSONB |
+| `CreateIndexes` | bool | true | Create indexes automatically |
+| `CompressMessageBody` | bool | false | Enable compression |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size |
+| `EnableRetry` | bool | true | Enable retry on failures |
+| `MaxRetryAttempts` | int | 3 | Number of retry attempts |
+| `RetryDelayMs` | int | 1000 | Delay between retries |
+| `ConnectionTimeoutSeconds` | int | 30 | Database connection timeout |
+| `LogErrors` | bool | true | Whether to log errors |
 
 ## 📏 Database Schema
 
@@ -164,8 +165,7 @@ AND received_date > NOW() - INTERVAL '7 days';
     config =>
     {
         config.EnablePartitioning = true;
-        config.PartitioningStrategy = PartitioningStrategy.Monthly;
-        config.RetentionMonths = 6; // Keep 6 months of data
+        config.PartitionInterval = PartitionInterval.Monthly;
     })
 
 // Use JSONB for headers
@@ -173,8 +173,8 @@ AND received_date > NOW() - INTERVAL '7 days';
     connectionString,
     config =>
     {
-        config.UseJsonbHeaders = true;
-        config.EnableGinIndex = true; // Create GIN index for JSONB
+        config.UseJsonbForHeaders = true;
+        config.CreateIndexes = true; // Create indexes including GIN for JSONB
     })
 ```
 

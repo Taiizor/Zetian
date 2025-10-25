@@ -15,6 +15,17 @@ import {
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
+const installCommand = `# Core SMTP Server
+dotnet add package Zetian
+
+# Choose your storage provider(s)
+dotnet add package Zetian.Storage.Redis
+dotnet add package Zetian.Storage.MongoDB
+dotnet add package Zetian.Storage.AmazonS3
+dotnet add package Zetian.Storage.AzureBlob
+dotnet add package Zetian.Storage.SqlServer
+dotnet add package Zetian.Storage.PostgreSQL`;
+
 const basicStorageExample = `using Zetian.Server;
 using Zetian.Storage.SqlServer.Extensions;
 
@@ -346,20 +357,7 @@ export default function StoragePage() {
             Install only the storage providers you need:
           </p>
           
-          <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-            <pre className="text-sm text-gray-100">
-{`# Core SMTP Server
-dotnet add package Zetian
-
-# Choose your storage provider(s)
-dotnet add package Zetian.Storage.Redis
-dotnet add package Zetian.Storage.MongoDB
-dotnet add package Zetian.Storage.AmazonS3
-dotnet add package Zetian.Storage.AzureBlob
-dotnet add package Zetian.Storage.SqlServer
-dotnet add package Zetian.Storage.PostgreSQL`}
-            </pre>
-          </div>
+          <CodeBlock code={installCommand} language="bash" showLineNumbers={false} />
         </section>
 
         {/* Common Configuration */}

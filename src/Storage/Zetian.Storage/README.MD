@@ -58,7 +58,7 @@ var server = new SmtpServerBuilder()
         {
             config.MaxMessageSizeMB = 25;
             config.AutoCreateTables = true;
-            config.EnableCompression = true;
+            config.CompressMessageBody = true;
         })
     .Build();
 
@@ -98,7 +98,6 @@ public abstract class BaseStorageConfiguration
     public int RetryDelayMs { get; set; } = 1000;
     public int ConnectionTimeoutSeconds { get; set; } = 30;
     public bool LogErrors { get; set; } = true;
-    public string? CustomStoragePath { get; set; }
 }
 ```
 

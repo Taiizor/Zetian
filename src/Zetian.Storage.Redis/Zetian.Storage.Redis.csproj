@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+        <RootNamespace>Zetian.Storage.Redis</RootNamespace>
+        <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <DefaultLanguage>en-GB</DefaultLanguage>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.MD</PackageReadmeFile>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageId>Zetian.Storage.Redis</PackageId>
+        <Title>Zetian Redis Storage Provider</Title>
+        <Version>1.0.0</Version>
+        <Authors>Zetian Contributors</Authors>
+        <Product>Zetian SMTP Server Redis Storage</Product>
+        <Description>Redis cache and storage provider for Zetian SMTP Server</Description>
+        <PackageTags>smtp;email;storage;cache;redis</PackageTags>
+        <Summary>High-performance Redis storage for SMTP messages</Summary>
+        <NeutralLanguage>en-GB</NeutralLanguage>
+        <PackageProjectUrl>https://github.com/Taiizor/Zetian</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Taiizor/Zetian</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.MD" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <!-- Project References -->
+    <ItemGroup>
+        <ProjectReference Include="..\Zetian\Zetian.csproj" />
+        <ProjectReference Include="..\Zetian.Storage\Zetian.Storage.csproj" />
+    </ItemGroup>
+
+    <!-- Dependencies -->
+    <ItemGroup>
+        <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    </ItemGroup>
+
+</Project>

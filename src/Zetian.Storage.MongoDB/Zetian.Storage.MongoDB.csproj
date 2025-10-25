@@ -1,0 +1,103 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+        <RootNamespace>Zetian.Storage.MongoDB</RootNamespace>
+        <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <DefaultLanguage>en-GB</DefaultLanguage>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <!-- AOT Support for .NET 7.0+ -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0' OR '$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
+        <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">true</EnableAotAnalyzer>
+        <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+        <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+        <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
+        <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <IsAotCompatible>true</IsAotCompatible>
+        <IlcTrimMetadata>true</IlcTrimMetadata>
+        <IsTrimmable>true</IsTrimmable>
+        <TrimMode>link</TrimMode>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ApplicationIcon>Resources\Zetian.ico</ApplicationIcon>
+        <Version>1.0.0</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>Zetian.Storage.MongoDB</Title>
+        <PackageId>Zetian.Storage.MongoDB</PackageId>
+        <Authors>Taiizor</Authors>
+        <Product>Zetian SMTP Storage Providers</Product>
+        <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
+        <Summary>Store SMTP messages in MongoDB database</Summary>
+        <Description>MongoDB NoSQL storage provider for Zetian SMTP Server</Description>
+        <PackageReadmeFile>README.MD</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageLicenseExpression></PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageReleaseNotes>Initial release with support for multiple storage providers.</PackageReleaseNotes>
+        <PackageTags>zetian;smtp;email;storage;database;mongodb;nosql</PackageTags>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
+        <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>git://github.com/Taiizor/Zetian</RepositoryUrl>
+        <PackageDescription>$(Description)</PackageDescription>
+        <PackageIcon>Zetian.png</PackageIcon>
+        <Company>$(Authors)</Company>
+        <Owners>$(Authors)</Owners>
+        <AnalysisLevel>preview</AnalysisLevel>
+        <LangVersion>preview</LangVersion>
+        <NeutralLanguage>$(DefaultLanguage)</NeutralLanguage>
+        <FileVersion>$(Version)</FileVersion>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Configurations>Debug;Release</Configurations>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Zetian\Zetian.csproj" />
+        <ProjectReference Include="..\Zetian.Storage\Zetian.Storage.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub">
+            <Version>10.0.0-beta.25514.2</Version>
+            <PrivateAssets>All</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.MD">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+        </None>
+        <None Include="..\..\LICENSE">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+        </None>
+        <None Include="Resources\Zetian.png">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Properties\" />
+    </ItemGroup>
+
+</Project>

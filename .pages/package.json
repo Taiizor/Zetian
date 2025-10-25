@@ -14,8 +14,8 @@
     "framer-motion": "^12.23.24",
     "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
-    "lucide-react": "^0.546.0",
-    "next": "15.5.6",
+    "lucide-react": "^0.548.0",
+    "next": "16.0.0",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.6",
     "react": "19.2.0",
@@ -25,13 +25,13 @@
     "remark-html": "^16.0.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.15",
+    "@tailwindcss/postcss": "^4.1.16",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/prismjs": "^1.26.5",
     "autoprefixer": "^10.4.21",
-    "tailwindcss": "^4.1.15",
+    "tailwindcss": "^4.1.16",
     "typescript": "^5"
   }
 }

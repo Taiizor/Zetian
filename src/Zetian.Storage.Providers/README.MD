@@ -1,4 +1,4 @@
-# Zetian.Storage.Providers - Database & Cloud Storage for SMTP
+﻿# Zetian.Storage.Providers - Database & Cloud Storage for SMTP
 
 [![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Storage.Providers.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Storage.Providers)
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Storage.Providers?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Storage.Providers)
@@ -8,16 +8,16 @@ Professional storage providers for Zetian SMTP Server, enabling persistent messa
 
 ## ⚡ Features
 
-- 🗄️ **SQL Server** - Full-featured relational database storage with compression
-- 🐘 **PostgreSQL** - Advanced storage with JSONB support and partitioning
-- 🍃 **MongoDB** - NoSQL storage with GridFS for large attachments
-- 🔴 **Redis** - High-performance caching and temporary storage
-- ☁️ **Azure Blob** - Scalable cloud storage with Azure integration
-- 🪣 **Amazon S3** - AWS cloud storage with lifecycle management
-- 🔄 **Automatic Retry** - Built-in retry mechanism for resilience
-- 🗜️ **Compression** - Optional message compression to save space
-- 📊 **Auto-indexing** - Automatic index creation for optimal performance
 - 🔒 **Thread-safe** - Concurrent access handling
+- 🔴 **Redis** - High-performance caching and temporary storage
+- 🪣 **Amazon S3** - AWS cloud storage with lifecycle management
+- 🗜️ **Compression** - Optional message compression to save space
+- 🍃 **MongoDB** - NoSQL storage with GridFS for large attachments
+- ☁️ **Azure Blob** - Scalable cloud storage with Azure integration
+- 🔄 **Automatic Retry** - Built-in retry mechanism for resilience
+- 📊 **Auto-indexing** - Automatic index creation for optimal performance
+- 🐘 **PostgreSQL** - Advanced storage with JSONB support and partitioning
+- 🗄️ **SQL Server** - Full-featured relational database storage with compression
 
 ## 📦 Installation
 
@@ -155,39 +155,39 @@ var store = new MongoDbMessageStore(mongoConfig);
 
 | Provider | Best For | Pros | Cons |
 |----------|----------|------|------|
-| **SQL Server** | Enterprise environments, Windows-based systems | Full ACID compliance, great tooling, compression | License costs, Windows-centric |
+| **Redis** | Caching, temporary storage | Ultra-fast, simple | Not for permanent storage |
+| **S3** | AWS environments, archival | Lifecycle policies, versioning | Cloud costs, complexity |
+| **Azure Blob** | Cloud-native apps, large scale | Unlimited storage, geo-redundancy | Cloud costs, latency |
 | **PostgreSQL** | Open-source projects, complex queries | Free, JSONB support, partitioning | Setup complexity |
 | **MongoDB** | Large attachments, flexible schemas | GridFS, TTL, horizontal scaling | Memory usage, eventual consistency |
-| **Redis** | Caching, temporary storage | Ultra-fast, simple | Not for permanent storage |
-| **Azure Blob** | Cloud-native apps, large scale | Unlimited storage, geo-redundancy | Cloud costs, latency |
-| **S3** | AWS environments, archival | Lifecycle policies, versioning | Cloud costs, complexity |
+| **SQL Server** | Enterprise environments, Windows-based systems | Full ACID compliance, great tooling, compression | License costs, Windows-centric |
 
 ## 🔧 Configuration Options
 
 ### Common Options (All Providers)
 
+- `LogErrors` - Error logging
+- `RetryDelayMs` - Delay between retries
 - `EnableRetry` - Automatic retry on failure
 - `MaxRetryAttempts` - Number of retry attempts
-- `RetryDelayMs` - Delay between retries
 - `ConnectionTimeoutSeconds` - Connection timeout
-- `LogErrors` - Error logging
 
 ### SQL Server Specific
 
-- `StoreAttachmentsSeparately` - Separate table for attachments
 - `CompressMessageBody` - GZip compression
+- `StoreAttachmentsSeparately` - Separate table for attachments
 
 ### PostgreSQL Specific
 
+- `PartitionInterval` - Daily/Monthly/Yearly
 - `UseJsonbForHeaders` - Store headers as JSONB
 - `EnablePartitioning` - Table partitioning by date
-- `PartitionInterval` - Daily/Monthly/Yearly
 
 ### MongoDB Specific
 
-- `UseGridFsForLargeMessages` - GridFS for large files
 - `EnableTTL` - Auto-expiration
 - `EnableSharding` - Horizontal scaling
+- `UseGridFsForLargeMessages` - GridFS for large files
 
 ## 🏗️ Database Schema
 
@@ -236,11 +236,11 @@ CREATE TABLE smtp_messages (
 ## 📈 Performance Tips
 
 1. **Enable Compression** for text-heavy emails
-2. **Use GridFS** in MongoDB for large attachments
-3. **Enable Partitioning** in PostgreSQL for time-series data
-4. **Create Indexes** on frequently queried fields
-5. **Set TTL** in MongoDB to auto-clean old messages
-6. **Use Connection Pooling** for database connections
+2. **Create Indexes** on frequently queried fields
+3. **Use GridFS** in MongoDB for large attachments
+4. **Set TTL** in MongoDB to auto-clean old messages
+5. **Use Connection Pooling** for database connections
+6. **Enable Partitioning** in PostgreSQL for time-series data
 
 ## 🔍 Querying Stored Messages
 
@@ -263,16 +263,17 @@ var filter = Builders<BsonDocument>.Filter.Gte("received_date", DateTime.UtcNow.
 var messages = await collection.Find(filter).ToListAsync();
 ```
 
-## 📦 Requirements
+## 📋 Requirements
 
+- Windows, Linux, or macOS
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
-- Zetian SMTP Server
-- Database/Storage system of choice
+- Zetian SMTP Server package
 
 ## 📚 Documentation & Support
 
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
 - **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
+- **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
 - **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 
 ## 🔒 Security Considerations
@@ -286,8 +287,8 @@ var messages = await collection.Find(filter).ToListAsync();
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
 
-## 🤝 Contributing
+---
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+**Built with ❤️ for the .NET community**

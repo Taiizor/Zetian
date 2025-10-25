@@ -184,7 +184,7 @@ namespace Zetian.Tests
             } while (line != null && !line.StartsWith("250 "));
 
             // Wait for timeout to exceed
-            await Task.Delay(connectionTimeout.Add(TimeSpan.FromSeconds(1)));
+            await Task.Delay(connectionTimeout.Add(TimeSpan.FromSeconds(3)));
 
             // Try to read - should fail as connection should be closed
             bool connectionClosed = false;

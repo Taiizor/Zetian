@@ -8,16 +8,16 @@ PostgreSQL storage provider for Zetian SMTP Server. Provides enterprise-grade me
 
 ## ⚡ Features
 
-- 🎉 **JSONB Support** - Native JSONB storage for headers with fast querying
-- 📈 **Table Partitioning** - Automatic time-based partitioning for scalability
-- 🔍 **GIN Indexing** - Full-text search capabilities on JSONB fields
-- 🗺️ **Automatic Setup** - Tables, partitions, and indexes created automatically
-- 🗜️ **Compression** - Optional GZIP compression for message bodies
-- 🌐 **Open Source** - Built on PostgreSQL, the world's most advanced open source database
-- 🔄 **Retry Logic** - Built-in retry mechanism for transient failures
 - 🗿 **Schema Support** - Organize tables in custom schemas
+- 🔄 **Retry Logic** - Built-in retry mechanism for transient failures
+- 🔍 **GIN Indexing** - Full-text search capabilities on JSONB fields
 - 📦 **Batch Operations** - Efficient bulk insert with COPY command
+- 🗜️ **Compression** - Optional GZIP compression for message bodies
+- 📈 **Table Partitioning** - Automatic time-based partitioning for scalability
+- 🎉 **JSONB Support** - Native JSONB storage for headers with fast querying
 - 🎯 **Advanced Queries** - Leverage PostgreSQL's powerful query capabilities
+- 🗺️ **Automatic Setup** - Tables, partitions, and indexes created automatically
+- 🌐 **Open Source** - Built on PostgreSQL, the world's most advanced open source database
 
 ## 📦 Installation
 
@@ -77,12 +77,12 @@ var server = new SmtpServerBuilder()
 | `PartitionInterval` | enum | Monthly | Partition interval (Daily, Weekly, Monthly, Yearly) |
 | `UseJsonbForHeaders` | bool | true | Store headers as JSONB |
 | `CreateIndexes` | bool | true | Create indexes automatically |
-| `CompressMessageBody` | bool | false | Enable compression |
-| `MaxMessageSizeMB` | double | 100 | Maximum message size |
-| `EnableRetry` | bool | true | Enable retry on failures |
-| `MaxRetryAttempts` | int | 3 | Number of retry attempts |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `CompressMessageBody` | bool | false | Compress message bodies |
+| `EnableRetry` | bool | true | Enable retry logic |
+| `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
 | `RetryDelayMs` | int | 1000 | Delay between retries |
-| `ConnectionTimeoutSeconds` | int | 30 | Database connection timeout |
+| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout |
 | `LogErrors` | bool | true | Whether to log errors |
 
 ## 📏 Database Schema
@@ -428,19 +428,19 @@ WHERE relname = 'messages';
 
 ## 📋 Requirements
 
-- PostgreSQL 11 or later (for partitioning)
-- PostgreSQL 9.4 or later (without partitioning)
+- Npgsql package (included)
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
-- Npgsql package (included)
+- PostgreSQL 11 or later (for partitioning)
+- PostgreSQL 9.4 or later (without partitioning)
 
 ## 📚 Documentation & Support
 
-- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
-- **PostgreSQL Docs**: [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
+- **PostgreSQL Docs**: [PostgreSQL Documentation](https://www.postgresql.org/docs)
 
 ## 📄 License
 

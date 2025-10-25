@@ -28,9 +28,6 @@ var server = new SmtpServerBuilder()
         {
             config.ContainerName = "smtp-messages";
             config.UseAzureAdAuthentication = true;
-            
-            // Optional: specific tenant
-            config.TenantId = "your-tenant-id";
         })
     .Build();`;
 
@@ -41,21 +38,15 @@ const advancedExample = `var server = new SmtpServerBuilder()
         config =>
         {
             config.ContainerName = "smtp-messages";
-            config.MessagePathFormat = "\{year\}/\{month\}/\{day\}/\{messageId\}";
             
             // Access tiers
-            config.DefaultAccessTier = AccessTier.Cool;
-            config.ArchiveAfterDays = 30;
+            config.AccessTier = BlobAccessTier.Cool;
             
             // Soft delete
             config.EnableSoftDelete = true;
             config.SoftDeleteRetentionDays = 7;
             
-            // Encryption
-            config.EncryptionScope = "custom-scope";
-            
             // Performance
-            config.MaxConcurrentUploads = 5;
             config.CompressMessageBody = true;
             config.MaxMessageSizeMB = 100;
         })
@@ -256,19 +247,9 @@ export default function AzureBlobStoragePage() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Use Azure AD auth</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">DefaultAccessTier</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Hot</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Default storage tier</td>
-                </tr>
-                <tr>
                   <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">EnableSoftDelete</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">false</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Enable soft delete</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">MessagePathFormat</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{`"\\{year\\}/\\{month\\}/\\{messageId\\}"`}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Blob path format</td>
                 </tr>
               </tbody>
             </table>

@@ -60,10 +60,9 @@ const advancedExample = `var server = new SmtpServerBuilder()
         {
             config.Region = "us-west-2";
             config.KeyPrefix = "emails/";
-            config.MessageKeyFormat = "\{year\}/\{month\}/\{day\}/\{messageId\}";
             
             // Server-side encryption
-            config.ServerSideEncryption = ServerSideEncryptionMethod.AES256;
+            config.EnableServerSideEncryption = true;
             config.KmsKeyId = "alias/my-kms-key";
             
             // Versioning
@@ -71,13 +70,6 @@ const advancedExample = `var server = new SmtpServerBuilder()
             
             // Storage class
             config.StorageClass = S3StorageClass.StandardInfrequentAccess;
-            
-            // Tags for organization
-            config.DefaultTags = new Dictionary<string, string>
-            {
-                ["Application"] = "SMTP-Server",
-                ["Environment"] = "Production"
-            };
             
             // Performance
             config.UseTransferAcceleration = true;
@@ -299,7 +291,7 @@ export default function AmazonS3StoragePage() {
                 </tr>
                 <tr>
                   <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">KeyPrefix</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">""</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">"smtp/"</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Object key prefix</td>
                 </tr>
                 <tr>
@@ -308,8 +300,8 @@ export default function AmazonS3StoragePage() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Default storage class</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">ServerSideEncryption</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">None</td>
+                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">EnableServerSideEncryption</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">true</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Encryption method</td>
                 </tr>
                 <tr>

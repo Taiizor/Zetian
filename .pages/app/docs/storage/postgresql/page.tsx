@@ -38,7 +38,6 @@ const advancedExample = `var server = new SmtpServerBuilder()
             
             // Performance
             config.CreateIndexes = true;
-            config.EnableGinIndex = true;
             config.CompressMessageBody = true;
             config.MaxMessageSizeMB = 100;
         })
@@ -110,9 +109,6 @@ export default function PostgreSQLStoragePage() {
                 </span>
                 <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 rounded">
                   Table Partitioning
-                </span>
-                <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 rounded">
-                  GIN Indexing
                 </span>
                 <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 rounded">
                   Time-based Retention
@@ -218,11 +214,6 @@ export default function PostgreSQLStoragePage() {
                   <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">PartitionInterval</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Monthly</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Partition time interval</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">EnableGinIndex</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">false</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Create GIN index for JSONB</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">CreateIndexes</td>

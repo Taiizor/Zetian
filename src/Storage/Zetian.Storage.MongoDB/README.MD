@@ -8,16 +8,16 @@ MongoDB NoSQL storage provider for Zetian SMTP Server. Provides flexible, schema
 
 ## ⚡ Features
 
+- 🔍 **Text Search** - Full-text search capabilities
+- 🌐 **Flexible Schema** - NoSQL document flexibility
+- 🌍 **Replica Sets** - Built-in high availability support
+- 🔄 **Change Streams** - Real-time change notifications
+- 📊 **Aggregation** - Powerful aggregation pipeline support
+- 🔀 **Sharding** - Horizontal scaling for massive deployments
+- 🗜️ **Compression** - Optional GZIP compression for messages
+- 🚀 **High Performance** - Optimized for write-heavy workloads
 - 📂 **GridFS Support** - Automatic large file handling with GridFS
 - ⏰ **TTL Expiration** - Automatic message cleanup after specified time
-- 🔀 **Sharding** - Horizontal scaling for massive deployments
-- 🌐 **Flexible Schema** - NoSQL document flexibility
-- 🔍 **Text Search** - Full-text search capabilities
-- 🗜️ **Compression** - Optional GZIP compression for messages
-- 📊 **Aggregation** - Powerful aggregation pipeline support
-- 🔄 **Change Streams** - Real-time change notifications
-- 🚀 **High Performance** - Optimized for write-heavy workloads
-- 🌍 **Replica Sets** - Built-in high availability support
 
 ## 📦 Installation
 
@@ -84,13 +84,13 @@ var server = new SmtpServerBuilder()
 | `AutoCreateIndexes` | bool | true | Create indexes automatically |
 | `EnableSharding` | bool | false | Enable collection sharding |
 | `ShardKeyField` | string | "received_date" | Field to use as shard key |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
 | `CompressMessageBody` | bool | false | Compress message bodies |
-| `MaxMessageSizeMB` | double | 100.0 | Maximum message size in MB |
-| `WriteConcern` | string | "majority" | Write concern level |
-| `ReadPreference` | string | "primary" | Read preference mode |
-| `EnableRetry` | bool | true | Enable retry for transient failures |
+| `EnableRetry` | bool | true | Enable retry logic |
 | `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
+| `RetryDelayMs` | int | 1000 | Delay between retries |
 | `ConnectionTimeoutSeconds` | int | 30 | Connection timeout |
+| `LogErrors` | bool | true | Whether to log errors |
 
 ## 📏 Document Schema
 
@@ -287,26 +287,6 @@ sh.shardCollection(
 )
 ```
 
-### Write Performance
-
-```csharp
-// Optimize for write performance
-.WithMongoDbStorage(config =>
-{
-    config.WriteConcern = "1"; // Acknowledge after primary write
-    config.Journal = false; // Don't wait for journal
-    config.EnableBulkWrites = true; // Batch inserts
-    config.BulkWriteSize = 100; // Batch size
-})
-
-// Balance between performance and durability
-.WithMongoDbStorage(config =>
-{
-    config.WriteConcern = "majority"; // Acknowledge after majority
-    config.Journal = true; // Wait for journal
-})
-```
-
 ## 📊 Change Streams (Real-time)
 
 ```csharp
@@ -424,10 +404,6 @@ config.ConnectionString =
 config.ConnectionString = 
     "mongodb://localhost:27017/?ssl=true&" +
     "sslCertificateAuthorityFile=/path/to/ca.pem";
-
-// Field-level encryption (MongoDB 4.2+)
-config.EnableFieldEncryption = true;
-config.EncryptionKeyPath = "/path/to/keyfile";
 ```
 
 ## 🔧 Troubleshooting
@@ -438,14 +414,6 @@ config.EncryptionKeyPath = "/path/to/keyfile";
 ```csharp
 // Increase connection timeout
 config.ConnectionTimeoutSeconds = 60;
-config.ServerSelectionTimeoutMs = 30000;
-```
-
-**Write Concern Errors**
-```csharp
-// Adjust write concern for network issues
-config.WriteConcern = "1"; // Don't wait for replication
-config.WriteConcernTimeoutMs = 10000;
 ```
 
 **Memory Issues with Large Collections**
@@ -461,20 +429,20 @@ db.messages.find().limit(1000).hint({ receivedDate: -1 })
 
 ## 📋 Requirements
 
-- MongoDB 4.0 or later (4.4+ recommended)
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
+- For Atlas: MongoDB Atlas cluster
 - MongoDB.Driver package (included)
 - For sharding: MongoDB sharded cluster
-- For Atlas: MongoDB Atlas cluster
+- MongoDB 4.0 or later (4.4+ recommended)
 
 ## 📚 Documentation & Support
 
-- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
-- **MongoDB Docs**: [MongoDB Documentation](https://docs.mongodb.com/)
-- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
+- **MongoDB Docs**: [MongoDB Documentation](https://www.mongodb.com/docs)
 
 ## 📄 License
 

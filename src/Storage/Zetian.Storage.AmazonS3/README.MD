@@ -202,8 +202,8 @@ config.NamingFormat = S3NamingFormat.Flat;
 ```csharp
 .WithS3CompatibleStorage(
     serviceUrl: "http://localhost:9000",
-    accessKey: "minioadmin",
-    secretKey: "minioadmin",
+    accessKeyId: "minioadmin",
+    secretAccessKey: "minioadmin",
     bucketName: "smtp-messages",
     config =>
     {
@@ -216,8 +216,8 @@ config.NamingFormat = S3NamingFormat.Flat;
 ```csharp
 .WithS3CompatibleStorage(
     serviceUrl: "https://s3.wasabisys.com",
-    accessKey: "WASABI_ACCESS_KEY",
-    secretKey: "WASABI_SECRET_KEY",
+    accessKeyId: "WASABI_ACCESS_KEY",
+    secretAccessKey: "WASABI_SECRET_KEY",
     bucketName: "smtp-messages",
     config =>
     {
@@ -230,8 +230,8 @@ config.NamingFormat = S3NamingFormat.Flat;
 ```csharp
 .WithS3CompatibleStorage(
     serviceUrl: "https://nyc3.digitaloceanspaces.com",
-    accessKey: "DO_SPACES_KEY",
-    secretKey: "DO_SPACES_SECRET",
+    accessKeyId: "DO_SPACES_KEY",
+    secretAccessKey: "DO_SPACES_SECRET",
     bucketName: "smtp-messages",
     config =>
     {
@@ -244,8 +244,8 @@ config.NamingFormat = S3NamingFormat.Flat;
 ```csharp
 .WithS3CompatibleStorage(
     serviceUrl: "https://s3.us-west-000.backblazeb2.com",
-    accessKey: "B2_KEY_ID",
-    secretKey: "B2_APPLICATION_KEY",
+    accessKeyId: "B2_KEY_ID",
+    secretAccessKey: "B2_APPLICATION_KEY",
     bucketName: "smtp-messages")
 ```
 

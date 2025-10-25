@@ -116,8 +116,8 @@ var server = new SmtpServerBuilder()
 | `TransitionToIADays` | int | 30 | Days before moving to Infrequent Access |
 | `TransitionToGlacierDays` | int | 90 | Days before moving to Glacier |
 | `ExpirationDays` | int | 365 | Days before automatic deletion |
-| `CompressMessageBody` | bool | false | Compress message bodies |
 | `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `CompressMessageBody` | bool | false | Compress message bodies |
 | `EnableRetry` | bool | true | Enable retry logic |
 | `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
 | `RetryDelayMs` | int | 1000 | Delay between retries |
@@ -280,19 +280,6 @@ config.LifecycleRules = new[]
 };
 ```
 
-### Intelligent Tiering
-
-```csharp
-// Automatic cost optimization
-config.StorageClass = S3StorageClass.IntelligentTiering;
-config.IntelligentTieringConfiguration = new IntelligentTieringConfiguration
-{
-    Id = "SmtpMessageTiering",
-    ArchiveAccessTierDays = 90,
-    DeepArchiveAccessTierDays = 180
-};
-```
-
 ## 🔒 Security Features
 
 ### Server-Side Encryption
@@ -304,9 +291,6 @@ config.EnableServerSideEncryption = true;
 // SSE-KMS
 config.EnableServerSideEncryption = true;
 config.KmsKeyId = "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab";
-
-// SSE-C (Customer-provided key)
-config.CustomerEncryptionKey = Convert.ToBase64String(encryptionKey);
 ```
 
 ### Bucket Policies
@@ -323,15 +307,6 @@ config.CustomerEncryptionKey = Convert.ToBase64String(encryptionKey);
     }
   ]
 }
-```
-
-### Object Lock
-
-```csharp
-// Enable compliance mode
-config.EnableObjectLock = true;
-config.ObjectLockMode = ObjectLockMode.Compliance;
-config.ObjectLockRetentionDays = 30;
 ```
 
 ## 📦 Versioning & Recovery
@@ -357,31 +332,6 @@ await s3Client.CopyObjectAsync(
     destinationKey: "messages/msg-123-restored.eml");
 ```
 
-## 🌐 Cross-Region Replication
-
-```csharp
-// Configure replication
-config.EnableReplication = true;
-config.ReplicationConfiguration = new ReplicationConfiguration
-{
-    Role = "arn:aws:iam::123456789012:role/replication-role",
-    Rules = new[]
-    {
-        new ReplicationRule
-        {
-            Id = "ReplicateAll",
-            Priority = 1,
-            Status = ReplicationRuleStatus.Enabled,
-            Destination = new ReplicationDestination
-            {
-                BucketArn = "arn:aws:s3:::my-smtp-bucket-replica",
-                StorageClass = S3StorageClass.StandardIA
-            }
-        }
-    }
-};
-```
-
 ## 🚀 Performance Optimization
 
 ### Transfer Acceleration
@@ -389,95 +339,6 @@ config.ReplicationConfiguration = new ReplicationConfiguration
 ```csharp
 // Enable for faster global uploads
 config.UseTransferAcceleration = true;
-
-// Accelerated endpoint
-config.AcceleratedEndpoint = "my-smtp-bucket.s3-accelerate.amazonaws.com";
-```
-
-### Multipart Upload
-
-```csharp
-// Configure multipart threshold
-config.MultipartUploadThresholdMB = 100; // Files > 100MB
-config.MultipartUploadPartSizeMB = 10; // 10MB parts
-
-// Parallel parts
-config.MaxConcurrentUploads = 10;
-```
-
-### Request Metrics
-
-```csharp
-// Enable CloudWatch metrics
-config.EnableRequestMetrics = true;
-config.MetricsConfiguration = new MetricsConfiguration
-{
-    Id = "SmtpStorageMetrics",
-    Filter = new MetricsFilter
-    {
-        Prefix = "messages/"
-    }
-};
-```
-
-## 💰 Cost Optimization
-
-### Storage Class Analysis
-
-```csharp
-// Enable storage class analysis
-config.EnableStorageClassAnalysis = true;
-config.AnalysisConfiguration = new AnalyticsConfiguration
-{
-    Id = "SmtpAnalysis",
-    ExportConfiguration = new AnalyticsExportDestination
-    {
-        BucketArn = "arn:aws:s3:::analysis-bucket",
-        Prefix = "analysis/smtp/"
-    }
-};
-```
-
-### Cost Allocation Tags
-
-```csharp
-// Tag objects for cost tracking
-config.DefaultTags = new Dictionary<string, string>
-{
-    ["Application"] = "SMTP-Server",
-    ["Environment"] = "Production",
-    ["CostCenter"] = "IT-Operations"
-};
-```
-
-## 📈 Monitoring & Logging
-
-### CloudWatch Integration
-
-```csharp
-// Enable CloudWatch logging
-config.EnableCloudWatchLogging = true;
-config.CloudWatchLogGroup = "/aws/s3/smtp-storage";
-
-// Custom metrics
-config.CustomMetrics = new[]
-{
-    "MessageSize",
-    "ProcessingTime",
-    "StorageClass"
-};
-```
-
-### S3 Access Logging
-
-```csharp
-// Enable access logging
-config.EnableAccessLogging = true;
-config.LoggingConfiguration = new S3BucketLoggingConfig
-{
-    TargetBucketName = "my-logs-bucket",
-    TargetPrefix = "s3-access-logs/smtp/"
-};
 ```
 
 ## 🔧 Troubleshooting
@@ -495,9 +356,6 @@ config.LoggingConfiguration = new S3BucketLoggingConfig
 ```csharp
 // Enable transfer acceleration
 config.UseTransferAcceleration = true;
-
-// Increase concurrent uploads
-config.MaxConcurrentUploads = 20;
 
 // Use appropriate region
 config.Region = "us-east-1"; // Same as bucket region
@@ -523,20 +381,20 @@ await s3Client.RestoreObjectAsync(new RestoreObjectRequest
 
 ## 📋 Requirements
 
-- AWS Account or S3-compatible service
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
-- AWSSDK.S3 package (included)
-- For Transfer Acceleration: Enabled on bucket
 - For KMS: KMS key permissions
+- AWSSDK.S3 package (included)
+- AWS Account or S3-compatible service
+- For Transfer Acceleration: Enabled on bucket
 
 ## 📚 Documentation & Support
 
-- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
-- **AWS S3 Docs**: [Amazon S3 Documentation](https://docs.aws.amazon.com/s3/)
-- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
+- **AWS S3 Docs**: [Amazon S3 Documentation](https://docs.aws.amazon.com/s3)
 
 ## 📄 License
 

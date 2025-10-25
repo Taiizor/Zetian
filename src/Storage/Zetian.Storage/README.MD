@@ -107,8 +107,6 @@ public abstract class BaseStorageConfiguration
 
 ```csharp
 using Zetian.Abstractions;
-using System.Threading;
-using System.Threading.Tasks;
 
 public class MyCustomMessageStore : IMessageStore
 {
@@ -159,7 +157,6 @@ public class MyCustomConfiguration : BaseStorageConfiguration
 using Zetian.Server;
 using Zetian.Storage.Extensions;
 using Microsoft.Extensions.Logging;
-using System;
 
 public static class MyCustomStorageExtensions
 {
@@ -272,26 +269,6 @@ protected async Task<T> ExecuteWithRetryAsync<T>(
 - **Compression** - Enable for large message bodies
 - **Indexing** - Create appropriate indexes for queries
 - **Batch Operations** - Process multiple messages in batches
-
-## 📊 Message Model
-
-```csharp
-public class SmtpMessage
-{
-    public string Id { get; set; }
-    public string From { get; set; }
-    public List<string> To { get; set; }
-    public List<string> Cc { get; set; }
-    public List<string> Bcc { get; set; }
-    public string Subject { get; set; }
-    public string Body { get; set; }
-    public Dictionary<string, string> Headers { get; set; }
-    public List<SmtpAttachment> Attachments { get; set; }
-    public DateTime ReceivedDate { get; set; }
-    public long Size { get; set; }
-    public string RemoteIP { get; set; }
-}
-```
 
 ## 📋 Requirements
 

@@ -276,14 +276,193 @@ const apiCategories = [
         name: 'FileMessageStore',
         description: 'Saving messages to file system',
         properties: ['Directory', 'CreateDateFolders'],
-        methods: ['SaveAsync()'],
+        methods: ['SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'],
         events: []
       },
       {
         name: 'NullMessageStore',
         description: 'Null store that does not save messages',
         properties: [],
-        methods: ['SaveAsync()'],
+        methods: ['SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'BaseStorageConfiguration',
+        description: 'Base configuration for all storage providers',
+        properties: [
+          'MaxMessageSizeMB',
+          'CompressMessageBody',
+          'CompressionThresholdKB',
+          'EnableRetry',
+          'MaxRetryAttempts',
+          'RetryDelayMs',
+          'ConnectionTimeoutSeconds',
+          'LogErrors',
+          'Logger'
+        ],
+        methods: ['Validate()'],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Storage Providers',
+    icon: Database,
+    namespace: 'Zetian.Storage.Providers',
+    items: [
+      {
+        name: 'SqlServerMessageStore',
+        description: 'SQL Server and Azure SQL Database storage provider',
+        properties: ['ConnectionString', 'Configuration'],
+        methods: [
+          'SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'SqlServerStorageConfiguration',
+        description: 'Configuration for SQL Server storage',
+        properties: [
+          'TableName',
+          'SchemaName',
+          'AutoCreateTable',
+          'StoreAttachmentsSeparately',
+          'AttachmentsTableName',
+          'CommandTimeoutSeconds',
+          'BulkCopyBatchSize'
+        ],
+        methods: ['Validate()', 'GetFullTableName()', 'GetAttachmentsTableName()'],
+        events: []
+      },
+      {
+        name: 'PostgreSqlMessageStore',
+        description: 'PostgreSQL storage provider with JSONB support',
+        properties: ['ConnectionString', 'Configuration'],
+        methods: [
+          'SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'PostgreSqlStorageConfiguration',
+        description: 'Configuration for PostgreSQL storage',
+        properties: [
+          'TableName',
+          'SchemaName',
+          'AutoCreateTable',
+          'UseJsonbForHeaders',
+          'EnablePartitioning',
+          'PartitionInterval',
+          'CreateIndexes',
+          'RetentionMonths'
+        ],
+        methods: ['Validate()', 'GetFullTableName()', 'GetPartitionName(DateTime)'],
+        events: []
+      },
+      {
+        name: 'MongoDbMessageStore',
+        description: 'MongoDB NoSQL storage provider with GridFS support',
+        properties: ['ConnectionString', 'DatabaseName', 'Configuration'],
+        methods: [
+          'SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'MongoDbStorageConfiguration',
+        description: 'Configuration for MongoDB storage',
+        properties: [
+          'CollectionName',
+          'GridFsBucketName',
+          'UseGridFsForLargeMessages',
+          'GridFsThresholdMB',
+          'AutoCreateIndexes',
+          'EnableTTL',
+          'TTLDays',
+          'ShardKeyField'
+        ],
+        methods: ['Validate()', 'ShouldUseGridFS(long sizeInBytes)'],
+        events: []
+      },
+      {
+        name: 'RedisMessageStore',
+        description: 'Redis in-memory cache storage provider',
+        properties: ['ConnectionString', 'Configuration', 'ConnectionMultiplexer'],
+        methods: [
+          'SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'RedisStorageConfiguration',
+        description: 'Configuration for Redis storage',
+        properties: [
+          'DatabaseNumber',
+          'KeyPrefix',
+          'MessageTTLSeconds',
+          'UseChunking',
+          'ChunkSizeKB',
+          'UseCompression',
+          'EnablePubSub',
+          'PubSubChannel',
+          'UseStreams',
+          'StreamName'
+        ],
+        methods: ['Validate()', 'GetMessageKey(string messageId)', 'GetChunkKey(string messageId, int chunkIndex)'],
+        events: []
+      },
+      {
+        name: 'S3MessageStore',
+        description: 'Amazon S3 and S3-compatible storage provider',
+        properties: ['AccessKeyId', 'SecretAccessKey', 'BucketName', 'Configuration', 'S3Client'],
+        methods: [
+          'SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'S3StorageConfiguration',
+        description: 'Configuration for S3 storage',
+        properties: [
+          'Region',
+          'ServiceUrl',
+          'KeyPrefix',
+          'StorageClass',
+          'EnableServerSideEncryption',
+          'KmsKeyId',
+          'EnableVersioning',
+          'UseTransferAcceleration',
+          'TransitionToIADays',
+          'TransitionToGlacierDays',
+          'ForcePathStyle'
+        ],
+        methods: ['Validate()', 'GetObjectKey(string messageId)', 'GetS3Config()'],
+        events: []
+      },
+      {
+        name: 'AzureBlobMessageStore',
+        description: 'Azure Blob Storage provider with Azure AD support',
+        properties: ['ConnectionString', 'Configuration', 'BlobServiceClient', 'ContainerClient'],
+        methods: [
+          'SaveAsync(ISmtpSession, ISmtpMessage, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'AzureBlobStorageConfiguration',
+        description: 'Configuration for Azure Blob storage',
+        properties: [
+          'ContainerName',
+          'StorageAccountName',
+          'UseAzureAdAuthentication',
+          'AccessTier',
+          'EnableSoftDelete',
+          'SoftDeleteRetentionDays',
+          'EnableVersioning',
+          'UseHierarchicalNamespace',
+          'BlobPrefix'
+        ],
+        methods: ['Validate()', 'GetBlobName(string messageId)', 'GetServiceClient()'],
         events: []
       }
     ]
@@ -418,6 +597,30 @@ const apiCategories = [
           'WithRecipientDomainBlacklist(params string[] domains)'
         ],
         events: []
+      },
+      {
+        name: 'StorageBuilderExtensions',
+        description: 'Extension methods for storage providers',
+        properties: [],
+        methods: [
+          'WithSqlServerStorage(string connectionString)',
+          'WithSqlServerStorage(string connectionString, Action<SqlServerStorageConfiguration> configure)',
+          'WithPostgreSqlStorage(string connectionString)',
+          'WithPostgreSqlStorage(string connectionString, Action<PostgreSqlStorageConfiguration> configure)',
+          'WithMongoDbStorage(string connectionString, string databaseName)',
+          'WithMongoDbStorage(string connectionString, string databaseName, Action<MongoDbStorageConfiguration> configure)',
+          'WithRedisStorage(string connectionString)',
+          'WithRedisStorage(string connectionString, Action<RedisStorageConfiguration> configure)',
+          'WithS3Storage(string accessKeyId, string secretAccessKey, string bucketName)',
+          'WithS3Storage(string accessKeyId, string secretAccessKey, string bucketName, Action<S3StorageConfiguration> configure)',
+          'WithS3CompatibleStorage(string serviceUrl, string accessKeyId, string secretAccessKey, string bucketName)',
+          'WithS3CompatibleStorage(string serviceUrl, string accessKeyId, string secretAccessKey, string bucketName, Action<S3StorageConfiguration> configure)',
+          'WithAzureBlobStorage(string connectionString)',
+          'WithAzureBlobStorage(string connectionString, Action<AzureBlobStorageConfiguration> configure)',
+          'WithAzureBlobStorageAD(string storageAccountName)',
+          'WithAzureBlobStorageAD(string storageAccountName, Action<AzureBlobStorageConfiguration> configure)'
+        ],
+        events: []
       }
     ]
   },
@@ -505,6 +708,30 @@ const apiCategories = [
         methods: [],
         events: [],
         values: ['Connected', 'AwaitingCommand', 'ReceivingData', 'Closing']
+      },
+      {
+        name: 'PartitionInterval',
+        description: 'PostgreSQL table partition interval for storage',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Daily', 'Weekly', 'Monthly', 'Yearly']
+      },
+      {
+        name: 'BlobNamingFormat',
+        description: 'Azure Blob Storage blob naming format options',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Flat', 'DateHierarchy', 'YearMonth', 'DomainBased']
+      },
+      {
+        name: 'BlobAccessTier',
+        description: 'Azure Blob Storage access tier for cost optimization',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Hot', 'Cool', 'Archive']
       }
     ]
   },

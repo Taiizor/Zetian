@@ -135,7 +135,7 @@ namespace Zetian.Internal
                         }
                         else
                         {
-                            await SendResponseAsync(new SmtpResponse(451, "Requested action aborted: local error in processing")).ConfigureAwait(false);
+                            await SendResponseAsync(new SmtpResponse(421, "Command timeout")).ConfigureAwait(false);
                         }
                     }
                     catch (OperationCanceledException) when (connectionTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)

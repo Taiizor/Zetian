@@ -1,4 +1,4 @@
-# Zetian AOT Example
+# Zetian AOT Examples
 
 This example demonstrates how to use Zetian SMTP Server with Native AOT compilation (hybrid approach).
 

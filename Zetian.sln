@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.HealthCheck.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.HealthCheck.Examples", "examples\Zetian.HealthCheck.Examples\Zetian.HealthCheck.Examples.csproj", "{2FE5FDB6-73D0-36E6-0A5D-1176030BEBA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.AotExample", "examples\Zetian.AotExample\Zetian.AotExample.csproj", "{B017C8D0-33F6-ED83-D48E-6604A980A771}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.AotExamples", "examples\Zetian.AotExamples\Zetian.AotExamples.csproj", "{B017C8D0-33F6-ED83-D48E-6604A980A771}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Compare.Benchmarks", "benchmarks\Zetian.Compare.Benchmarks\Zetian.Compare.Benchmarks.csproj", "{1714FB89-C994-E927-2C2F-40CFF72C18CA}"
 EndProject

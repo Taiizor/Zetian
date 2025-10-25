@@ -4,7 +4,7 @@ using Zetian.HealthCheck.Options;
 using Zetian.HealthCheck.Services;
 using Zetian.Server;
 
-namespace Zetian.AotExample
+namespace Zetian.AotExamples
 {
     class Program
     {

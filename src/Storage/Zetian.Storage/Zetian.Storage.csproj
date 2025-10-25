@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
@@ -26,7 +26,7 @@
 
     <PropertyGroup>
         <ApplicationIcon>Resources\Zetian.ico</ApplicationIcon>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>Zetian.Storage</Title>

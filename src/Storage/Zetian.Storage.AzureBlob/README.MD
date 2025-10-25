@@ -1,40 +1,74 @@
-# Zetian.Storage.AzureBlob
+# Zetian.Storage.AzureBlob - Azure Cloud Storage
 
-Azure Blob Storage provider for Zetian SMTP Server.
+[![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Storage.AzureBlob.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Storage.AzureBlob)
+[![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Storage.AzureBlob?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Storage.AzureBlob)
+[![License](https://img.shields.io/github/license/Taiizor/Zetian.svg?label=License)](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
 
-## Installation
+Azure Blob Storage provider for Zetian SMTP Server. Provides enterprise-grade cloud storage with features including hierarchical namespace support, access tier management, soft delete capabilities, Azure AD authentication, lifecycle management, and built-in encryption. Perfect for organizations using Microsoft Azure requiring scalable, secure, and cost-effective message archival with seamless integration into Azure ecosystem.
+
+## ⚡ Features
+
+- ☁️ **Azure Native** - Full Azure Blob Storage integration
+- 🗂️ **Hierarchical Structure** - Organized folder-like storage
+- ❄️ **Access Tiers** - Hot, Cool, and Archive tier support
+- 🔐 **Azure AD Auth** - Managed identity and service principal
+- 🗑️ **Soft Delete** - Recover deleted messages
+- 📊 **Lifecycle Management** - Automatic tier transitions
+- 🔒 **Encryption** - At-rest and in-transit encryption
+- 📸 **Snapshots** - Point-in-time recovery
+- 🌍 **Geo-Redundancy** - Cross-region replication
+- 📈 **Analytics** - Storage analytics and metrics
+
+## 📦 Installation
 
 ```bash
+# Install SMTP Server and Storage Provider
+dotnet add package Zetian
 dotnet add package Zetian.Storage.AzureBlob
 ```
 
-## Configuration
+## 🚀 Quick Start
 
-### With Connection String
+### Basic Configuration
 
 ```csharp
+using Zetian.Server;
 using Zetian.Storage.AzureBlob.Extensions;
 
+// Configure with connection string
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithAzureBlobStorage(
-        "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net",
-        config =>
-        {
-            config.ContainerName = "smtp-messages";
-            config.NamingFormat = BlobNamingFormat.DateHierarchy;
-            config.AccessTier = BlobAccessTier.Hot;
-            config.CompressMessageBody = true;
-            config.StoreMetadataAsBlobProperties = true;
-            config.EnableSoftDelete = true;
-            config.SoftDeleteRetentionDays = 7;
-        })
+    .WithAzureBlobStorage("DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net")
+    .Build();
+
+await server.StartAsync();
+```
+
+### Advanced Configuration
+
+```csharp
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithAzureBlobStorage(config =>
+    {
+        config.ConnectionString = "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net";
+        config.ContainerName = "smtp-messages";
+        config.NamingFormat = BlobNamingFormat.DateHierarchy;
+        config.AccessTier = BlobAccessTier.Hot;
+        config.CompressMessageBody = true;
+        config.StoreMetadataAsBlobProperties = true;
+        config.EnableSoftDelete = true;
+        config.SoftDeleteRetentionDays = 7;
+        config.EnableVersioning = true;
+        config.MaxMessageSizeMB = 100;
+    })
     .Build();
 ```
 
-### With Azure AD Authentication
+### Azure AD Authentication
 
 ```csharp
+// Using Managed Identity
 var server = new SmtpServerBuilder()
     .Port(25)
     .WithAzureBlobStorageAD(
@@ -42,120 +76,306 @@ var server = new SmtpServerBuilder()
         config =>
         {
             config.ContainerName = "email-archive";
+            config.UseManagedIdentity = true;
             config.NamingFormat = BlobNamingFormat.YearMonth;
             config.AccessTier = BlobAccessTier.Cool;
         })
     .Build();
 ```
 
-## Features
-
-- **Azure AD authentication** - Secure authentication without connection strings
-- **Automatic container creation** - Containers created automatically if needed
-- **Hierarchical storage** - Organize messages by date or domain
-- **Access tier management** - Hot, Cool, or Archive tiers
-- **Soft delete** - Recover accidentally deleted messages
-- **Metadata storage** - Store message metadata as blob properties
-- **Message compression** - Optional GZIP compression
-- **Blob tagging** - Tag blobs for easy searching
-
-## Configuration Options
+## 🛠️ Configuration Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| ConnectionString | string | - | Azure Storage connection string |
-| ContainerName | string | "smtp-messages" | Container name for messages |
-| UseAzureAdAuthentication | bool | false | Use Azure AD authentication |
-| StorageAccountName | string | - | Storage account name (for Azure AD) |
-| AutoCreateContainer | bool | true | Create container if it doesn't exist |
-| NamingFormat | enum | DateHierarchy | Blob naming strategy |
-| AccessTier | enum | Hot | Storage access tier |
-| StoreMetadataAsBlobProperties | bool | true | Store metadata as blob properties |
-| EnableSoftDelete | bool | false | Enable soft delete feature |
-| SoftDeleteRetentionDays | int | 7 | Soft delete retention period |
-| CompressMessageBody | bool | false | Compress message bodies |
-| MaxMessageSizeMB | double | 100 | Maximum message size in MB |
+| `ConnectionString` | string | - | Azure Storage connection string |
+| `StorageAccountName` | string | - | Storage account name (for AD auth) |
+| `ContainerName` | string | "smtp-messages" | Container name for messages |
+| `NamingFormat` | enum | DateHierarchy | Blob naming strategy |
+| `BlobPrefix` | string | "messages/" | Prefix for all blobs |
+| `AccessTier` | enum | Hot | Default blob access tier |
+| `CompressMessageBody` | bool | false | Compress message bodies |
+| `StoreMetadataAsBlobProperties` | bool | true | Store metadata as blob properties |
+| `EnableSoftDelete` | bool | false | Enable soft delete feature |
+| `SoftDeleteRetentionDays` | int | 7 | Days to retain deleted blobs |
+| `EnableVersioning` | bool | false | Enable blob versioning |
+| `UseHierarchicalNamespace` | bool | false | Use Data Lake Gen2 features |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `UseManagedIdentity` | bool | false | Use Azure Managed Identity |
+| `EnableRetry` | bool | true | Enable retry logic |
+| `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
 
-## Naming Formats
+## 🎯 Usage Examples
 
-### Flat
-All messages stored in container root:
-```
-message-123.eml
-message-456.eml
-```
+### Connection Options
 
-### DateHierarchy (Default)
-Organized by date:
-```
-2024/01/15/message-123.eml
-2024/01/15/message-456.eml
-```
-
-### YearMonth
-Organized by year and month:
-```
-2024-01/message-123.eml
-2024-01/message-456.eml
-```
-
-### DomainBased
-Organized by sender domain:
-```
-messages/message-123.eml
-messages/message-456.eml
-```
-
-## Access Tiers
-
-- **Hot**: Optimized for data that is accessed frequently
-- **Cool**: Optimized for data that is infrequently accessed and stored for at least 30 days
-- **Archive**: Optimized for data that is rarely accessed and stored for at least 180 days
-
-## Metadata and Tags
-
-When `StoreMetadataAsBlobProperties` is enabled:
-- Message metadata is stored as blob properties
-- Up to 10 tags are added for indexing
-- Tags can be used for searching and filtering
-
-## Soft Delete
-
-When enabled:
-- Deleted blobs are retained for the specified period
-- Deleted blobs can be recovered within the retention period
-- Requires appropriate permissions on the storage account
-
-## Authentication
-
-### Connection String
-Traditional authentication using storage account key:
 ```csharp
-.WithAzureBlobStorage("DefaultEndpointsProtocol=https;AccountName=...")
+// Connection string with SAS token
+.WithAzureBlobStorage(
+    "BlobEndpoint=https://myaccount.blob.core.windows.net/;" +
+    "SharedAccessSignature=sv=2020-08-04&ss=b&srt=sco&sp=rwdlacx&se=2024-12-31")
+
+// Emulator for local development
+.WithAzureBlobStorage("UseDevelopmentStorage=true")
+
+// Azure Government Cloud
+.WithAzureBlobStorage(
+    "DefaultEndpointsProtocol=https;AccountName=myaccount;" +
+    "AccountKey=mykey;EndpointSuffix=core.usgovcloudapi.net")
 ```
 
-### Azure AD
-Modern authentication using Azure Active Directory:
+### Blob Naming Strategies
+
 ```csharp
-.WithAzureBlobStorageAD("mystorageaccount")
+// Date hierarchy: /2024/01/15/msg-123.eml
+config.NamingFormat = BlobNamingFormat.DateHierarchy;
+
+// Year-Month: /2024-01/msg-123.eml
+config.NamingFormat = BlobNamingFormat.YearMonth;
+
+// Flat structure: /msg-123.eml
+config.NamingFormat = BlobNamingFormat.Flat;
+
+// Custom format
+config.CustomNamingFunction = (messageId, date) => 
+    $"{date:yyyy/MM/dd}/{messageId}.eml";
 ```
 
-Requires:
-- Azure.Identity credential setup
-- Appropriate RBAC permissions (Storage Blob Data Contributor)
+## 🔐 Authentication Methods
 
-## Performance Considerations
+### Azure AD with Managed Identity
 
-- **Compression**: Reduces storage costs but adds CPU overhead
-- **Access Tier**: Choose based on access patterns
-- **Metadata**: Blob properties are limited in size
-- **Container size**: No practical limit on container size
+```csharp
+// System-assigned managed identity
+.WithAzureBlobStorageAD("mystorageaccount", config =>
+{
+    config.UseManagedIdentity = true;
+})
 
-## Requirements
+// User-assigned managed identity
+.WithAzureBlobStorageAD("mystorageaccount", config =>
+{
+    config.UseManagedIdentity = true;
+    config.ManagedIdentityClientId = "client-id";
+})
+```
 
-- Azure Storage Account
-- .NET 6.0 or later
+### Service Principal
 
-## License
+```csharp
+.WithAzureBlobStorageAD("mystorageaccount", config =>
+{
+    config.TenantId = "tenant-id";
+    config.ClientId = "client-id";
+    config.ClientSecret = "client-secret";
+})
+```
 
-MIT
+## 📊 Lifecycle Management
+
+```csharp
+// Configure automatic lifecycle policies
+config.LifecyclePolicies = new[]
+{
+    new LifecyclePolicy
+    {
+        Name = "MoveToCool",
+        DaysAfterCreation = 30,
+        Action = LifecycleAction.TierToCool
+    },
+    new LifecyclePolicy
+    {
+        Name = "MoveToArchive",
+        DaysAfterCreation = 90,
+        Action = LifecycleAction.TierToArchive
+    },
+    new LifecyclePolicy
+    {
+        Name = "DeleteOld",
+        DaysAfterCreation = 365,
+        Action = LifecycleAction.Delete
+    }
+};
+```
+
+## 🗑️ Soft Delete & Recovery
+
+```csharp
+// Enable soft delete
+config.EnableSoftDelete = true;
+config.SoftDeleteRetentionDays = 30;
+
+// Recover deleted blob
+foreach (var blob in containerClient.GetBlobs(states: BlobStates.Deleted))
+{
+    var blobClient = containerClient.GetBlobClient(blob.Name);
+    await blobClient.UndeleteAsync();
+}
+```
+
+## 📸 Snapshots & Versioning
+
+```csharp
+// Enable versioning
+config.EnableVersioning = true;
+
+// Create snapshot
+var snapshotResponse = await blobClient.CreateSnapshotAsync();
+var snapshotId = snapshotResponse.Value.Snapshot;
+
+// Read from snapshot
+var snapshotClient = blobClient.WithSnapshot(snapshotId);
+var content = await snapshotClient.DownloadContentAsync();
+```
+
+## 🌍 Geo-Redundancy
+
+```csharp
+// Read from secondary region (RA-GRS/RA-GZRS)
+config.ConnectionString = 
+    "DefaultEndpointsProtocol=https;AccountName=myaccount;" +
+    "AccountKey=mykey;EndpointSuffix=core.windows.net;" +
+    "BlobEndpoint=https://myaccount-secondary.blob.core.windows.net/";
+```
+
+## 📈 Monitoring & Analytics
+
+```csharp
+// Enable storage analytics
+var serviceProperties = new BlobServiceProperties
+{
+    Logging = new BlobAnalyticsLogging
+    {
+        Read = true,
+        Write = true,
+        Delete = true,
+        RetentionPolicy = new BlobRetentionPolicy
+        {
+            Enabled = true,
+            Days = 7
+        }
+    }
+};
+
+await blobServiceClient.SetPropertiesAsync(serviceProperties);
+```
+
+## 🔒 Security Features
+
+### Encryption
+
+```csharp
+// Customer-managed keys
+config.EncryptionScope = "my-encryption-scope";
+
+// Client-side encryption
+var encryptionOptions = new ClientSideEncryptionOptions(
+    ClientSideEncryptionVersion.V2_0)
+{
+    KeyEncryptionKey = keyEncryptionKey,
+    KeyResolver = keyResolver,
+    KeyWrapAlgorithm = "RSA-OAEP"
+};
+```
+
+### Private Endpoints
+
+```csharp
+// Connect via private endpoint
+config.ConnectionString = 
+    "DefaultEndpointsProtocol=https;" +
+    "AccountName=myaccount;" +
+    "AccountKey=mykey;" +
+    "BlobEndpoint=https://myaccount.privatelink.blob.core.windows.net/";
+```
+
+## 🚀 Performance Optimization
+
+### Parallel Upload
+
+```csharp
+// Configure parallel upload
+var uploadOptions = new BlobUploadOptions
+{
+    TransferOptions = new StorageTransferOptions
+    {
+        MaximumConcurrency = 8,
+        InitialTransferSize = 256 * 1024,
+        MaximumTransferSize = 4 * 1024 * 1024
+    }
+};
+
+await blobClient.UploadAsync(stream, uploadOptions);
+```
+
+### Batch Operations
+
+```csharp
+// Batch delete
+var batchClient = blobServiceClient.GetBlobBatchClient();
+var batch = batchClient.CreateBatch();
+
+foreach (var blobName in blobsToDelete)
+{
+    batch.DeleteBlob(containerName, blobName);
+}
+
+await batchClient.SubmitBatchAsync(batch);
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Authentication Failed**
+```csharp
+// Check Azure AD permissions
+// Storage Blob Data Contributor role required
+// Verify tenant ID and client credentials
+```
+
+**Request Rate Exceeded**
+```csharp
+// Implement exponential backoff
+config.RetryOptions = new RetryOptions
+{
+    MaxRetries = 5,
+    Delay = TimeSpan.FromSeconds(1),
+    MaxDelay = TimeSpan.FromSeconds(30),
+    Mode = RetryMode.Exponential
+};
+```
+
+**Archive Tier Access**
+```csharp
+// Rehydrate before access
+if (blobProperties.AccessTier == AccessTier.Archive)
+{
+    await blobClient.SetAccessTierAsync(AccessTier.Hot);
+    // Wait for rehydration (can take hours)
+}
+```
+
+## 📋 Requirements
+
+- Azure Storage account (General Purpose v2 recommended)
+- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- Zetian SMTP Server package
+- Azure.Storage.Blobs package (included)
+- For Data Lake: Hierarchical namespace enabled
+- For managed identity: Azure AD configuration
+
+## 📚 Documentation & Support
+
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
+- **Azure Docs**: [Azure Blob Storage Documentation](https://docs.microsoft.com/azure/storage/blobs/)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
+- **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+
+## 📄 License
+
+MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
+
+---
+
+**Built with ❤️ for the .NET community**

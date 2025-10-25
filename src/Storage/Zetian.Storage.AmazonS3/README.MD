@@ -52,23 +52,24 @@ await server.StartAsync();
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithS3Storage(config =>
-    {
-        config.AccessKeyId = "AKIAIOSFODNN7EXAMPLE";
-        config.SecretAccessKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-        config.BucketName = "my-smtp-bucket";
-        config.Region = "us-west-2";
-        config.KeyPrefix = "messages/";
-        config.NamingFormat = S3NamingFormat.DateHierarchy;
-        config.StorageClass = S3StorageClass.Standard;
-        config.EnableServerSideEncryption = true;
-        config.CompressMessageBody = true;
-        config.EnableVersioning = true;
-        config.EnableLifecycleRules = true;
-        config.TransitionToIADays = 30;
-        config.TransitionToGlacierDays = 90;
-        config.ExpirationDays = 365;
-    })
+    .WithS3Storage(
+        "AKIAIOSFODNN7EXAMPLE",
+        "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        "my-smtp-bucket",
+        config =>
+        {
+            config.Region = "us-west-2";
+            config.KeyPrefix = "messages/";
+            config.NamingFormat = S3NamingFormat.DateHierarchy;
+            config.StorageClass = S3StorageClass.Standard;
+            config.EnableServerSideEncryption = true;
+            config.CompressMessageBody = true;
+            config.EnableVersioning = true;
+            config.EnableLifecycleRules = true;
+            config.TransitionToIADays = 30;
+            config.TransitionToGlacierDays = 90;
+            config.ExpirationDays = 365;
+        })
     .Build();
 ```
 
@@ -169,25 +170,25 @@ config.CustomNamingFunction = (messageId, date) =>
 ### IAM Roles (EC2/ECS/Lambda)
 
 ```csharp
-// Use instance/task role
-.WithS3Storage(config =>
-{
-    config.UseInstanceProfile = true;
-    config.BucketName = "my-smtp-bucket";
-    config.Region = "us-west-2";
-})
+// Use with IAM role (empty credentials)
+.WithS3Storage(
+    "",  // Empty access key for IAM role
+    "",  // Empty secret key for IAM role
+    "my-smtp-bucket",
+    config =>
+    {
+        config.Region = "us-west-2";
+    })
 ```
 
 ### AWS SSO/Identity Center
 
 ```csharp
-// Use AWS SSO credentials
-.WithS3Storage(config =>
-{
-    config.Profile = "my-sso-profile";
-    config.BucketName = "my-smtp-bucket";
-    config.Region = "us-west-2";
-})
+// With minimal configuration
+.WithS3Storage(
+    "AKIAIOSFODNN7EXAMPLE",
+    "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    "my-smtp-bucket")  // Uses default region and settings
 ```
 
 ## 🔀 S3-Compatible Services

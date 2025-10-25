@@ -38,7 +38,9 @@ using Zetian.Storage.MongoDB.Extensions;
 // Configure with connection string and database
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithMongoDbStorage("mongodb://localhost:27017", "smtp_database")
+    .WithMongoDbStorage(
+        "mongodb://localhost:27017",
+        "smtp_database")
     .Build();
 
 await server.StartAsync();
@@ -49,20 +51,21 @@ await server.StartAsync();
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithMongoDbStorage(config =>
-    {
-        config.ConnectionString = "mongodb://localhost:27017";
-        config.DatabaseName = "smtp_database";
-        config.CollectionName = "email_messages";
-        config.UseGridFsForLargeMessages = true;
-        config.GridFsThresholdMB = 5;
-        config.EnableTTL = true;
-        config.TTLDays = 30;
-        config.EnableSharding = true;
-        config.ShardKeyField = "received_date";
-        config.CompressMessageBody = true;
-        config.AutoCreateIndexes = true;
-    })
+    .WithMongoDbStorage(
+        "mongodb://localhost:27017",
+        "smtp_database",
+        config =>
+        {
+            config.CollectionName = "email_messages";
+            config.UseGridFsForLargeMessages = true;
+            config.GridFsThresholdMB = 5;
+            config.EnableTTL = true;
+            config.TTLDays = 30;
+            config.EnableSharding = true;
+            config.ShardKeyField = "received_date";
+            config.CompressMessageBody = true;
+            config.AutoCreateIndexes = true;
+        })
     .Build();
 ```
 
@@ -167,12 +170,15 @@ var server = new SmtpServerBuilder()
 
 ```csharp
 // Configure GridFS
-.WithMongoDbStorage(config =>
-{
-    config.UseGridFsForLargeMessages = true;
-    config.GridFsThresholdMB = 5; // Store messages > 5MB in GridFS
-    config.GridFsBucketName = "email_files";
-})
+.WithMongoDbStorage(
+    "mongodb://localhost:27017",
+    "smtp_database",
+    config =>
+    {
+        config.UseGridFsForLargeMessages = true;
+        config.GridFsThresholdMB = 5; // Store messages > 5MB in GridFS
+        config.GridFsBucketName = "email_files";
+    })
 
 // Retrieving messages with GridFS
 var message = await messageStore.GetMessageAsync("msg-123");
@@ -187,19 +193,24 @@ if (message.IsStoredInGridFs)
 
 ```csharp
 // Auto-delete messages after 30 days
-.WithMongoDbStorage(config =>
-{
-    config.EnableTTL = true;
-    config.TTLDays = 30;
-})
+.WithMongoDbStorage(
+    "mongodb://localhost:27017",
+    "smtp_database",
+    config =>
+    {
+        config.EnableTTL = true;
+        config.TTLDays = 30;
+    })
 
 // Different TTL strategies
-.WithMongoDbStorage(config =>
-{
-    config.EnableTTL = true;
-    config.TTLDays = 7;   // Delete after 1 week
-    config.TTLField = "receivedDate";  // TTL based on received date
-})
+.WithMongoDbStorage(
+    "mongodb://localhost:27017",
+    "smtp_database",
+    config =>
+    {
+        config.EnableTTL = true;
+        config.TTLDays = 7;   // Delete after 1 week
+    })
 ```
 
 ## 🔍 Querying Messages

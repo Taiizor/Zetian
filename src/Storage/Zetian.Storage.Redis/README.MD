@@ -49,19 +49,20 @@ await server.StartAsync();
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithRedisStorage(config =>
-    {
-        config.ConnectionString = "localhost:6379,password=mypassword";
-        config.DatabaseNumber = 1;
-        config.KeyPrefix = "smtp:msg:";
-        config.MessageTTLSeconds = 3600; // 1 hour cache
-        config.EnableChunking = true;
-        config.ChunkSizeKB = 64;
-        config.UseRedisStreams = true;
-        config.EnablePubSub = true;
-        config.MaintainIndex = true;
-        config.CompressMessageBody = true;
-    })
+    .WithRedisStorage(
+        "localhost:6379,password=mypassword",
+        config =>
+        {
+            config.DatabaseNumber = 1;
+            config.KeyPrefix = "smtp:msg:";
+            config.MessageTTLSeconds = 3600; // 1 hour cache
+            config.EnableChunking = true;
+            config.ChunkSizeKB = 64;
+            config.UseRedisStreams = true;
+            config.EnablePubSub = true;
+            config.MaintainIndex = true;
+            config.CompressMessageBody = true;
+        })
     .Build();
 ```
 

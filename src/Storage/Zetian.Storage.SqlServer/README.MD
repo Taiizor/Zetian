@@ -49,18 +49,19 @@ await server.StartAsync();
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithSqlServerStorage(config =>
-    {
-        config.ConnectionString = "Server=localhost;Database=SmtpDb;Trusted_Connection=true;";
-        config.SchemaName = "mail";
-        config.TableName = "Messages";
-        config.CompressMessageBody = true;
-        config.MaxMessageSizeMB = 50;
-        config.StoreAttachmentsSeparately = true;
-        config.EnableRetry = true;
-        config.MaxRetryAttempts = 3;
-        config.ConnectionTimeoutSeconds = 30;
-    })
+    .WithSqlServerStorage(
+        "Server=localhost;Database=SmtpStorage;Integrated Security=true;",
+        config =>
+        {
+            config.TableName = "SmtpMessages";
+            config.AttachmentsTableName = "SmtpAttachments";
+            config.AutoCreateTables = true;
+            config.EnableCompression = true;
+            config.MaxMessageSizeMB = 50;
+            config.UseJsonHeaders = true;
+            config.EnableRetry = true;
+            config.MaxRetryAttempts = 3;
+        })
     .Build();
 ```
 
@@ -138,16 +139,24 @@ CREATE TABLE [mail].[Attachments] (
 
 ```csharp
 // Windows Authentication
-.WithSqlServerStorage("Server=localhost;Database=SmtpDb;Trusted_Connection=true;")
+.WithSqlServerStorage(
+    "Server=localhost;Database=SmtpDb;Trusted_Connection=true;",
+    config => { })
 
 // SQL Server Authentication
-.WithSqlServerStorage("Server=localhost;Database=SmtpDb;User Id=sa;Password=YourPassword;")
+.WithSqlServerStorage(
+    "Server=localhost;Database=SmtpDb;User Id=sa;Password=YourPassword;",
+    config => { })
 
 // Azure SQL Database
-.WithSqlServerStorage("Server=tcp:myserver.database.windows.net,1433;Database=SmtpDb;User Id=admin;Password=YourPassword;Encrypt=True;")
+.WithSqlServerStorage(
+    "Server=tcp:myserver.database.windows.net,1433;Database=SmtpDb;User Id=admin;Password=YourPassword;Encrypt=True;",
+    config => { })
 
 // With Connection Pooling
-.WithSqlServerStorage("Server=localhost;Database=SmtpDb;Trusted_Connection=true;Min Pool Size=5;Max Pool Size=100;")
+.WithSqlServerStorage(
+    "Server=localhost;Database=SmtpDb;Trusted_Connection=true;Min Pool Size=5;Max Pool Size=100;",
+    config => { })
 ```
 
 ### Retrieving Messages
@@ -177,14 +186,15 @@ var exists = await messageStore.MessageExistsAsync("msg-123");
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithSqlServerStorage(config =>
-    {
-        config.ConnectionString = connectionString;
-        config.MaxMessageSizeMB = 100; // Allow up to 100MB
-        config.CompressMessageBody = true; // Enable compression
-        config.StoreAttachmentsSeparately = true; // Store attachments separately
-        config.BulkCopyTimeoutSeconds = 120; // Increase timeout for large messages
-    })
+    .WithSqlServerStorage(
+        connectionString,
+        config =>
+        {
+            config.MaxMessageSizeMB = 100; // Allow up to 100MB
+            config.EnableCompression = true; // Enable compression
+            config.StoreAttachmentsSeparately = true; // Store attachments separately
+            config.BulkCopyTimeoutSeconds = 120; // Increase timeout for large messages
+        })
     .Build();
 ```
 
@@ -194,11 +204,13 @@ var server = new SmtpServerBuilder()
 
 ```csharp
 // Optimize connection pooling
-config.ConnectionString = "Server=localhost;Database=SmtpDb;" +
+.WithSqlServerStorage(
+    "Server=localhost;Database=SmtpDb;" +
     "Trusted_Connection=true;" +
     "Min Pool Size=10;" +
     "Max Pool Size=100;" +
-    "Connect Timeout=30;";
+    "Connect Timeout=30;",
+    config => { })
 ```
 
 ### Index Recommendations
@@ -234,34 +246,34 @@ UPDATE STATISTICS [mail].[Messages];
 ### Connection Configuration
 
 ```csharp
-.WithSqlServerStorage(config =>
-{
-    config.ConnectionString = 
-        "Server=tcp:myserver.database.windows.net,1433;" +
-        "Initial Catalog=SmtpDb;" +
-        "Persist Security Info=False;" +
-        "User ID=admin;" +
-        "Password={your_password};" +
-        "MultipleActiveResultSets=False;" +
-        "Encrypt=True;" +
-        "TrustServerCertificate=False;" +
-        "Connection Timeout=30;";
-    
-    // Azure-optimized settings
-    config.EnableRetry = true;
-    config.MaxRetryAttempts = 5; // More retries for cloud
-    config.ConnectionTimeoutSeconds = 60; // Longer timeout
-})
+.WithSqlServerStorage(
+    "Server=tcp:myserver.database.windows.net,1433;" +
+    "Initial Catalog=SmtpDb;" +
+    "Persist Security Info=False;" +
+    "User ID=admin;" +
+    "Password={your_password};" +
+    "MultipleActiveResultSets=False;" +
+    "Encrypt=True;" +
+    "TrustServerCertificate=False;" +
+    "Connection Timeout=30;",
+    config =>
+    {
+        // Azure-optimized settings
+        config.EnableRetry = true;
+        config.MaxRetryAttempts = 5; // More retries for cloud
+        config.ConnectionTimeoutSeconds = 60; // Longer timeout
+    })
 ```
 
 ### Using Azure AD Authentication
 
 ```csharp
 // Using Azure AD Managed Identity
-config.ConnectionString = 
+.WithSqlServerStorage(
     "Server=tcp:myserver.database.windows.net,1433;" +
     "Authentication=Active Directory Managed Identity;" +
-    "Database=SmtpDb;";
+    "Database=SmtpDb;",
+    config => { })
 ```
 
 ## 🔒 Security Best Practices
@@ -303,11 +315,12 @@ services.AddLogging(builder =>
 });
 
 // Configure storage with logging
-.WithSqlServerStorage(config =>
-{
-    config.ConnectionString = connectionString;
-    config.LogErrors = true;
-})
+.WithSqlServerStorage(
+    connectionString,
+    config =>
+    {
+        config.LogErrors = true;
+    })
 ```
 
 ### Performance Metrics

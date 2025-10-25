@@ -49,26 +49,26 @@ await server.StartAsync();
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithAzureBlobStorage(config =>
-    {
-        config.ConnectionString = "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net";
-        config.ContainerName = "smtp-messages";
-        config.NamingFormat = BlobNamingFormat.DateHierarchy;
-        config.AccessTier = BlobAccessTier.Hot;
-        config.CompressMessageBody = true;
-        config.StoreMetadataAsBlobProperties = true;
-        config.EnableSoftDelete = true;
-        config.SoftDeleteRetentionDays = 7;
-        config.EnableVersioning = true;
-        config.MaxMessageSizeMB = 100;
-    })
+    .WithAzureBlobStorage(
+        "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net",
+        config =>
+        {
+            config.ContainerName = "smtp-messages";
+            config.NamingFormat = BlobNamingFormat.DateHierarchy;
+            config.AccessTier = BlobAccessTier.Hot;
+            config.CompressMessageBody = true;
+            config.StoreMetadataAsBlobProperties = true;
+            config.EnableSoftDelete = true;
+            config.SoftDeleteRetentionDays = 7;
+            config.MaxMessageSizeMB = 100;
+        })
     .Build();
 ```
 
 ### Azure AD Authentication
 
 ```csharp
-// Using Managed Identity
+// Using Azure AD Authentication
 var server = new SmtpServerBuilder()
     .Port(25)
     .WithAzureBlobStorageAD(
@@ -76,7 +76,6 @@ var server = new SmtpServerBuilder()
         config =>
         {
             config.ContainerName = "email-archive";
-            config.UseManagedIdentity = true;
             config.NamingFormat = BlobNamingFormat.YearMonth;
             config.AccessTier = BlobAccessTier.Cool;
         })
@@ -145,29 +144,32 @@ config.CustomNamingFunction = (messageId, date) =>
 ### Azure AD with Managed Identity
 
 ```csharp
-// System-assigned managed identity
+// Azure AD authentication (uses DefaultAzureCredential)
 .WithAzureBlobStorageAD("mystorageaccount", config =>
 {
-    config.UseManagedIdentity = true;
+    config.ContainerName = "smtp-messages";
+    config.NamingFormat = BlobNamingFormat.DateHierarchy;
 })
 
-// User-assigned managed identity
+// With specific configuration
 .WithAzureBlobStorageAD("mystorageaccount", config =>
 {
-    config.UseManagedIdentity = true;
-    config.ManagedIdentityClientId = "client-id";
+    config.ContainerName = "email-archive";
+    config.AccessTier = BlobAccessTier.Cool;
+    config.EnableSoftDelete = true;
 })
 ```
 
-### Service Principal
+### Connection String with Options
 
 ```csharp
-.WithAzureBlobStorageAD("mystorageaccount", config =>
-{
-    config.TenantId = "tenant-id";
-    config.ClientId = "client-id";
-    config.ClientSecret = "client-secret";
-})
+.WithAzureBlobStorage(
+    "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey",
+    config =>
+    {
+        config.ContainerName = "custom-container";
+        config.NamingFormat = BlobNamingFormat.Flat;
+    })
 ```
 
 ## 📊 Lifecycle Management

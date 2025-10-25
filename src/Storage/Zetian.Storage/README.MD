@@ -72,13 +72,13 @@ The main interface all storage providers must implement:
 ```csharp
 public interface IMessageStore
 {
-    Task<string> SaveMessageAsync(SmtpMessage message, CancellationToken cancellationToken = default);
-    Task<SmtpMessage?> GetMessageAsync(string messageId, CancellationToken cancellationToken = default);
-    Task<bool> DeleteMessageAsync(string messageId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<MessageInfo>> ListMessagesAsync(MessageFilter? filter = null, CancellationToken cancellationToken = default);
-    Task<long> GetMessageCountAsync(MessageFilter? filter = null, CancellationToken cancellationToken = default);
-    Task<bool> MessageExistsAsync(string messageId, CancellationToken cancellationToken = default);
-    Task InitializeAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Save the given message to the underlying storage system
+    /// </summary>
+    Task<bool> SaveAsync(
+        ISmtpSession session,
+        ISmtpMessage message,
+        CancellationToken cancellationToken = default);
 }
 ```
 
@@ -106,6 +106,8 @@ public abstract class BaseStorageConfiguration
 
 ```csharp
 using Zetian.Abstractions;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class MyCustomMessageStore : IMessageStore
 {
@@ -116,18 +118,23 @@ public class MyCustomMessageStore : IMessageStore
         _config = config;
     }
     
-    public async Task<string> SaveMessageAsync(SmtpMessage message, CancellationToken cancellationToken = default)
+    public async Task<bool> SaveAsync(
+        ISmtpSession session,
+        ISmtpMessage message,
+        CancellationToken cancellationToken = default)
     {
         // Your implementation
-        var messageId = Guid.NewGuid().ToString();
-        
-        // Save message to your storage
-        await SaveToCustomStorageAsync(messageId, message);
-        
-        return messageId;
+        try
+        {
+            // Save message to your storage
+            await SaveToCustomStorageAsync(session, message);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
-    
-    // Implement other methods...
 }
 ```
 
@@ -149,20 +156,29 @@ public class MyCustomConfiguration : BaseStorageConfiguration
 
 ```csharp
 using Zetian.Server;
+using Zetian.Storage.Extensions;
+using Microsoft.Extensions.Logging;
+using System;
 
 public static class MyCustomStorageExtensions
 {
     public static SmtpServerBuilder WithMyCustomStorage(
         this SmtpServerBuilder builder,
-        Action<MyCustomConfiguration> configure)
+        string connectionString,
+        Action<MyCustomConfiguration>? configure = null)
     {
-        var config = new MyCustomConfiguration();
-        configure(config);
+        var configuration = new MyCustomConfiguration
+        {
+            ConnectionString = connectionString
+        };
         
-        var store = new MyCustomMessageStore(config);
-        builder.UseMessageStore(store);
+        configure?.Invoke(configuration);
+        configuration.Validate();
         
-        return builder;
+        ILogger<MyCustomMessageStore>? logger = builder.GetLogger<MyCustomMessageStore>();
+        var store = new MyCustomMessageStore(configuration, logger);
+        
+        return builder.MessageStore(store);
     }
 }
 ```
@@ -172,11 +188,13 @@ public static class MyCustomStorageExtensions
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithMyCustomStorage(config =>
-    {
-        config.ConnectionString = "custom://localhost";
-        config.UseEncryption = true;
-    })
+    .WithMyCustomStorage(
+        "custom://localhost",
+        config =>
+        {
+            config.TableName = "EmailArchive";
+            config.UseEncryption = true;
+        })
     .Build();
 ```
 

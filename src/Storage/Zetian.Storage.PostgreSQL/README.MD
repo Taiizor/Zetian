@@ -49,19 +49,18 @@ await server.StartAsync();
 ```csharp
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithPostgreSqlStorage(config =>
-    {
-        config.ConnectionString = "Host=localhost;Database=smtp_db;Username=postgres;Password=secret";
-        config.SchemaName = "mail";
-        config.TableName = "messages";
-        config.UseJsonbForHeaders = true;
-        config.EnablePartitioning = true;
-        config.PartitionInterval = PartitionInterval.Monthly;
-        config.CreateIndexes = true;
-        config.CompressMessageBody = true;
-        config.MaxMessageSizeMB = 100;
-        config.EnableRetry = true;
-    })
+    .WithPostgreSqlStorage(
+        "Host=localhost;Database=smtp_storage;Username=postgres;Password=password;",
+        config =>
+        {
+            config.TableName = "smtp_messages";
+            config.SchemaName = "mail";
+            config.AutoCreateTables = true;
+            config.EnablePartitioning = true;
+            config.PartitioningStrategy = PartitioningStrategy.Monthly;
+            config.EnableCompression = true;
+            config.UseJsonbHeaders = true;
+        })
     .Build();
 ```
 
@@ -159,19 +158,24 @@ AND received_date > NOW() - INTERVAL '7 days';
 ### Table Partitioning
 
 ```csharp
-// Enable monthly partitioning
-.WithPostgreSqlStorage(config =>
-{
-    config.EnablePartitioning = true;
-    config.PartitionInterval = PartitionInterval.Monthly;
-})
+// Configure with partitioning
+.WithPostgreSqlStorage(
+    connectionString,
+    config =>
+    {
+        config.EnablePartitioning = true;
+        config.PartitioningStrategy = PartitioningStrategy.Monthly;
+        config.RetentionMonths = 6; // Keep 6 months of data
+    })
 
-// Enable daily partitioning for high volume
-.WithPostgreSqlStorage(config =>
-{
-    config.EnablePartitioning = true;
-    config.PartitionInterval = PartitionInterval.Daily;
-})
+// Use JSONB for headers
+.WithPostgreSqlStorage(
+    connectionString,
+    config =>
+    {
+        config.UseJsonbHeaders = true;
+        config.EnableGinIndex = true; // Create GIN index for JSONB
+    })
 ```
 
 ### Partition Management

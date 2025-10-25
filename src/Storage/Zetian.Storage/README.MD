@@ -52,12 +52,14 @@ using Zetian.Storage.SqlServer.Extensions;
 // Configure SMTP server with SQL Server storage
 var server = new SmtpServerBuilder()
     .Port(25)
-    .WithSqlServerStorage(config =>
-    {
-        config.ConnectionString = "Server=localhost;Database=SmtpStorage;...";
-        config.CompressMessageBody = true;
-        config.MaxMessageSizeMB = 25;
-    })
+    .WithSqlServerStorage(
+        "Server=localhost;Database=SmtpStorage;Integrated Security=true;",
+        config =>
+        {
+            config.MaxMessageSizeMB = 25;
+            config.AutoCreateTables = true;
+            config.EnableCompression = true;
+        })
     .Build();
 
 await server.StartAsync();

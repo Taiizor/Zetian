@@ -135,6 +135,9 @@ var server = new SmtpServerBuilder()
     .CommandTimeout(TimeSpan.FromSeconds(30))
     .DataTimeout(TimeSpan.FromMinutes(2))
     
+    // Retry Configuration
+    .MaxRetryCount(3)
+    
     // Logging
     .LoggerFactory(loggerFactory)
     .EnableVerboseLogging()
@@ -372,7 +375,8 @@ The `examples` directory contains comprehensive examples:
 5. **BasicExample** - Simple SMTP server without authentication
 6. **FullFeaturedExample** - Complete SMTP server with all features
 7. **CustomProcessingExample** - Custom message processing and filtering
-8. **ProtocolLevelFilteringExample** - Demonstrates the difference between protocol-level and event-based filtering
+8. **MaxRetryCountExample** - Demonstrates retry mechanism configuration
+9. **ProtocolLevelFilteringExample** - Demonstrates the difference between protocol-level and event-based filtering
 
 ## Performance
 

@@ -38,6 +38,7 @@ namespace Zetian.Internal
         private List<string>? _multipleRecipients; // Only allocate for multiple recipients
         private SmtpSessionState _state;
         private bool _disposed;
+        private int _errorCount; // Track consecutive errors for retry mechanism
 
         public SmtpSession(SmtpServer server, TcpClient client, SmtpServerConfiguration configuration, ILogger logger)
         {
@@ -55,6 +56,7 @@ namespace Zetian.Internal
             _singleRecipient = null;
             _multipleRecipients = null;
             _state = SmtpSessionState.Connected;
+            _errorCount = 0;
 
             MaxMessageSize = _configuration.MaxMessageSize;
             PipeliningEnabled = _configuration.EnablePipelining;
@@ -122,9 +124,19 @@ namespace Zetian.Internal
                     }
                     catch (TimeoutException tex)
                     {
-                        _logger.LogWarning("Session {SessionId}: Command timeout - {Message}", Id, tex.Message);
-                        await SendResponseAsync(new SmtpResponse(421, "Command timeout")).ConfigureAwait(false);
-                        break;
+                        _errorCount++;
+                        _logger.LogWarning("Session {SessionId}: Command timeout - {Message} (Retry {Count}/{Max})", Id, tex.Message, _errorCount, _configuration.MaxRetryCount);
+
+                        if (_errorCount >= _configuration.MaxRetryCount)
+                        {
+                            _logger.LogWarning("Session {SessionId}: Maximum retry count reached, closing session", Id);
+                            await SendResponseAsync(new SmtpResponse(421, "Too many errors, closing connection")).ConfigureAwait(false);
+                            break;
+                        }
+                        else
+                        {
+                            await SendResponseAsync(new SmtpResponse(451, "Requested action aborted: local error in processing")).ConfigureAwait(false);
+                        }
                     }
                     catch (OperationCanceledException) when (connectionTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
                     {
@@ -140,8 +152,19 @@ namespace Zetian.Internal
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error processing command");
-                        await SendResponseAsync(SmtpResponse.LocalError).ConfigureAwait(false);
+                        _errorCount++;
+                        _logger.LogError(ex, "Error processing command (Retry {Count}/{Max})", _errorCount, _configuration.MaxRetryCount);
+
+                        if (_errorCount >= _configuration.MaxRetryCount)
+                        {
+                            _logger.LogWarning("Session {SessionId}: Maximum retry count reached, closing session", Id);
+                            await SendResponseAsync(new SmtpResponse(421, "Too many errors, closing connection")).ConfigureAwait(false);
+                            break;
+                        }
+                        else
+                        {
+                            await SendResponseAsync(SmtpResponse.LocalError).ConfigureAwait(false);
+                        }
                     }
                 }
             }
@@ -166,6 +189,17 @@ namespace Zetian.Internal
         {
             if (!SmtpCommand.TryParse(commandLine, out SmtpCommand? command) || command == null)
             {
+                _errorCount++;
+                _logger.LogWarning("Session {SessionId}: Invalid command syntax (Retry {Count}/{Max})", Id, _errorCount, _configuration.MaxRetryCount);
+
+                if (_errorCount >= _configuration.MaxRetryCount)
+                {
+                    _logger.LogWarning("Session {SessionId}: Maximum retry count reached, closing session", Id);
+                    await SendResponseAsync(new SmtpResponse(421, "Too many errors, closing connection")).ConfigureAwait(false);
+                    _state = SmtpSessionState.Quit;
+                    return;
+                }
+
                 await SendResponseAsync(SmtpResponse.SyntaxError).ConfigureAwait(false);
                 return;
             }
@@ -174,50 +208,73 @@ namespace Zetian.Internal
             {
                 case SmtpCommand.Commands.HELO:
                     await ProcessHeloAsync(command).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.EHLO:
                     await ProcessEhloAsync(command).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.MAIL:
                     await ProcessMailFromAsync(command).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.RCPT:
                     await ProcessRcptToAsync(command).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.DATA:
                     await ProcessDataAsync(cancellationToken).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.RSET:
                     await ProcessRsetAsync().ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.QUIT:
                     await ProcessQuitAsync().ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.NOOP:
                     await SendResponseAsync(SmtpResponse.Ok).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.VRFY:
                     await SendResponseAsync(SmtpResponse.CannotVerifyUser).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.STARTTLS:
                     await ProcessStartTlsAsync(cancellationToken).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 case SmtpCommand.Commands.AUTH:
                     await ProcessAuthAsync(command, cancellationToken).ConfigureAwait(false);
+                    _errorCount = 0; // Reset on successful command
                     break;
 
                 default:
-                    await SendResponseAsync(SmtpResponse.CommandNotImplemented).ConfigureAwait(false);
+                    _errorCount++;
+                    _logger.LogWarning("Session {SessionId}: Command not implemented: {Command} (Retry {Count}/{Max})", Id, command.Verb, _errorCount, _configuration.MaxRetryCount);
+
+                    if (_configuration.MaxRetryCount > 1 && _errorCount >= _configuration.MaxRetryCount)
+                    {
+                        _logger.LogWarning("Session {SessionId}: Maximum retry count reached, closing session", Id);
+                        await SendResponseAsync(new SmtpResponse(421, "Too many errors, closing connection")).ConfigureAwait(false);
+                        _state = SmtpSessionState.Quit;
+                    }
+                    else
+                    {
+                        await SendResponseAsync(SmtpResponse.CommandNotImplemented).ConfigureAwait(false);
+                    }
                     break;
             }
         }

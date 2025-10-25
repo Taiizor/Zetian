@@ -28,6 +28,7 @@ namespace Zetian.Configuration
             ConnectionTimeout = TimeSpan.FromMinutes(5);
             CommandTimeout = TimeSpan.FromMinutes(1);
             DataTimeout = TimeSpan.FromMinutes(3);
+            MaxRetryCount = 3;
             EnablePipelining = true;
             Enable8BitMime = true;
             EnableBinaryMime = false;
@@ -92,6 +93,11 @@ namespace Zetian.Configuration
         /// Gets or sets the data transfer timeout
         /// </summary>
         public TimeSpan DataTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of retries before quitting the session
+        /// </summary>
+        public int MaxRetryCount { get; set; }
 
         /// <summary>
         /// Gets or sets whether pipelining is enabled
@@ -241,6 +247,11 @@ namespace Zetian.Configuration
             if (DataTimeout <= TimeSpan.Zero)
             {
                 throw new ArgumentException("DataTimeout must be greater than zero");
+            }
+
+            if (MaxRetryCount < 0)
+            {
+                throw new ArgumentException("MaxRetryCount cannot be negative");
             }
 
             if (RequireSecureConnection && Certificate == null)

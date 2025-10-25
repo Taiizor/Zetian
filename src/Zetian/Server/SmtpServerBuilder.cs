@@ -351,6 +351,15 @@ namespace Zetian.Server
         }
 
         /// <summary>
+        /// Sets the maximum number of retries before quitting the session
+        /// </summary>
+        public SmtpServerBuilder MaxRetryCount(int maxRetryCount)
+        {
+            _configuration.MaxRetryCount = maxRetryCount;
+            return this;
+        }
+
+        /// <summary>
         /// Sets the logger factory
         /// </summary>
         public SmtpServerBuilder LoggerFactory(ILoggerFactory loggerFactory)

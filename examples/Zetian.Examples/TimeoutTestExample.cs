@@ -74,7 +74,7 @@ namespace Zetian.Examples
                 StreamWriter writer = new(stream) { AutoFlush = true };
 
                 // Read greeting
-                var greeting = await reader.ReadLineAsync();
+                string? greeting = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {greeting}");
 
                 // Send EHLO
@@ -91,7 +91,7 @@ namespace Zetian.Examples
 
                 // Try to send another command (should fail)
                 await writer.WriteLineAsync("NOOP");
-                var response = await reader.ReadLineAsync();
+                string? response = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server response after timeout: {response}");
             }
             catch (Exception ex)
@@ -112,7 +112,7 @@ namespace Zetian.Examples
                 StreamWriter writer = new(stream) { AutoFlush = true };
 
                 // Read greeting
-                var greeting = await reader.ReadLineAsync();
+                string? greeting = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {greeting}");
 
                 // Send incomplete command and wait
@@ -124,7 +124,7 @@ namespace Zetian.Examples
                 // Server should timeout waiting for complete line
                 await Task.Delay(6000); // Wait 6 seconds to trigger command timeout
 
-                var response = await reader.ReadLineAsync();
+                string? response = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server response after timeout: {response}");
             }
             catch (Exception ex)
@@ -145,7 +145,7 @@ namespace Zetian.Examples
                 StreamWriter writer = new(stream) { AutoFlush = true };
 
                 // Read greeting
-                var greeting = await reader.ReadLineAsync();
+                string? greeting = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {greeting}");
 
                 // Send EHLO
@@ -158,17 +158,17 @@ namespace Zetian.Examples
 
                 // Send MAIL FROM
                 await writer.WriteLineAsync("MAIL FROM:<sender@test.com>");
-                var mailResponse = await reader.ReadLineAsync();
+                string? mailResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {mailResponse}");
 
                 // Send RCPT TO
                 await writer.WriteLineAsync("RCPT TO:<recipient@test.com>");
-                var rcptResponse = await reader.ReadLineAsync();
+                string? rcptResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {rcptResponse}");
 
                 // Send DATA command
                 await writer.WriteLineAsync("DATA");
-                var dataResponse = await reader.ReadLineAsync();
+                string? dataResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {dataResponse}");
 
                 // Start sending data but don't complete it
@@ -180,7 +180,7 @@ namespace Zetian.Examples
                 Console.WriteLine("  Started data transfer but not completing it, waiting for data timeout...");
                 await Task.Delay(9000); // Wait 9 seconds to trigger data timeout
 
-                var timeoutResponse = await reader.ReadLineAsync();
+                string? timeoutResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server response after timeout: {timeoutResponse}");
             }
             catch (Exception ex)
@@ -201,7 +201,7 @@ namespace Zetian.Examples
                 StreamWriter writer = new(stream) { AutoFlush = true };
 
                 // Read greeting
-                var greeting = await reader.ReadLineAsync();
+                string? greeting = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {greeting}");
 
                 // Send EHLO
@@ -214,17 +214,17 @@ namespace Zetian.Examples
 
                 // Send MAIL FROM
                 await writer.WriteLineAsync("MAIL FROM:<sender@test.com>");
-                var mailResponse = await reader.ReadLineAsync();
+                string? mailResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {mailResponse}");
 
                 // Send RCPT TO
                 await writer.WriteLineAsync("RCPT TO:<recipient@test.com>");
-                var rcptResponse = await reader.ReadLineAsync();
+                string? rcptResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {rcptResponse}");
 
                 // Send DATA command
                 await writer.WriteLineAsync("DATA");
-                var dataResponse = await reader.ReadLineAsync();
+                string? dataResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {dataResponse}");
 
                 // Send complete message
@@ -233,12 +233,12 @@ namespace Zetian.Examples
                 await writer.WriteLineAsync("This is a test message");
                 await writer.WriteLineAsync(".");
 
-                var acceptResponse = await reader.ReadLineAsync();
+                string? acceptResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {acceptResponse}");
 
                 // Send QUIT
                 await writer.WriteLineAsync("QUIT");
-                var quitResponse = await reader.ReadLineAsync();
+                string? quitResponse = await reader.ReadLineAsync();
                 Console.WriteLine($"  Server: {quitResponse}");
 
                 Console.WriteLine("  Normal operation completed successfully!");

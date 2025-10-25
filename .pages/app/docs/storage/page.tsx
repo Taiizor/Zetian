@@ -99,7 +99,7 @@ const storageProviders = [
         name: 'SQL Server',
         package: 'Zetian.Storage.SqlServer',
         description: 'Microsoft SQL Server with ACID compliance',
-        href: '/docs/storage/sqlserver',
+        href: '/docs/storage/sql-server',
         features: ['ACID compliance', 'Auto table creation', 'Message compression', 'Full-text search']
       },
       {
@@ -482,7 +482,7 @@ export default function StoragePage() {
         {/* Next Steps */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link 
-            href="/docs/storage/sqlserver"
+            href="/docs/storage/sql-server"
             className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all group"
           >
             <div className="flex items-center justify-between">

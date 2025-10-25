@@ -76,22 +76,34 @@ namespace Zetian.Storage.Providers.Azure
             base.Validate();
 
             if (!UseAzureAdAuthentication && string.IsNullOrWhiteSpace(ConnectionString))
+            {
                 throw new ArgumentException("ConnectionString is required when not using Azure AD authentication");
+            }
 
             if (UseAzureAdAuthentication && string.IsNullOrWhiteSpace(StorageAccountName))
+            {
                 throw new ArgumentException("StorageAccountName is required when using Azure AD authentication");
+            }
 
             if (string.IsNullOrWhiteSpace(ContainerName))
+            {
                 throw new ArgumentException("ContainerName is required");
+            }
 
             if (!IsValidContainerName(ContainerName))
+            {
                 throw new ArgumentException("ContainerName must be 3-63 characters, lowercase letters, numbers, and hyphens only");
+            }
 
             if (MaxMessageSizeMB < 0)
+            {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
+            }
 
             if (SoftDeleteRetentionDays <= 0)
+            {
                 throw new ArgumentException("SoftDeleteRetentionDays must be positive");
+            }
         }
 
         /// <summary>
@@ -111,16 +123,22 @@ namespace Zetian.Storage.Providers.Azure
 
         private bool IsValidContainerName(string name)
         {
-            if (name.Length < 3 || name.Length > 63)
+            if (name.Length is < 3 or > 63)
+            {
                 return false;
+            }
 
             foreach (char c in name)
             {
                 if (!char.IsLetterOrDigit(c) && c != '-')
+                {
                     return false;
+                }
 
                 if (char.IsUpper(c))
+                {
                     return false;
+                }
             }
 
             return !name.StartsWith("-") && !name.EndsWith("-") && !name.Contains("--");

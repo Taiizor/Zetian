@@ -1,14 +1,13 @@
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
 using Zetian.Abstractions;
 
 namespace Zetian.Storage.Providers.Redis
@@ -31,10 +30,10 @@ namespace Zetian.Storage.Providers.Redis
             _logger = logger;
 
             // Initialize Redis connection
-            var configOptions = ConfigurationOptions.Parse(_configuration.ConnectionString);
+            ConfigurationOptions configOptions = ConfigurationOptions.Parse(_configuration.ConnectionString);
             configOptions.ConnectTimeout = _configuration.ConnectionTimeoutSeconds * 1000;
             configOptions.ConnectRetry = _configuration.MaxRetryAttempts;
-            
+
             _redis = ConnectionMultiplexer.Connect(configOptions);
             _database = _redis.GetDatabase(_configuration.DatabaseNumber);
 
@@ -51,12 +50,12 @@ namespace Zetian.Storage.Providers.Redis
             try
             {
                 // Get message data
-                var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+                byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
                 // Check size limit
                 if (_configuration.MaxMessageSizeMB > 0)
                 {
-                    var sizeMB = rawData.Length / (1024.0 * 1024.0);
+                    double sizeMB = rawData.Length / (1024.0 * 1024.0);
                     if (sizeMB > _configuration.MaxMessageSizeMB)
                     {
                         _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)",
@@ -66,7 +65,7 @@ namespace Zetian.Storage.Providers.Redis
                 }
 
                 // Prepare metadata
-                var metadata = new MessageMetadata
+                MessageMetadata metadata = new()
                 {
                     MessageId = message.Id,
                     SessionId = session.Id,
@@ -101,7 +100,7 @@ namespace Zetian.Storage.Providers.Redis
                 // Publish notification if enabled
                 if (_configuration.EnablePubSub && _subscriber != null)
                 {
-                    await _subscriber.PublishAsync(_configuration.PubSubChannel, 
+                    await _subscriber.PublishAsync(_configuration.PubSubChannel,
                         JsonSerializer.Serialize(new { Event = "MessageStored", MessageId = message.Id })).ConfigureAwait(false);
                 }
 
@@ -124,9 +123,9 @@ namespace Zetian.Storage.Providers.Redis
         private async Task StoreAsKeyValueAsync(string messageId, byte[] data, MessageMetadata metadata, CancellationToken cancellationToken)
         {
             var transaction = _database.CreateTransaction();
-            
+
             // Store metadata as hash
-            var metadataKey = _configuration.GetMetadataKey(messageId);
+            string metadataKey = _configuration.GetMetadataKey(messageId);
             var hashEntries = new[]
             {
                 new HashEntry("MessageId", metadata.MessageId),
@@ -148,19 +147,19 @@ namespace Zetian.Storage.Providers.Redis
             if (_configuration.EnableChunking && data.Length > _configuration.ChunkSizeKB * 1024)
             {
                 // Store in chunks
-                var chunkSize = _configuration.ChunkSizeKB * 1024;
-                var totalChunks = (int)Math.Ceiling((double)data.Length / chunkSize);
+                int chunkSize = _configuration.ChunkSizeKB * 1024;
+                int totalChunks = (int)Math.Ceiling((double)data.Length / chunkSize);
 
                 for (int i = 0; i < totalChunks; i++)
                 {
-                    var offset = i * chunkSize;
-                    var length = Math.Min(chunkSize, data.Length - offset);
-                    var chunk = new byte[length];
+                    int offset = i * chunkSize;
+                    int length = Math.Min(chunkSize, data.Length - offset);
+                    byte[] chunk = new byte[length];
                     Array.Copy(data, offset, chunk, 0, length);
 
-                    var chunkKey = _configuration.GetChunkKey(messageId, i);
+                    string chunkKey = _configuration.GetChunkKey(messageId, i);
                     _ = transaction.StringSetAsync(chunkKey, chunk);
-                    
+
                     if (_configuration.MessageTTLSeconds > 0)
                     {
                         _ = transaction.KeyExpireAsync(chunkKey, TimeSpan.FromSeconds(_configuration.MessageTTLSeconds));
@@ -172,9 +171,9 @@ namespace Zetian.Storage.Providers.Redis
             else
             {
                 // Store as single key
-                var messageKey = _configuration.GetMessageKey(messageId);
+                string messageKey = _configuration.GetMessageKey(messageId);
                 _ = transaction.StringSetAsync(messageKey, data);
-                
+
                 if (_configuration.MessageTTLSeconds > 0)
                 {
                     _ = transaction.KeyExpireAsync(messageKey, TimeSpan.FromSeconds(_configuration.MessageTTLSeconds));
@@ -191,10 +190,10 @@ namespace Zetian.Storage.Providers.Redis
             if (_configuration.MaintainIndex)
             {
                 _ = transaction.SortedSetAddAsync(_configuration.IndexKey, messageId, metadata.ReceivedDate.Ticks);
-                
+
                 // Optionally expire old entries from index
-                _ = transaction.SortedSetRemoveRangeByScoreAsync(_configuration.IndexKey, 
-                    0, 
+                _ = transaction.SortedSetRemoveRangeByScoreAsync(_configuration.IndexKey,
+                    0,
                     DateTime.UtcNow.AddSeconds(-_configuration.MessageTTLSeconds).Ticks);
             }
 
@@ -203,7 +202,7 @@ namespace Zetian.Storage.Providers.Redis
 
         private async Task StoreInStreamAsync(string messageId, byte[] data, MessageMetadata metadata, CancellationToken cancellationToken)
         {
-            var streamEntries = new NameValueEntry[]
+            NameValueEntry[] streamEntries = new NameValueEntry[]
             {
                 new("MessageId", messageId),
                 new("SessionId", metadata.SessionId),
@@ -239,10 +238,13 @@ namespace Zetian.Storage.Providers.Redis
 
                     // Try again without recursion
                     _configuration.EnableRetry = false;
-                    var result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
+                    bool result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
                     _configuration.EnableRetry = true;
 
-                    if (result) return true;
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
                 catch
                 {
@@ -255,8 +257,8 @@ namespace Zetian.Storage.Providers.Redis
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var compressor = new GZipStream(output, CompressionLevel.Optimal))
+            using MemoryStream output = new();
+            using (GZipStream compressor = new(output, CompressionLevel.Optimal))
             {
                 compressor.Write(data, 0, data.Length);
             }
@@ -270,23 +272,25 @@ namespace Zetian.Storage.Providers.Redis
         {
             try
             {
-                var metadataKey = _configuration.GetMetadataKey(messageId);
+                string metadataKey = _configuration.GetMetadataKey(messageId);
                 var metadata = await _database.HashGetAllAsync(metadataKey).ConfigureAwait(false);
-                
+
                 if (metadata.Length == 0)
+                {
                     return null;
+                }
 
                 // Check if chunked
                 var totalChunksEntry = metadata.FirstOrDefault(x => x.Name == "TotalChunks");
                 if (totalChunksEntry != default && totalChunksEntry.Value.HasValue)
                 {
                     // Retrieve chunks
-                    var totalChunks = (int)totalChunksEntry.Value;
-                    var chunks = new List<byte[]>();
+                    int totalChunks = (int)totalChunksEntry.Value;
+                    List<byte[]> chunks = [];
 
                     for (int i = 0; i < totalChunks; i++)
                     {
-                        var chunkKey = _configuration.GetChunkKey(messageId, i);
+                        string chunkKey = _configuration.GetChunkKey(messageId, i);
                         var chunk = await _database.StringGetAsync(chunkKey).ConfigureAwait(false);
                         if (chunk.HasValue)
                         {
@@ -299,7 +303,7 @@ namespace Zetian.Storage.Providers.Redis
                 else
                 {
                     // Retrieve single key
-                    var messageKey = _configuration.GetMessageKey(messageId);
+                    string messageKey = _configuration.GetMessageKey(messageId);
                     var data = await _database.StringGetAsync(messageKey).ConfigureAwait(false);
                     return data.HasValue ? (byte[])data! : null;
                 }
@@ -346,7 +350,7 @@ namespace Zetian.Storage.Providers.Redis
             public string MessageId { get; set; } = string.Empty;
             public string SessionId { get; set; } = string.Empty;
             public string? FromAddress { get; set; }
-            public List<string> ToAddresses { get; set; } = new();
+            public List<string> ToAddresses { get; set; } = [];
             public string? Subject { get; set; }
             public DateTime ReceivedDate { get; set; }
             public long MessageSize { get; set; }

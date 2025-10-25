@@ -1,3 +1,7 @@
+using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,10 +9,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.GridFS;
 using Zetian.Abstractions;
 
 namespace Zetian.Storage.Providers.MongoDB
@@ -39,7 +39,7 @@ namespace Zetian.Storage.Providers.MongoDB
             _collection = _database.GetCollection<MessageDocument>(_configuration.CollectionName);
 
             // Initialize GridFS
-            var gridFsOptions = new GridFSBucketOptions
+            GridFSBucketOptions gridFsOptions = new()
             {
                 BucketName = _configuration.GridFsBucketName
             };
@@ -54,12 +54,12 @@ namespace Zetian.Storage.Providers.MongoDB
                 await EnsureIndexesAsync(cancellationToken).ConfigureAwait(false);
 
                 // Get message data
-                var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+                byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
                 // Check size limit
                 if (_configuration.MaxMessageSizeMB > 0)
                 {
-                    var sizeMB = rawData.Length / (1024.0 * 1024.0);
+                    double sizeMB = rawData.Length / (1024.0 * 1024.0);
                     if (sizeMB > _configuration.MaxMessageSizeMB)
                     {
                         _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)",
@@ -69,7 +69,7 @@ namespace Zetian.Storage.Providers.MongoDB
                 }
 
                 // Prepare document
-                var document = new MessageDocument
+                MessageDocument document = new()
                 {
                     MessageId = message.Id,
                     SessionId = session.Id,
@@ -87,7 +87,7 @@ namespace Zetian.Storage.Providers.MongoDB
                 };
 
                 // Determine storage strategy
-                var sizeMB2 = rawData.Length / (1024.0 * 1024.0);
+                double sizeMB2 = rawData.Length / (1024.0 * 1024.0);
                 bool useGridFs = _configuration.UseGridFsForLargeMessages && sizeMB2 >= _configuration.GridFsThresholdMB;
 
                 if (useGridFs)
@@ -139,7 +139,7 @@ namespace Zetian.Storage.Providers.MongoDB
 
         private async Task<ObjectId> StoreInGridFsAsync(string messageId, byte[] data, CancellationToken cancellationToken)
         {
-            var options = new GridFSUploadOptions
+            GridFSUploadOptions options = new()
             {
                 Metadata = new BsonDocument
                 {
@@ -148,7 +148,7 @@ namespace Zetian.Storage.Providers.MongoDB
                 }
             };
 
-            using var stream = new MemoryStream(data);
+            using MemoryStream stream = new(data);
             var objectId = await _gridFsBucket.UploadFromStreamAsync(
                 $"{messageId}.eml",
                 stream,
@@ -170,10 +170,13 @@ namespace Zetian.Storage.Providers.MongoDB
 
                     // Try again without recursion
                     _configuration.EnableRetry = false;
-                    var result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
+                    bool result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
                     _configuration.EnableRetry = true;
 
-                    if (result) return true;
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
                 catch
                 {
@@ -187,27 +190,31 @@ namespace Zetian.Storage.Providers.MongoDB
         private async Task EnsureIndexesAsync(CancellationToken cancellationToken)
         {
             if (_indexesCreated || !_configuration.AutoCreateIndexes)
+            {
                 return;
+            }
 
             await _indexLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if (_indexesCreated)
-                    return;
-
-                var indexKeys = new List<CreateIndexModel<MessageDocument>>
                 {
+                    return;
+                }
+
+                List<CreateIndexModel<MessageDocument>> indexKeys =
+                [
                     new(Builders<MessageDocument>.IndexKeys.Ascending(x => x.MessageId)),
                     new(Builders<MessageDocument>.IndexKeys.Ascending(x => x.SessionId)),
                     new(Builders<MessageDocument>.IndexKeys.Descending(x => x.ReceivedDate)),
                     new(Builders<MessageDocument>.IndexKeys.Ascending(x => x.FromAddress)),
                     new(Builders<MessageDocument>.IndexKeys.Text(x => x.Subject))
-                };
+                ];
 
                 // Add TTL index if enabled
                 if (_configuration.EnableTTL)
                 {
-                    var ttlIndexOptions = new CreateIndexOptions
+                    CreateIndexOptions ttlIndexOptions = new()
                     {
                         ExpireAfter = TimeSpan.FromDays(_configuration.TTLDays)
                     };
@@ -238,16 +245,16 @@ namespace Zetian.Storage.Providers.MongoDB
             try
             {
                 var adminDb = _client.GetDatabase("admin");
-                
+
                 // Enable sharding on database
-                var enableShardingCommand = new BsonDocument
+                BsonDocument enableShardingCommand = new()
                 {
                     { "enableSharding", _configuration.DatabaseName }
                 };
                 await adminDb.RunCommandAsync<BsonDocument>(enableShardingCommand, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 // Shard the collection
-                var shardCollectionCommand = new BsonDocument
+                BsonDocument shardCollectionCommand = new()
                 {
                     { "shardCollection", $"{_configuration.DatabaseName}.{_configuration.CollectionName}" },
                     { "key", new BsonDocument { { _configuration.ShardKeyField, 1 } } }
@@ -265,8 +272,8 @@ namespace Zetian.Storage.Providers.MongoDB
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var compressor = new GZipStream(output, CompressionLevel.Optimal))
+            using MemoryStream output = new();
+            using (GZipStream compressor = new(output, CompressionLevel.Optimal))
             {
                 compressor.Write(data, 0, data.Length);
             }
@@ -287,7 +294,7 @@ namespace Zetian.Storage.Providers.MongoDB
             public string MessageId { get; set; } = string.Empty;
             public string SessionId { get; set; } = string.Empty;
             public string? FromAddress { get; set; }
-            public List<string> ToAddresses { get; set; } = new();
+            public List<string> ToAddresses { get; set; } = [];
             public string? Subject { get; set; }
             public DateTime ReceivedDate { get; set; }
             public long MessageSize { get; set; }

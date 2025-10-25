@@ -56,16 +56,24 @@ namespace Zetian.Storage.Providers.SqlServer
             base.Validate();
 
             if (string.IsNullOrWhiteSpace(ConnectionString))
+            {
                 throw new ArgumentException("ConnectionString is required");
+            }
 
             if (string.IsNullOrWhiteSpace(TableName))
+            {
                 throw new ArgumentException("TableName is required");
+            }
 
             if (string.IsNullOrWhiteSpace(SchemaName))
+            {
                 throw new ArgumentException("SchemaName is required");
+            }
 
             if (MaxMessageSizeMB < 0)
+            {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
+            }
         }
 
         /// <summary>

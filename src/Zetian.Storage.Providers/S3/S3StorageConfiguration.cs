@@ -1,3 +1,4 @@
+using Amazon.S3;
 using System;
 using Zetian.Storage.Providers.Common;
 
@@ -130,25 +131,39 @@ namespace Zetian.Storage.Providers.S3
             }
 
             if (string.IsNullOrWhiteSpace(BucketName))
+            {
                 throw new ArgumentException("BucketName is required");
+            }
 
             if (!IsValidBucketName(BucketName))
+            {
                 throw new ArgumentException("BucketName must be 3-63 characters, lowercase letters, numbers, periods, and hyphens only");
+            }
 
             if (string.IsNullOrWhiteSpace(Region))
+            {
                 throw new ArgumentException("Region is required");
+            }
 
             if (MaxMessageSizeMB < 0)
+            {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
+            }
 
             if (TransitionToIADays < 0)
+            {
                 throw new ArgumentException("TransitionToIADays must be non-negative");
+            }
 
             if (TransitionToGlacierDays < 0)
+            {
                 throw new ArgumentException("TransitionToGlacierDays must be non-negative");
+            }
 
             if (ExpirationDays < 0)
+            {
                 throw new ArgumentException("ExpirationDays must be non-negative");
+            }
         }
 
         /// <summary>
@@ -156,7 +171,7 @@ namespace Zetian.Storage.Providers.S3
         /// </summary>
         public string GetObjectKey(string messageId, DateTime receivedDate)
         {
-            var baseName = NamingFormat switch
+            string baseName = NamingFormat switch
             {
                 S3NamingFormat.Flat => $"{messageId}.eml",
                 S3NamingFormat.DateHierarchy => $"{receivedDate:yyyy/MM/dd}/{messageId}.eml",
@@ -171,20 +186,26 @@ namespace Zetian.Storage.Providers.S3
 
         private bool IsValidBucketName(string name)
         {
-            if (name.Length < 3 || name.Length > 63)
+            if (name.Length is < 3 or > 63)
+            {
                 return false;
+            }
 
             foreach (char c in name)
             {
                 if (!char.IsLetterOrDigit(c) && c != '-' && c != '.')
+                {
                     return false;
+                }
 
                 if (char.IsUpper(c))
+                {
                     return false;
+                }
             }
 
-            return !name.StartsWith("-") && !name.EndsWith("-") && 
-                   !name.StartsWith(".") && !name.EndsWith(".") && 
+            return !name.StartsWith("-") && !name.EndsWith("-") &&
+                   !name.StartsWith(".") && !name.EndsWith(".") &&
                    !name.Contains("..") && !name.Contains(".-") && !name.Contains("-.");
         }
 
@@ -193,7 +214,7 @@ namespace Zetian.Storage.Providers.S3
             // Simple check for EC2 instance metadata service
             try
             {
-                var ec2InstanceId = Environment.GetEnvironmentVariable("EC2_INSTANCE_ID");
+                string? ec2InstanceId = Environment.GetEnvironmentVariable("EC2_INSTANCE_ID");
                 return !string.IsNullOrEmpty(ec2InstanceId);
             }
             catch
@@ -232,46 +253,5 @@ namespace Zetian.Storage.Providers.S3
         /// Hourly partitions: yyyy/MM/dd/HH/messageId.eml
         /// </summary>
         HourlyPartition
-    }
-
-    /// <summary>
-    /// S3 storage classes
-    /// </summary>
-    public enum S3StorageClass
-    {
-        /// <summary>
-        /// Standard storage for frequently accessed data
-        /// </summary>
-        Standard,
-
-        /// <summary>
-        /// Standard-IA for infrequently accessed data
-        /// </summary>
-        StandardIA,
-
-        /// <summary>
-        /// Intelligent-Tiering for automatic cost optimization
-        /// </summary>
-        IntelligentTiering,
-
-        /// <summary>
-        /// One Zone-IA for infrequently accessed data in a single AZ
-        /// </summary>
-        OneZoneIA,
-
-        /// <summary>
-        /// Glacier Instant Retrieval
-        /// </summary>
-        GlacierInstantRetrieval,
-
-        /// <summary>
-        /// Glacier Flexible Retrieval
-        /// </summary>
-        GlacierFlexible,
-
-        /// <summary>
-        /// Glacier Deep Archive for long-term retention
-        /// </summary>
-        GlacierDeepArchive
     }
 }

@@ -1,3 +1,5 @@
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Data;
 using System.IO;
@@ -6,8 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Logging;
 using Zetian.Abstractions;
 
 namespace Zetian.Storage.Providers.SqlServer
@@ -37,15 +37,15 @@ namespace Zetian.Storage.Providers.SqlServer
                 await EnsureTableExistsAsync(cancellationToken).ConfigureAwait(false);
 
                 // Get message data
-                var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+                byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
                 // Check size limit
                 if (_configuration.MaxMessageSizeMB > 0)
                 {
-                    var sizeMB = rawData.Length / (1024.0 * 1024.0);
+                    double sizeMB = rawData.Length / (1024.0 * 1024.0);
                     if (sizeMB > _configuration.MaxMessageSizeMB)
                     {
-                        _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)", 
+                        _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)",
                             message.Id, sizeMB, _configuration.MaxMessageSizeMB);
                         return false;
                     }
@@ -62,7 +62,7 @@ namespace Zetian.Storage.Providers.SqlServer
                 }
 
                 // Save to database
-                using var connection = new SqlConnection(_configuration.ConnectionString);
+                using SqlConnection connection = new(_configuration.ConnectionString);
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                 using var command = connection.CreateCommand();
@@ -112,17 +112,20 @@ namespace Zetian.Storage.Providers.SqlServer
             for (int i = 0; i < _configuration.MaxRetryAttempts; i++)
             {
                 await Task.Delay(_configuration.RetryDelayMs * (i + 1), cancellationToken).ConfigureAwait(false);
-                
+
                 try
                 {
                     _logger?.LogInformation("Retry attempt {Attempt} for message {MessageId}", i + 1, message.Id);
-                    
+
                     // Try again without recursion
                     _configuration.EnableRetry = false;
-                    var result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
+                    bool result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
                     _configuration.EnableRetry = true;
-                    
-                    if (result) return true;
+
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
                 catch
                 {
@@ -136,15 +139,19 @@ namespace Zetian.Storage.Providers.SqlServer
         private async Task EnsureTableExistsAsync(CancellationToken cancellationToken)
         {
             if (_tableChecked || !_configuration.AutoCreateTable)
+            {
                 return;
+            }
 
             await _tableLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if (_tableChecked)
+                {
                     return;
+                }
 
-                using var connection = new SqlConnection(_configuration.ConnectionString);
+                using SqlConnection connection = new(_configuration.ConnectionString);
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                 // Check if table exists
@@ -153,11 +160,11 @@ namespace Zetian.Storage.Providers.SqlServer
                     SELECT COUNT(*) 
                     FROM INFORMATION_SCHEMA.TABLES 
                     WHERE TABLE_SCHEMA = @Schema AND TABLE_NAME = @Table";
-                
+
                 checkCommand.Parameters.AddWithValue("@Schema", _configuration.SchemaName);
                 checkCommand.Parameters.AddWithValue("@Table", _configuration.TableName);
 
-                var exists = (int)await checkCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
+                bool exists = (int)await checkCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
 
                 if (!exists)
                 {
@@ -217,7 +224,7 @@ namespace Zetian.Storage.Providers.SqlServer
 
                         await createAttachCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
-                        _logger?.LogInformation("Created SQL Server attachments table {TableName}", 
+                        _logger?.LogInformation("Created SQL Server attachments table {TableName}",
                             _configuration.GetFullAttachmentsTableName());
                     }
                 }
@@ -232,8 +239,8 @@ namespace Zetian.Storage.Providers.SqlServer
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var compressor = new GZipStream(output, CompressionLevel.Optimal))
+            using MemoryStream output = new();
+            using (GZipStream compressor = new(output, CompressionLevel.Optimal))
             {
                 compressor.Write(data, 0, data.Length);
             }
@@ -242,7 +249,7 @@ namespace Zetian.Storage.Providers.SqlServer
 
         private string SerializeHeaders(ISmtpMessage message)
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (var header in message.Headers)
             {
                 sb.AppendLine($"{header.Key}: {header.Value}");

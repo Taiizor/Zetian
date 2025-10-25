@@ -91,22 +91,34 @@ namespace Zetian.Storage.Providers.Redis
             base.Validate();
 
             if (string.IsNullOrWhiteSpace(ConnectionString))
+            {
                 throw new ArgumentException("ConnectionString is required");
+            }
 
-            if (DatabaseNumber < 0 || DatabaseNumber > 15)
+            if (DatabaseNumber is < 0 or > 15)
+            {
                 throw new ArgumentException("DatabaseNumber must be between 0 and 15");
+            }
 
             if (string.IsNullOrWhiteSpace(KeyPrefix))
+            {
                 throw new ArgumentException("KeyPrefix is required");
+            }
 
             if (MessageTTLSeconds < 0)
+            {
                 throw new ArgumentException("MessageTTLSeconds must be non-negative");
+            }
 
             if (MaxMessageSizeMB < 0)
+            {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
+            }
 
             if (ChunkSizeKB <= 0)
+            {
                 throw new ArgumentException("ChunkSizeKB must be positive");
+            }
         }
 
         /// <summary>

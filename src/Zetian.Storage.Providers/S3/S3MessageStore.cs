@@ -1,3 +1,8 @@
+using Amazon;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,11 +10,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Amazon;
-using Amazon.Runtime;
-using Amazon.S3;
-using Amazon.S3.Model;
-using Microsoft.Extensions.Logging;
 using Zetian.Abstractions;
 
 namespace Zetian.Storage.Providers.S3
@@ -34,13 +34,13 @@ namespace Zetian.Storage.Providers.S3
             // Initialize S3 client
             _s3Client = CreateS3Client();
 
-            _logger?.LogInformation("Initialized S3 client for bucket {BucketName} in region {Region}", 
+            _logger?.LogInformation("Initialized S3 client for bucket {BucketName} in region {Region}",
                 _configuration.BucketName, _configuration.Region);
         }
 
         private IAmazonS3 CreateS3Client()
         {
-            var config = new AmazonS3Config
+            AmazonS3Config config = new()
             {
                 RegionEndpoint = RegionEndpoint.GetBySystemName(_configuration.Region),
                 ForcePathStyle = _configuration.ForcePathStyle,
@@ -54,10 +54,10 @@ namespace Zetian.Storage.Providers.S3
             }
 
             // Create client with appropriate credentials
-            if (!string.IsNullOrWhiteSpace(_configuration.AccessKeyId) && 
+            if (!string.IsNullOrWhiteSpace(_configuration.AccessKeyId) &&
                 !string.IsNullOrWhiteSpace(_configuration.SecretAccessKey))
             {
-                var credentials = new BasicAWSCredentials(_configuration.AccessKeyId, _configuration.SecretAccessKey);
+                BasicAWSCredentials credentials = new(_configuration.AccessKeyId, _configuration.SecretAccessKey);
                 return new AmazonS3Client(credentials, config);
             }
             else
@@ -75,12 +75,12 @@ namespace Zetian.Storage.Providers.S3
                 await EnsureBucketExistsAsync(cancellationToken).ConfigureAwait(false);
 
                 // Get message data
-                var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+                byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
                 // Check size limit
                 if (_configuration.MaxMessageSizeMB > 0)
                 {
-                    var sizeMB = rawData.Length / (1024.0 * 1024.0);
+                    double sizeMB = rawData.Length / (1024.0 * 1024.0);
                     if (sizeMB > _configuration.MaxMessageSizeMB)
                     {
                         _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)",
@@ -90,7 +90,7 @@ namespace Zetian.Storage.Providers.S3
                 }
 
                 // Prepare object key
-                var objectKey = _configuration.GetObjectKey(message.Id, DateTime.UtcNow);
+                string objectKey = _configuration.GetObjectKey(message.Id, DateTime.UtcNow);
 
                 // Compress if configured
                 byte[] dataToUpload = rawData;
@@ -103,7 +103,7 @@ namespace Zetian.Storage.Providers.S3
                 }
 
                 // Prepare metadata
-                var metadata = new Dictionary<string, string>
+                Dictionary<string, string> metadata = new()
                 {
                     ["message-id"] = message.Id,
                     ["session-id"] = session.Id,
@@ -118,12 +118,12 @@ namespace Zetian.Storage.Providers.S3
                 };
 
                 // Prepare tags
-                var tags = new List<Tag>
-                {
+                List<Tag> tags =
+                [
                     new Tag { Key = "MessageId", Value = message.Id },
                     new Tag { Key = "SessionId", Value = session.Id },
                     new Tag { Key = "ReceivedDate", Value = DateTime.UtcNow.ToString("yyyy-MM-dd") }
-                };
+                ];
 
                 if (message.From?.Address != null)
                 {
@@ -131,24 +131,13 @@ namespace Zetian.Storage.Providers.S3
                 }
 
                 // Create put request
-                var putRequest = new PutObjectRequest
+                PutObjectRequest putRequest = new()
                 {
                     BucketName = _configuration.BucketName,
                     Key = objectKey,
                     ContentType = "message/rfc822",
-                    Metadata = metadata
-                };
-
-                // Set storage class
-                putRequest.StorageClass = _configuration.StorageClass switch
-                {
-                    S3StorageClass.StandardIA => S3StorageClass.StandardInfrequentAccess,
-                    S3StorageClass.IntelligentTiering => S3StorageClass.IntelligentTiering,
-                    S3StorageClass.OneZoneIA => S3StorageClass.OneZoneInfrequentAccess,
-                    S3StorageClass.GlacierInstantRetrieval => S3StorageClass.GlacierInstantRetrieval,
-                    S3StorageClass.GlacierFlexible => S3StorageClass.Glacier,
-                    S3StorageClass.GlacierDeepArchive => S3StorageClass.DeepArchive,
-                    _ => S3StorageClass.Standard
+                    Metadata = metadata,
+                    StorageClass = _configuration.StorageClass
                 };
 
                 // Set server-side encryption
@@ -172,7 +161,7 @@ namespace Zetian.Storage.Providers.S3
                 }
 
                 // Upload data
-                using var stream = new MemoryStream(dataToUpload);
+                using MemoryStream stream = new(dataToUpload);
                 putRequest.InputStream = stream;
 
                 var response = await _s3Client.PutObjectAsync(putRequest, cancellationToken).ConfigureAwait(false);
@@ -180,7 +169,7 @@ namespace Zetian.Storage.Providers.S3
                 // Add tags (separate request)
                 if (tags.Count > 0)
                 {
-                    var taggingRequest = new PutObjectTaggingRequest
+                    PutObjectTaggingRequest taggingRequest = new()
                     {
                         BucketName = _configuration.BucketName,
                         Key = objectKey,
@@ -190,7 +179,7 @@ namespace Zetian.Storage.Providers.S3
                     await _s3Client.PutObjectTaggingAsync(taggingRequest, cancellationToken).ConfigureAwait(false);
                 }
 
-                _logger?.LogInformation("Message {MessageId} uploaded to S3 as {ObjectKey} with ETag {ETag}", 
+                _logger?.LogInformation("Message {MessageId} uploaded to S3 as {ObjectKey} with ETag {ETag}",
                     message.Id, objectKey, response.ETag);
 
                 return true;
@@ -220,10 +209,13 @@ namespace Zetian.Storage.Providers.S3
 
                     // Try again without recursion
                     _configuration.EnableRetry = false;
-                    var result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
+                    bool result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
                     _configuration.EnableRetry = true;
 
-                    if (result) return true;
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
                 catch
                 {
@@ -237,26 +229,30 @@ namespace Zetian.Storage.Providers.S3
         private async Task EnsureBucketExistsAsync(CancellationToken cancellationToken)
         {
             if (_bucketChecked || !_configuration.AutoCreateBucket)
+            {
                 return;
+            }
 
             await _bucketLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if (_bucketChecked)
+                {
                     return;
+                }
 
                 // Check if bucket exists
                 try
                 {
-                    await _s3Client.HeadBucketAsync(new HeadBucketRequest 
-                    { 
-                        BucketName = _configuration.BucketName 
+                    await _s3Client.HeadBucketAsync(new HeadBucketRequest
+                    {
+                        BucketName = _configuration.BucketName
                     }, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Amazon.S3.AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // Create bucket
-                    var createRequest = new PutBucketRequest
+                    PutBucketRequest createRequest = new()
                     {
                         BucketName = _configuration.BucketName,
                         UseClientRegion = true
@@ -285,7 +281,7 @@ namespace Zetian.Storage.Providers.S3
             {
                 try
                 {
-                    var versioningRequest = new PutBucketVersioningRequest
+                    PutBucketVersioningRequest versioningRequest = new()
                     {
                         BucketName = _configuration.BucketName,
                         VersioningConfig = new S3BucketVersioningConfig
@@ -309,17 +305,17 @@ namespace Zetian.Storage.Providers.S3
             {
                 try
                 {
-                    var lifecycleConfig = new LifecycleConfiguration
+                    LifecycleConfiguration lifecycleConfig = new()
                     {
-                        Rules = new List<LifecycleRule>()
+                        Rules = []
                     };
 
-                    var rule = new LifecycleRule
+                    LifecycleRule rule = new()
                     {
                         Id = "smtp-message-lifecycle",
                         Status = LifecycleRuleStatus.Enabled,
                         Prefix = _configuration.KeyPrefix,
-                        Transitions = new List<LifecycleTransition>()
+                        Transitions = []
                     };
 
                     // Add transitions
@@ -352,7 +348,7 @@ namespace Zetian.Storage.Providers.S3
 
                     lifecycleConfig.Rules.Add(rule);
 
-                    var lifecycleRequest = new PutLifecycleConfigurationRequest
+                    PutLifecycleConfigurationRequest lifecycleRequest = new()
                     {
                         BucketName = _configuration.BucketName,
                         Configuration = lifecycleConfig
@@ -371,8 +367,8 @@ namespace Zetian.Storage.Providers.S3
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var compressor = new GZipStream(output, CompressionLevel.Optimal))
+            using MemoryStream output = new();
+            using (GZipStream compressor = new(output, CompressionLevel.Optimal))
             {
                 compressor.Write(data, 0, data.Length);
             }
@@ -382,16 +378,18 @@ namespace Zetian.Storage.Providers.S3
         private string? TruncateForMetadata(string? value, int maxLength = 2048)
         {
             if (string.IsNullOrEmpty(value))
+            {
                 return value;
+            }
 
             return value.Length <= maxLength ? value : value[..maxLength];
         }
 
         private string GetDomainFromEmail(string email)
         {
-            var atIndex = email.IndexOf('@');
-            return atIndex > 0 && atIndex < email.Length - 1 
-                ? email[(atIndex + 1)..] 
+            int atIndex = email.IndexOf('@');
+            return atIndex > 0 && atIndex < email.Length - 1
+                ? email[(atIndex + 1)..]
                 : "unknown";
         }
 
@@ -402,26 +400,26 @@ namespace Zetian.Storage.Providers.S3
         {
             try
             {
-                var objectKey = _configuration.GetObjectKey(messageId, receivedDate ?? DateTime.UtcNow);
-                
-                var getRequest = new GetObjectRequest
+                string objectKey = _configuration.GetObjectKey(messageId, receivedDate ?? DateTime.UtcNow);
+
+                GetObjectRequest getRequest = new()
                 {
                     BucketName = _configuration.BucketName,
                     Key = objectKey
                 };
 
                 var response = await _s3Client.GetObjectAsync(getRequest).ConfigureAwait(false);
-                
-                using var memoryStream = new MemoryStream();
+
+                using MemoryStream memoryStream = new();
                 await response.ResponseStream.CopyToAsync(memoryStream).ConfigureAwait(false);
-                var data = memoryStream.ToArray();
+                byte[] data = memoryStream.ToArray();
 
                 // Check if compressed
                 if (response.Headers.ContentEncoding?.Contains("gzip") == true)
                 {
-                    using var input = new MemoryStream(data);
-                    using var output = new MemoryStream();
-                    using (var decompressor = new GZipStream(input, CompressionMode.Decompress))
+                    using MemoryStream input = new(data);
+                    using MemoryStream output = new();
+                    using (GZipStream decompressor = new(input, CompressionMode.Decompress))
                     {
                         await decompressor.CopyToAsync(output).ConfigureAwait(false);
                     }
@@ -442,9 +440,9 @@ namespace Zetian.Storage.Providers.S3
         /// </summary>
         public async Task<List<string>> ListMessagesAsync(string? prefix = null, int maxResults = 100)
         {
-            var messages = new List<string>();
+            List<string> messages = [];
 
-            var listRequest = new ListObjectsV2Request
+            ListObjectsV2Request listRequest = new()
             {
                 BucketName = _configuration.BucketName,
                 Prefix = prefix ?? _configuration.KeyPrefix,
@@ -465,9 +463,9 @@ namespace Zetian.Storage.Providers.S3
         {
             try
             {
-                var objectKey = _configuration.GetObjectKey(messageId, receivedDate ?? DateTime.UtcNow);
+                string objectKey = _configuration.GetObjectKey(messageId, receivedDate ?? DateTime.UtcNow);
 
-                var deleteRequest = new DeleteObjectRequest
+                DeleteObjectRequest deleteRequest = new()
                 {
                     BucketName = _configuration.BucketName,
                     Key = objectKey

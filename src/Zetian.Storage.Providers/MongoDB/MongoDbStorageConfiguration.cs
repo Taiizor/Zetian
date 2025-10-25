@@ -81,22 +81,34 @@ namespace Zetian.Storage.Providers.MongoDB
             base.Validate();
 
             if (string.IsNullOrWhiteSpace(ConnectionString))
+            {
                 throw new ArgumentException("ConnectionString is required");
+            }
 
             if (string.IsNullOrWhiteSpace(DatabaseName))
+            {
                 throw new ArgumentException("DatabaseName is required");
+            }
 
             if (string.IsNullOrWhiteSpace(CollectionName))
+            {
                 throw new ArgumentException("CollectionName is required");
+            }
 
             if (GridFsThresholdMB <= 0)
+            {
                 throw new ArgumentException("GridFsThresholdMB must be positive");
+            }
 
             if (TTLDays <= 0 && EnableTTL)
+            {
                 throw new ArgumentException("TTLDays must be positive when TTL is enabled");
+            }
 
             if (MaxMessageSizeMB < 0)
+            {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
+            }
         }
     }
 }

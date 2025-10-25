@@ -38,13 +38,19 @@ namespace Zetian.Storage.Providers.Common
         public virtual void Validate()
         {
             if (MaxRetryAttempts < 0)
+            {
                 throw new ArgumentException("MaxRetryAttempts must be non-negative");
+            }
 
             if (RetryDelayMs < 0)
+            {
                 throw new ArgumentException("RetryDelayMs must be non-negative");
+            }
 
             if (ConnectionTimeoutSeconds <= 0)
+            {
                 throw new ArgumentException("ConnectionTimeoutSeconds must be positive");
+            }
         }
     }
 }

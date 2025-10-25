@@ -1,3 +1,8 @@
+using Azure.Identity;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,12 +10,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure;
-using Azure.Identity;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
-using Microsoft.Extensions.Logging;
 using Zetian.Abstractions;
 
 namespace Zetian.Storage.Providers.Azure
@@ -37,7 +36,7 @@ namespace Zetian.Storage.Providers.Azure
 
             if (_configuration.UseAzureAdAuthentication)
             {
-                var uri = new Uri($"https://{_configuration.StorageAccountName}.blob.core.windows.net");
+                Uri uri = new($"https://{_configuration.StorageAccountName}.blob.core.windows.net");
                 serviceClient = new BlobServiceClient(uri, new DefaultAzureCredential());
             }
             else
@@ -58,12 +57,12 @@ namespace Zetian.Storage.Providers.Azure
                 await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
 
                 // Get message data
-                var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+                byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
                 // Check size limit
                 if (_configuration.MaxMessageSizeMB > 0)
                 {
-                    var sizeMB = rawData.Length / (1024.0 * 1024.0);
+                    double sizeMB = rawData.Length / (1024.0 * 1024.0);
                     if (sizeMB > _configuration.MaxMessageSizeMB)
                     {
                         _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)",
@@ -73,7 +72,7 @@ namespace Zetian.Storage.Providers.Azure
                 }
 
                 // Prepare blob name
-                var blobName = _configuration.GetBlobName(message.Id, DateTime.UtcNow);
+                string blobName = _configuration.GetBlobName(message.Id, DateTime.UtcNow);
                 var blobClient = _containerClient.GetBlobClient(blobName);
 
                 // Compress if configured
@@ -87,8 +86,8 @@ namespace Zetian.Storage.Providers.Azure
                 }
 
                 // Prepare metadata
-                var metadata = new Dictionary<string, string>();
-                var tags = new Dictionary<string, string>();
+                Dictionary<string, string> metadata = [];
+                Dictionary<string, string> tags = [];
 
                 if (_configuration.StoreMetadataAsBlobProperties)
                 {
@@ -113,7 +112,7 @@ namespace Zetian.Storage.Providers.Azure
                 }
 
                 // Upload options
-                var uploadOptions = new BlobUploadOptions
+                BlobUploadOptions uploadOptions = new()
                 {
                     Metadata = metadata,
                     Tags = tags,
@@ -121,19 +120,18 @@ namespace Zetian.Storage.Providers.Azure
                     {
                         ContentType = "message/rfc822",
                         ContentEncoding = isCompressed ? "gzip" : null
+                    },
+                    // Set access tier
+                    AccessTier = _configuration.AccessTier switch
+                    {
+                        BlobAccessTier.Cool => AccessTier.Cool,
+                        BlobAccessTier.Archive => AccessTier.Archive,
+                        _ => AccessTier.Hot
                     }
                 };
 
-                // Set access tier
-                uploadOptions.AccessTier = _configuration.AccessTier switch
-                {
-                    BlobAccessTier.Cool => AccessTier.Cool,
-                    BlobAccessTier.Archive => AccessTier.Archive,
-                    _ => AccessTier.Hot
-                };
-
                 // Upload blob
-                using var stream = new MemoryStream(dataToUpload);
+                using MemoryStream stream = new(dataToUpload);
                 await blobClient.UploadAsync(stream, uploadOptions, cancellationToken).ConfigureAwait(false);
 
                 _logger?.LogInformation("Message {MessageId} uploaded to Azure Blob Storage as {BlobName}", message.Id, blobName);
@@ -164,10 +162,13 @@ namespace Zetian.Storage.Providers.Azure
 
                     // Try again without recursion
                     _configuration.EnableRetry = false;
-                    var result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
+                    bool result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
                     _configuration.EnableRetry = true;
 
-                    if (result) return true;
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
                 catch
                 {
@@ -181,13 +182,17 @@ namespace Zetian.Storage.Providers.Azure
         private async Task EnsureContainerExistsAsync(CancellationToken cancellationToken)
         {
             if (_containerChecked || !_configuration.AutoCreateContainer)
+            {
                 return;
+            }
 
             await _containerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if (_containerChecked)
+                {
                     return;
+                }
 
                 // Check if container exists
                 var exists = await _containerClient.ExistsAsync(cancellationToken).ConfigureAwait(false);
@@ -211,7 +216,7 @@ namespace Zetian.Storage.Providers.Azure
                         {
                             var serviceClient = _containerClient.GetParentBlobServiceClient();
                             var properties = await serviceClient.GetPropertiesAsync(cancellationToken).ConfigureAwait(false);
-                            
+
                             properties.Value.DeleteRetentionPolicy = new BlobRetentionPolicy
                             {
                                 Enabled = true,
@@ -239,8 +244,8 @@ namespace Zetian.Storage.Providers.Azure
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var compressor = new GZipStream(output, CompressionLevel.Optimal))
+            using MemoryStream output = new();
+            using (GZipStream compressor = new(output, CompressionLevel.Optimal))
             {
                 compressor.Write(data, 0, data.Length);
             }
@@ -250,16 +255,18 @@ namespace Zetian.Storage.Providers.Azure
         private string? TruncateForMetadata(string? value, int maxLength = 1024)
         {
             if (string.IsNullOrEmpty(value))
+            {
                 return value;
+            }
 
             return value.Length <= maxLength ? value : value[..maxLength];
         }
 
         private string GetDomainFromEmail(string email)
         {
-            var atIndex = email.IndexOf('@');
-            return atIndex > 0 && atIndex < email.Length - 1 
-                ? email[(atIndex + 1)..] 
+            int atIndex = email.IndexOf('@');
+            return atIndex > 0 && atIndex < email.Length - 1
+                ? email[(atIndex + 1)..]
                 : "unknown";
         }
 
@@ -270,22 +277,24 @@ namespace Zetian.Storage.Providers.Azure
         {
             try
             {
-                var blobName = _configuration.GetBlobName(messageId, receivedDate ?? DateTime.UtcNow);
+                string blobName = _configuration.GetBlobName(messageId, receivedDate ?? DateTime.UtcNow);
                 var blobClient = _containerClient.GetBlobClient(blobName);
 
                 var exists = await blobClient.ExistsAsync().ConfigureAwait(false);
                 if (!exists)
+                {
                     return null;
+                }
 
                 var response = await blobClient.DownloadContentAsync().ConfigureAwait(false);
-                var data = response.Value.Content.ToArray();
+                byte[] data = response.Value.Content.ToArray();
 
                 // Check if compressed
                 if (response.Value.Details.HttpHeaders?.ContentEncoding?.Contains("gzip") == true)
                 {
-                    using var input = new MemoryStream(data);
-                    using var output = new MemoryStream();
-                    using (var decompressor = new GZipStream(input, CompressionMode.Decompress))
+                    using MemoryStream input = new(data);
+                    using MemoryStream output = new();
+                    using (GZipStream decompressor = new(input, CompressionMode.Decompress))
                     {
                         await decompressor.CopyToAsync(output).ConfigureAwait(false);
                     }
@@ -306,13 +315,15 @@ namespace Zetian.Storage.Providers.Azure
         /// </summary>
         public async Task<List<string>> ListMessagesAsync(string? prefix = null, int maxResults = 100)
         {
-            var messages = new List<string>();
+            List<string> messages = [];
 
             await foreach (var blobItem in _containerClient.GetBlobsAsync(prefix: prefix))
             {
                 messages.Add(blobItem.Name);
                 if (messages.Count >= maxResults)
+                {
                     break;
+                }
             }
 
             return messages;
@@ -325,11 +336,11 @@ namespace Zetian.Storage.Providers.Azure
         {
             try
             {
-                var blobName = _configuration.GetBlobName(messageId, receivedDate ?? DateTime.UtcNow);
+                string blobName = _configuration.GetBlobName(messageId, receivedDate ?? DateTime.UtcNow);
                 var blobClient = _containerClient.GetBlobClient(blobName);
 
                 var response = await blobClient.DeleteIfExistsAsync().ConfigureAwait(false);
-                
+
                 if (response.Value)
                 {
                     _logger?.LogInformation("Deleted message {MessageId} from Azure Blob Storage", messageId);

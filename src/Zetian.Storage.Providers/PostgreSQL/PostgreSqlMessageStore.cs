@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging;
+using Npgsql;
+using NpgsqlTypes;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -7,9 +9,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Npgsql;
-using NpgsqlTypes;
 using Zetian.Abstractions;
 
 namespace Zetian.Storage.Providers.PostgreSQL
@@ -39,15 +38,15 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 await EnsureTableExistsAsync(cancellationToken).ConfigureAwait(false);
 
                 // Get message data
-                var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+                byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
                 // Check size limit
                 if (_configuration.MaxMessageSizeMB > 0)
                 {
-                    var sizeMB = rawData.Length / (1024.0 * 1024.0);
+                    double sizeMB = rawData.Length / (1024.0 * 1024.0);
                     if (sizeMB > _configuration.MaxMessageSizeMB)
                     {
-                        _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)", 
+                        _logger?.LogWarning("Message {MessageId} exceeds size limit ({Size:F2}MB > {Limit}MB)",
                             message.Id, sizeMB, _configuration.MaxMessageSizeMB);
                         return false;
                     }
@@ -64,11 +63,11 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 }
 
                 // Save to database
-                await using var connection = new NpgsqlConnection(_configuration.ConnectionString);
+                await using NpgsqlConnection connection = new(_configuration.ConnectionString);
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                 await using var command = connection.CreateCommand();
-                
+
                 if (_configuration.UseJsonbForHeaders)
                 {
                     command.CommandText = $@"
@@ -100,7 +99,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 command.Parameters.AddWithValue("@message_size", rawData.Length);
                 command.Parameters.AddWithValue("@message_body", dataToStore);
                 command.Parameters.AddWithValue("@is_compressed", isCompressed);
-                
+
                 if (_configuration.UseJsonbForHeaders)
                 {
                     command.Parameters.AddWithValue("@headers", NpgsqlDbType.Text, JsonSerializer.Serialize(message.Headers));
@@ -109,7 +108,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 {
                     command.Parameters.AddWithValue("@headers", SerializeHeaders(message));
                 }
-                
+
                 command.Parameters.AddWithValue("@has_attachments", message.HasAttachments);
                 command.Parameters.AddWithValue("@attachment_count", message.AttachmentCount);
                 command.Parameters.AddWithValue("@priority", message.Priority.ToString());
@@ -137,17 +136,20 @@ namespace Zetian.Storage.Providers.PostgreSQL
             for (int i = 0; i < _configuration.MaxRetryAttempts; i++)
             {
                 await Task.Delay(_configuration.RetryDelayMs * (i + 1), cancellationToken).ConfigureAwait(false);
-                
+
                 try
                 {
                     _logger?.LogInformation("Retry attempt {Attempt} for message {MessageId}", i + 1, message.Id);
-                    
+
                     // Try again without recursion
                     _configuration.EnableRetry = false;
-                    var result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
+                    bool result = await SaveAsync(session, message, cancellationToken).ConfigureAwait(false);
                     _configuration.EnableRetry = true;
-                    
-                    if (result) return true;
+
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
                 catch
                 {
@@ -161,23 +163,27 @@ namespace Zetian.Storage.Providers.PostgreSQL
         private async Task EnsureTableExistsAsync(CancellationToken cancellationToken)
         {
             if (_tableChecked || !_configuration.AutoCreateTable)
+            {
                 return;
+            }
 
             await _tableLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if (_tableChecked)
+                {
                     return;
+                }
 
-                await using var connection = new NpgsqlConnection(_configuration.ConnectionString);
+                await using NpgsqlConnection connection = new(_configuration.ConnectionString);
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                 // Check if schema exists
                 await using var schemaCommand = connection.CreateCommand();
                 schemaCommand.CommandText = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = @schema";
                 schemaCommand.Parameters.AddWithValue("@schema", _configuration.SchemaName);
-                
-                var schemaExists = (long)await schemaCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
+
+                bool schemaExists = (long)await schemaCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
                 if (!schemaExists)
                 {
                     await using var createSchemaCommand = connection.CreateCommand();
@@ -191,19 +197,19 @@ namespace Zetian.Storage.Providers.PostgreSQL
                     SELECT COUNT(*) 
                     FROM information_schema.tables 
                     WHERE table_schema = @schema AND table_name = @table";
-                
+
                 checkCommand.Parameters.AddWithValue("@schema", _configuration.SchemaName);
                 checkCommand.Parameters.AddWithValue("@table", _configuration.TableName);
 
-                var exists = (long)await checkCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
+                bool exists = (long)await checkCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
 
                 if (!exists)
                 {
                     // Create table
                     await using var createCommand = connection.CreateCommand();
-                    
-                    var headersType = _configuration.UseJsonbForHeaders ? "JSONB" : "TEXT";
-                    
+
+                    string headersType = _configuration.UseJsonbForHeaders ? "JSONB" : "TEXT";
+
                     createCommand.CommandText = $@"
                         CREATE TABLE {_configuration.GetFullTableName()} (
                             id BIGSERIAL PRIMARY KEY,
@@ -245,7 +251,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
                     // Create indexes if configured
                     if (_configuration.CreateIndexes)
                     {
-                        var indexes = new[]
+                        string[] indexes = new[]
                         {
                             $"CREATE INDEX idx_{_configuration.TableName}_message_id ON {_configuration.GetFullTableName()} (message_id)",
                             $"CREATE INDEX idx_{_configuration.TableName}_session_id ON {_configuration.GetFullTableName()} (session_id)",
@@ -258,7 +264,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
                             indexes = indexes.Append($"CREATE INDEX idx_{_configuration.TableName}_headers ON {_configuration.GetFullTableName()} USING gin (headers)").ToArray();
                         }
 
-                        foreach (var index in indexes)
+                        foreach (string? index in indexes)
                         {
                             await using var indexCommand = connection.CreateCommand();
                             indexCommand.CommandText = index;
@@ -279,8 +285,8 @@ namespace Zetian.Storage.Providers.PostgreSQL
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var compressor = new GZipStream(output, CompressionLevel.Optimal))
+            using MemoryStream output = new();
+            using (GZipStream compressor = new(output, CompressionLevel.Optimal))
             {
                 compressor.Write(data, 0, data.Length);
             }
@@ -289,7 +295,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
 
         private string SerializeHeaders(ISmtpMessage message)
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (var header in message.Headers)
             {
                 sb.AppendLine($"{header.Key}: {header.Value}");

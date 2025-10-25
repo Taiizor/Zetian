@@ -1,10 +1,11 @@
+using Amazon.S3;
 using System;
 using System.Threading.Tasks;
 using Zetian.Server;
-using Zetian.Storage.Providers.Extensions;
 using Zetian.Storage.Providers.Azure;
-using Zetian.Storage.Providers.S3;
+using Zetian.Storage.Providers.Extensions;
 using Zetian.Storage.Providers.PostgreSQL;
+using Zetian.Storage.Providers.S3;
 
 namespace Zetian.Storage.Providers.Examples
 {
@@ -18,7 +19,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task SqlServerExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .ServerName("SMTP Server with SQL Storage")
                 .WithSqlServerStorage(
@@ -49,7 +50,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task PostgreSqlExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(587)
                 .RequireAuthentication()
                 .WithPostgreSqlStorage(
@@ -74,7 +75,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task MongoDbExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .WithMongoDbStorage(
                     "mongodb://localhost:27017",
@@ -101,7 +102,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task RedisExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(2525)
                 .WithRedisStorage(
                     "localhost:6379,password=mypassword",
@@ -129,7 +130,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task AzureBlobExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .WithAzureBlobStorage(
                     "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net",
@@ -154,7 +155,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task AzureBlobWithADExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .WithAzureBlobStorageAD(
                     "mystorageaccount",
@@ -176,7 +177,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task AmazonS3Example()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .WithS3Storage(
                     "AKIAIOSFODNN7EXAMPLE",
@@ -207,7 +208,7 @@ namespace Zetian.Storage.Providers.Examples
         /// </summary>
         public static async Task S3CompatibleExample()
         {
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .WithS3CompatibleStorage(
                     "http://localhost:9000", // MinIO endpoint
@@ -239,7 +240,7 @@ namespace Zetian.Storage.Providers.Examples
 
             Console.WriteLine("Hybrid storage example would require custom implementation");
             Console.WriteLine("Combine Redis for immediate caching with SQL/S3 for persistence");
-            
+
             // Conceptual code:
             /*
             var server = new SmtpServerBuilder()
@@ -260,10 +261,10 @@ namespace Zetian.Storage.Providers.Examples
         public static async Task ProductionExample()
         {
             // Use environment variables for sensitive data
-            var connectionString = Environment.GetEnvironmentVariable("SMTP_SQL_CONNECTION") 
+            string connectionString = Environment.GetEnvironmentVariable("SMTP_SQL_CONNECTION")
                 ?? "Server=localhost;Database=SmtpProd;Trusted_Connection=true;";
 
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25)
                 .ServerName("Production SMTP Server")
                 .MaxMessageSizeMB(25)

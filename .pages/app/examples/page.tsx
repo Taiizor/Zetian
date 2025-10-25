@@ -142,11 +142,11 @@ using var server = new SmtpServerBuilder()
 //     .Port(25)
 //     .WithRedisStorage("localhost:6379", config =>
 //     {
-//         config.Database = 0;
+//         config.DatabaseNumber = 0;
 //         config.KeyPrefix = "smtp:";
-//         config.ExpirationMinutes = 1440;  // 24 hours
+//         config.MessageTTLSeconds = 1440;  // 24 hours
 //         config.MaxMessageSizeMB = 10;
-//         config.UseCompression = true;
+//         config.CompressMessageBody = true;
 //     })
 //     .Build();
 
@@ -175,21 +175,20 @@ using Zetian.Storage.MongoDB.Extensions;
 // SMTP server with MongoDB storage
 using var server = new SmtpServerBuilder()
     .Port(25)
-    .WithMongoStorage(
+    .WithMongoDbStorage(
         connectionString: "mongodb://localhost:27017",
-        database: "smtp_server",
+        databaseName: "smtp_server",
         collection: "messages")
     .Build();
 
 // Advanced MongoDB configuration
 // using var server = new SmtpServerBuilder()
 //     .Port(25)
-//     .WithMongoStorage("mongodb://localhost:27017", config =>
+//     .WithMongoDbStorage("mongodb://localhost:27017", "email_system", config =>
 //     {
-//         config.DatabaseName = "email_system";
 //         config.CollectionName = "emails";
-//         config.UseGridFS = true;  // For large attachments
-//         config.CreateIndexes = true;
+//         config.UseGridFsForLargeMessages = true;  // For large attachments
+//         config.AutoCreateIndexes = true;
 //         config.TTLDays = 30;  // Auto-delete after 30 days
 //     })
 //     .Build();
@@ -200,7 +199,7 @@ server.MessageReceived += async (sender, e) => {
     Console.WriteLine($"Message saved to MongoDB");
     Console.WriteLine($"  ID: {message.Id}");
     Console.WriteLine($"  Subject: {message.Subject}");
-    Console.WriteLine($"  Attachments: {message.Attachments.Count()}");
+    Console.WriteLine($"  Attachments: {message.AttachmentCount}");
     
     // GridFS handles large attachments automatically
     // TTL index ensures old messages are cleaned up
@@ -234,9 +233,7 @@ using var server = new SmtpServerBuilder()
 //         config.TableName = "EmailMessages";
 //         config.SchemaName = "smtp";
 //         config.AutoCreateTable = true;
-//         config.UseCompression = true;
-//         config.EnablePartitioning = true;  // Monthly partitions
-//         config.RetentionDays = 90;
+//         config.CompressMessageBody = true;
 //     })
 //     .Build();
 
@@ -271,15 +268,15 @@ using var server = new SmtpServerBuilder()
     // Primary storage: Fast Redis cache
     .WithRedisStorage("localhost:6379", config =>
     {
-        config.ExpirationMinutes = 60;  // Short-term cache
+        config.MessageTTLSeconds = 60;  // Short-term cache
     })
     // Secondary storage: SQL Server for search
     .WithSqlServerStorage(
         "Server=localhost;Database=SmtpDb;Trusted_Connection=true;",
         config => 
         {
-            config.EnableFullTextSearch = true;
-            config.RetentionDays = 30;
+            config.AutoCreateTable = true;
+            config.StoreAttachmentsSeparately = false;
         })
     // Archive storage: Azure Blob for long-term
     .WithAzureBlobStorage(
@@ -287,8 +284,7 @@ using var server = new SmtpServerBuilder()
         config =>
         {
             config.ContainerName = "email-archive";
-            config.DefaultAccessTier = AccessTier.Cool;
-            config.ArchiveAfterDays = 7;
+            config.AccessTier = BlobAccessTier.Cool;
         })
     .Build();
 
@@ -333,8 +329,10 @@ using var server = new SmtpServerBuilder()
     .WithS3Storage(
         accessKeyId: Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"),
         secretAccessKey: Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY"),
-        bucketName: "smtp-messages",
-        region: "us-west-2")
+        bucketName: "smtp-messages", config =>
+        {
+            config.Region = "us-west-2";
+        })
     .Build();
 
 // Advanced S3 configuration with encryption and lifecycle
@@ -344,16 +342,14 @@ using var server = new SmtpServerBuilder()
 //     {
 //         config.Region = "us-west-2";
 //         config.KeyPrefix = "emails/";
-//         config.MessageKeyFormat = "\\{year\\}/\\{month\\}/\\{day\\}/\\{messageId\\}";
 //         
 //         // Server-side encryption
-//         config.ServerSideEncryption = ServerSideEncryptionMethod.AES256;
+//         config.EnableServerSideEncryption = true;
 //         config.KmsKeyId = "alias/my-kms-key";
 //         
 //         // Lifecycle rules
-//         config.TransitionToInfrequentAccessDays = 30;
+//         config.TransitionToIADays = 7;
 //         config.TransitionToGlacierDays = 90;
-//         config.DeleteAfterDays = 365;
 //     })
 //     .Build();
 

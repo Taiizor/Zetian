@@ -1,6 +1,6 @@
 using System;
 
-namespace Zetian.Storage.Common
+namespace Zetian.Storage.Configuration
 {
     /// <summary>
     /// Base configuration for all storage providers

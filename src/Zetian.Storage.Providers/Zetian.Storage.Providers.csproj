@@ -66,7 +66,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Zetian.Storage\Zetian.Storage.csproj" />
+        <ProjectReference Include="..\Zetian\Zetian.csproj" />
     </ItemGroup>
 
     <ItemGroup>

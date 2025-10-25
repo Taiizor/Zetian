@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-        <RootNamespace>Zetian.Storage.MongoDB</RootNamespace>
+        <RootNamespace>Zetian.Storage</RootNamespace>
         <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
         <ImplicitUsings>disable</ImplicitUsings>
         <DefaultLanguage>en-GB</DefaultLanguage>
@@ -29,19 +29,19 @@
         <Version>1.0.0</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>Zetian.Storage.MongoDB</Title>
-        <PackageId>Zetian.Storage.MongoDB</PackageId>
+        <Title>Zetian.Storage</Title>
+        <PackageId>Zetian.Storage</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Server - Storage MongoDB</Product>
+        <Product>Zetian SMTP Server - Storage</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>Store SMTP messages in MongoDB database</Summary>
-        <Description>MongoDB NoSQL storage provider for Zetian SMTP Server</Description>
+        <Summary>Storage abstraction layer for Zetian SMTP Server</Summary>
+        <Description>Core storage abstractions and base classes for Zetian SMTP Server</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>zetian;smtp;email;storage;database;mongodb;nosql</PackageTags>
+        <PackageTags>zetian;smtp;email;storage;database;abstraction</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
@@ -66,7 +66,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Zetian.Storage\Zetian.Storage.csproj" />
+        <ProjectReference Include="..\..\Zetian\Zetian.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -77,15 +77,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="README.MD">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
-        <None Include="..\..\LICENSE">
+        <None Include="..\..\..\LICENSE">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>

@@ -2,11 +2,26 @@
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-        <RootNamespace>Zetian.Storage.PostgreSQL</RootNamespace>
+        <RootNamespace>Zetian.Storage.SqlServer</RootNamespace>
         <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
         <ImplicitUsings>disable</ImplicitUsings>
         <DefaultLanguage>en-GB</DefaultLanguage>
         <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <!-- AOT Support for .NET 7.0+ -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0' OR '$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
+        <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">true</EnableAotAnalyzer>
+        <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+        <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+        <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
+        <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <IsAotCompatible>true</IsAotCompatible>
+        <IlcTrimMetadata>true</IlcTrimMetadata>
+        <IsTrimmable>true</IsTrimmable>
+        <TrimMode>link</TrimMode>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -14,19 +29,19 @@
         <Version>1.0.0</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>Zetian.Storage.PostgreSQL</Title>
-        <PackageId>Zetian.Storage.PostgreSQL</PackageId>
+        <Title>Zetian.Storage.SqlServer</Title>
+        <PackageId>Zetian.Storage.SqlServer</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Server - Storage PostgreSQL</Product>
+        <Product>Zetian SMTP Server - Storage SqlServer</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>Store SMTP messages in PostgreSQL database</Summary>
-        <Description>PostgreSQL storage provider for Zetian SMTP Server</Description>
+        <Summary>Store SMTP messages in SQL Server database</Summary>
+        <Description>SQL Server storage provider for Zetian SMTP Server</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>zetian;smtp;email;storage;database;postgresql;postgres</PackageTags>
+        <PackageTags>zetian;smtp;email;storage;database;sqlserver;mssql</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
@@ -62,12 +77,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Npgsql" Version="9.0.4" />
-    </ItemGroup>
-
-    <!-- Preserve types for JSON serialization -->
-    <ItemGroup>
-        <TrimmerRootDescriptor Include="TrimmerRoots.xml" Condition="Exists('TrimmerRoots.xml')" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -75,7 +85,7 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
-        <None Include="..\..\LICENSE">
+        <None Include="..\..\..\LICENSE">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>

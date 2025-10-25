@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-        <RootNamespace>Zetian.Storage.Redis</RootNamespace>
+        <RootNamespace>Zetian.Storage.AzureBlob</RootNamespace>
         <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
         <ImplicitUsings>disable</ImplicitUsings>
         <DefaultLanguage>en-GB</DefaultLanguage>
@@ -29,19 +29,19 @@
         <Version>1.0.0</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>Zetian.Storage.Redis</Title>
-        <PackageId>Zetian.Storage.Redis</PackageId>
+        <Title>Zetian.Storage.AzureBlob</Title>
+        <PackageId>Zetian.Storage.AzureBlob</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Server - Storage Redis</Product>
+        <Product>Zetian SMTP Server - Storage Azure Blob</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>High-performance Redis storage for SMTP messages</Summary>
-        <Description>Redis cache and storage provider for Zetian SMTP Server</Description>
+        <Summary>Store SMTP messages in Azure Blob Storage</Summary>
+        <Description>Azure Blob Storage provider for Zetian SMTP Server</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>zetian;smtp;email;storage;cache;redis</PackageTags>
+        <PackageTags>zetian;smtp;email;storage;azure;blob;cloud</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
@@ -75,9 +75,10 @@
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
     </ItemGroup>
-
+    
     <ItemGroup>
-        <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+        <PackageReference Include="Azure.Identity" Version="1.17.0" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -85,7 +86,7 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
-        <None Include="..\..\LICENSE">
+        <None Include="..\..\..\LICENSE">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>

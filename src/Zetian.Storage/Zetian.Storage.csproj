@@ -32,7 +32,7 @@
         <Title>Zetian.Storage</Title>
         <PackageId>Zetian.Storage</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Storage Providers</Product>
+        <Product>Zetian SMTP Server - Storage</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
         <Summary>Storage abstraction layer for Zetian SMTP Server</Summary>
         <Description>Core storage abstractions and base classes for Zetian SMTP Server</Description>

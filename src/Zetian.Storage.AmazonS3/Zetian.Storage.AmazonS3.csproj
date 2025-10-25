@@ -32,7 +32,7 @@
         <Title>Zetian.Storage.AmazonS3</Title>
         <PackageId>Zetian.Storage.AmazonS3</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Storage Providers</Product>
+        <Product>Zetian SMTP Server - Storage Amazon S3</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
         <Summary>Store SMTP messages in Amazon S3 or S3-compatible storage</Summary>
         <Description>Amazon S3 and S3-compatible storage provider for Zetian SMTP Server</Description>
@@ -66,7 +66,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Zetian\Zetian.csproj" />
         <ProjectReference Include="..\Zetian.Storage\Zetian.Storage.csproj" />
     </ItemGroup>
 

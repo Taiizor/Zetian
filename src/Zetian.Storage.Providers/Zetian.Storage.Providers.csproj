@@ -32,7 +32,7 @@
         <Title>Zetian.Storage.Providers</Title>
         <PackageId>Zetian.Storage.Providers</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Storage Providers</Product>
+        <Product>Zetian SMTP Server - Storage Providers</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
         <Summary>Storage providers for Zetian SMTP Server including SQL Server, PostgreSQL, MongoDB, Redis, Azure Blob, and Amazon S3.</Summary>
         <Description>Storage providers for Zetian SMTP Server. Includes database and cloud storage implementations for SQL Server, PostgreSQL, MongoDB, Redis, Azure Blob Storage, and Amazon S3. Easily extend Zetian with persistent message storage capabilities.</Description>
@@ -43,6 +43,7 @@
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
         <PackageTags>zetian;smtp;email;storage;database;sql;postgresql;mongodb;redis;azure;aws;s3</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>git://github.com/Taiizor/Zetian</RepositoryUrl>
@@ -64,12 +65,17 @@
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     </PropertyGroup>
 
-    <!-- Dependencies -->
     <ItemGroup>
-        <ProjectReference Include="..\Zetian\Zetian.csproj" />
+        <ProjectReference Include="..\Zetian.Storage\Zetian.Storage.csproj" />
     </ItemGroup>
 
-    <!-- Database Providers -->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub">
+            <Version>10.0.0-beta.25514.2</Version>
+            <PrivateAssets>All</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Npgsql" Version="9.0.4" />
         <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
@@ -77,13 +83,11 @@
         <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     </ItemGroup>
 
-    <!-- Cloud Storage Providers -->
     <ItemGroup>
         <PackageReference Include="AWSSDK.S3" Version="4.0.7.14" />
         <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
     </ItemGroup>
 
-    <!-- Common Dependencies -->
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.10" />
     </ItemGroup>
@@ -101,6 +105,10 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Properties\" />
     </ItemGroup>
 
 </Project>

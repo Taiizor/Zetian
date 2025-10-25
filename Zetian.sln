@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Storage.AmazonS3", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Storage.AzureBlob", "src\Zetian.Storage.AzureBlob\Zetian.Storage.AzureBlob.csproj", "{C5D2C705-95BE-86DB-B9CA-B28FBE5D22A2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Storage.Redis", "src\Zetian.Storage.Redis\Zetian.Storage.Redis.csproj", "{F077EDFB-8EBA-9923-555B-33879EBDCF20}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,10 @@ Global
 		{C5D2C705-95BE-86DB-B9CA-B28FBE5D22A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5D2C705-95BE-86DB-B9CA-B28FBE5D22A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5D2C705-95BE-86DB-B9CA-B28FBE5D22A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F077EDFB-8EBA-9923-555B-33879EBDCF20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F077EDFB-8EBA-9923-555B-33879EBDCF20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F077EDFB-8EBA-9923-555B-33879EBDCF20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F077EDFB-8EBA-9923-555B-33879EBDCF20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -150,6 +156,7 @@ Global
 		{773714E3-2C5A-78E6-AA18-B35157F6DCA7} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
 		{9AD9F7B2-BDED-CCA9-35E9-DAF911B11DC3} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
 		{C5D2C705-95BE-86DB-B9CA-B28FBE5D22A2} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
+		{F077EDFB-8EBA-9923-555B-33879EBDCF20} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1A2C3D4-5E6F-7890-1234-567890FEDCBA}

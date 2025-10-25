@@ -88,15 +88,19 @@ namespace Zetian.Internal
         {
             try
             {
+                // Create a CancellationTokenSource for connection timeout
+                using CancellationTokenSource connectionTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                connectionTimeoutCts.CancelAfter(_configuration.ConnectionTimeout);
+
                 // Send greeting
                 await SendGreetingAsync().ConfigureAwait(false);
 
                 // Process commands
-                while (!cancellationToken.IsCancellationRequested && _client.Connected && _state != SmtpSessionState.Quit)
+                while (!connectionTimeoutCts.Token.IsCancellationRequested && _client.Connected && _state != SmtpSessionState.Quit)
                 {
                     try
                     {
-                        string? line = await ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                        string? line = await ReadLineAsync(connectionTimeoutCts.Token).ConfigureAwait(false);
                         if (line == null)
                         {
                             break;
@@ -107,7 +111,7 @@ namespace Zetian.Internal
                             _logger.LogDebug("C: {Command}", line);
                         }
 
-                        await ProcessCommandAsync(line, cancellationToken).ConfigureAwait(false);
+                        await ProcessCommandAsync(line, connectionTimeoutCts.Token).ConfigureAwait(false);
 
                         // Check if QUIT was processed
                         if (_state == SmtpSessionState.Quit)
@@ -115,6 +119,18 @@ namespace Zetian.Internal
                             _logger.LogDebug("Session {SessionId}: QUIT processed, breaking loop", Id);
                             break;
                         }
+                    }
+                    catch (TimeoutException tex)
+                    {
+                        _logger.LogWarning("Session {SessionId}: Command timeout - {Message}", Id, tex.Message);
+                        await SendResponseAsync(new SmtpResponse(421, "Command timeout")).ConfigureAwait(false);
+                        break;
+                    }
+                    catch (OperationCanceledException) when (connectionTimeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                    {
+                        _logger.LogWarning("Session {SessionId}: Connection timeout after {Timeout}", Id, _configuration.ConnectionTimeout);
+                        await SendResponseAsync(new SmtpResponse(421, "Connection timeout")).ConfigureAwait(false);
+                        break;
                     }
                     catch (IOException ex)
                     {
@@ -431,7 +447,17 @@ namespace Zetian.Internal
 
             await SendResponseAsync(SmtpResponse.StartMailInput).ConfigureAwait(false);
 
-            byte[]? messageData = await ReadMessageDataAsync(cancellationToken).ConfigureAwait(false);
+            byte[]? messageData = null;
+            try
+            {
+                messageData = await ReadMessageDataAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (TimeoutException tex)
+            {
+                _logger.LogWarning("Session {SessionId}: Data timeout - {Message}", Id, tex.Message);
+                await SendResponseAsync(new SmtpResponse(421, "Data transfer timeout")).ConfigureAwait(false);
+                return;
+            }
 
             if (messageData == null || messageData.Length == 0)
             {
@@ -499,12 +525,16 @@ namespace Zetian.Internal
 
             try
             {
+                // Create a CancellationTokenSource for data timeout
+                using CancellationTokenSource dataTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                dataTimeoutCts.CancelAfter(_configuration.DataTimeout);
+
                 bool previousWasCr = false;
                 List<byte> currentLine = new(64); // Smaller initial capacity
 
-                while (!cancellationToken.IsCancellationRequested)
+                while (!dataTimeoutCts.Token.IsCancellationRequested)
                 {
-                    int bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), cancellationToken).ConfigureAwait(false);
+                    int bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, 256), dataTimeoutCts.Token).ConfigureAwait(false);
                     if (bytesRead == 0)
                     {
                         return null;
@@ -561,6 +591,15 @@ namespace Zetian.Internal
                 }
 
                 return null;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw; // Re-throw if original token was cancelled
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Data transfer timeout after {Timeout}", _configuration.DataTimeout);
+                throw new TimeoutException("Data transfer timeout");
             }
             finally
             {

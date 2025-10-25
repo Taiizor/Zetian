@@ -1,4 +1,4 @@
-# Zetian.Storage.SqlServer - SQL Server Message Storage
+# Zetian.Storage.SqlServer - SQL Server Storage
 
 [![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Storage.SqlServer.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Storage.SqlServer)
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Storage.SqlServer?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Storage.SqlServer)

@@ -1,4 +1,4 @@
-# Zetian.Storage.MongoDB - NoSQL Message Storage
+# Zetian.Storage.MongoDB - NoSQL Storage
 
 [![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Storage.MongoDB.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Storage.MongoDB)
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Storage.MongoDB?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Storage.MongoDB)

@@ -1,4 +1,4 @@
-# Zetian.Storage.PostgreSQL - PostgreSQL Message Storage
+# Zetian.Storage.PostgreSQL - PostgreSQL Storage
 
 [![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Storage.PostgreSQL.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Storage.PostgreSQL)
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Storage.PostgreSQL?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Storage.PostgreSQL)

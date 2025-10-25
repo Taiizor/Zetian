@@ -1,4 +1,4 @@
-# Zetian.Storage.Redis - High-Performance Cache Storage
+# Zetian.Storage.Redis - Redis Storage
 
 [![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Storage.Redis.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Storage.Redis)
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Storage.Redis?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Storage.Redis)
@@ -8,16 +8,16 @@ Redis cache and storage provider for Zetian SMTP Server. Delivers ultra-fast, in
 
 ## ⚡ Features
 
-- 🚀 **Ultra-Fast Performance** - In-memory storage with sub-millisecond latency
-- 📦 **Chunking Support** - Automatic splitting of large messages
-- 🌊 **Redis Streams** - Event-driven message processing
-- 📢 **Pub/Sub** - Real-time message notifications
-- ⏱️ **TTL Expiration** - Automatic cache cleanup
 - 📊 **Sorted Sets** - Efficient time-based queries
+- ⏱️ **TTL Expiration** - Automatic cache cleanup
 - 🗜️ **Compression** - Optional GZIP compression
-- 🔄 **Pipeline Support** - Batch operations for efficiency
-- 🌍 **Cluster Support** - Horizontal scaling with Redis Cluster
+- 📢 **Pub/Sub** - Real-time message notifications
 - 💾 **Persistence Options** - RDB and AOF support
+- 🔄 **Pipeline Support** - Batch operations for efficiency
+- 🌊 **Redis Streams** - Event-driven message processing
+- 🌍 **Cluster Support** - Horizontal scaling with Redis Cluster
+- 📦 **Chunking Support** - Automatic splitting of large messages
+- 🚀 **Ultra-Fast Performance** - In-memory storage with sub-millisecond latency
 
 ## 📦 Installation
 
@@ -70,20 +70,25 @@ var server = new SmtpServerBuilder()
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| ConnectionString | string | - | Redis connection string (required) |
-| DatabaseNumber | int | 0 | Redis database number (0-15) |
-| KeyPrefix | string | "smtp:" | Prefix for all Redis keys |
-| MessageTTLSeconds | int | 3600 | Message expiration time in seconds |
-| EnableChunking | bool | true | Split large messages into chunks |
-| ChunkSizeKB | int | 64 | Size of each chunk in KB |
-| UseRedisStreams | bool | false | Use Redis Streams for storage |
-| StreamKey | string | "smtp:stream" | Key for Redis Stream |
-| EnablePubSub | bool | false | Enable Pub/Sub notifications |
-| PubSubChannel | string | "smtp:notifications" | Channel for notifications |
-| MaintainIndex | bool | true | Maintain sorted set index |
-| IndexKey | string | "smtp:index" | Key for sorted set index |
-| CompressMessageBody | bool | false | Compress message bodies |
-| MaxMessageSizeMB | double | 100 | Maximum message size in MB |
+| `ConnectionString` | string | - | Redis connection string (required) |
+| `DatabaseNumber` | int | 0 | Redis database number (0-15) |
+| `KeyPrefix` | string | "smtp:" | Prefix for all Redis keys |
+| `MessageTTLSeconds` | int | 3600 | Message expiration time in seconds |
+| `EnableChunking` | bool | true | Split large messages into chunks |
+| `ChunkSizeKB` | int | 64 | Size of each chunk in KB |
+| `UseRedisStreams` | bool | false | Use Redis Streams for storage |
+| `StreamKey` | string | "smtp:stream" | Key for Redis Stream |
+| `EnablePubSub` | bool | false | Enable Pub/Sub notifications |
+| `PubSubChannel` | string | "smtp:notifications" | Channel for notifications |
+| `MaintainIndex` | bool | true | Maintain sorted set index |
+| `IndexKey` | string | "smtp:index" | Key for sorted set index |
+| `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `CompressMessageBody` | bool | false | Compress message bodies |
+| `EnableRetry` | bool | true | Enable retry logic |
+| `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
+| `RetryDelayMs` | int | 1000 | Delay between retries |
+| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout |
+| `LogErrors` | bool | true | Whether to log errors |
 
 ## 🎯 Usage Examples
 
@@ -129,7 +134,6 @@ config.UseRedisStreams = false;
 // Use Redis Streams for event-driven architectures
 config.UseRedisStreams = true;
 config.StreamKey = "smtp:stream";
-config.StreamMaxLength = 10000; // Trim to prevent unlimited growth
 
 // Consume messages from stream
 var entries = await db.StreamReadAsync("smtp:stream", "0-0");
@@ -377,34 +381,22 @@ CONFIG SET maxmemory 2gb
 CONFIG SET maxmemory-policy allkeys-lru
 ```
 
-**Performance Issues**
-```csharp
-// Use pipelining
-config.EnablePipelining = true;
-
-// Reduce round trips
-config.BatchSize = 100;
-
-// Monitor slow queries
-// redis-cli: SLOWLOG GET 10
-```
-
 ## 📋 Requirements
 
-- Redis 5.0 or later (for Streams support)
-- Redis 3.2 or later (without Streams)
-- Redis 6.0 or later (for ACL support)
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
+- Redis 3.2 or later (without Streams)
+- Redis 6.0 or later (for ACL support)
+- Redis 5.0 or later (for Streams support)
 - StackExchange.Redis package (included)
 
 ## 📚 Documentation & Support
 
-- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
-- **Redis Docs**: [Redis Documentation](https://redis.io/documentation)
-- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Redis Docs**: [Redis Documentation](https://redis.io/docs/latest)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 
 ## 📄 License
 

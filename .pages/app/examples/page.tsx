@@ -391,19 +391,17 @@ using var server = new SmtpServerBuilder()
 //     .WithAzureBlobStorage(connectionString, config =>
 //     {
 //         config.ContainerName = "smtp-messages";
-//         config.MessagePathFormat = "\\{year\\}/\\{month\\}/\\{day\\}/\\{messageId\\}";
 //         
 //         // Access tiers for cost optimization
-//         config.DefaultAccessTier = AccessTier.Cool;
-//         config.ArchiveAfterDays = 30;
+//         config.AccessTier = BlobAccessTier.Cool;
 //         
 //         // Security features
 //         config.EnableSoftDelete = true;
 //         config.SoftDeleteRetentionDays = 7;
-//         config.EnableEncryption = true;
+//         config.CompressMessageBody = true;
 //         
 //         // Azure AD authentication (instead of connection string)
-//         // config.UseAzureIdentity = true;
+//         // config.UseAzureAdAuthentication = true;
 //     })
 //     .Build();
 
@@ -446,19 +444,15 @@ using var server = new SmtpServerBuilder()
 //     {
 //         config.TableName = "email_messages";
 //         config.SchemaName = "smtp";
-//         config.AutoCreateSchema = true;
+//         config.AutoCreateTable = true;
 //         
 //         // JSONB for headers and metadata
-//         config.UseJsonB = true;
-//         config.CreateGinIndex = true;  // Fast JSON queries
+//         config.UseJsonbForHeaders = true;
+//         config.CreateIndexes = true;  // Fast JSON queries
 //         
 //         // Table partitioning for scale
 //         config.EnablePartitioning = true;
 //         config.PartitionInterval = PartitionInterval.Monthly;
-//         
-//         // Retention
-//         config.RetentionMonths = 6;
-//         config.AutoVacuum = true;
 //     })
 //     .Build();
 

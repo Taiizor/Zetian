@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -66,7 +67,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 await using NpgsqlConnection connection = new(_configuration.ConnectionString);
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-                await using var command = connection.CreateCommand();
+                await using NpgsqlCommand command = connection.CreateCommand();
 
                 if (_configuration.UseJsonbForHeaders)
                 {
@@ -179,20 +180,20 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                 // Check if schema exists
-                await using var schemaCommand = connection.CreateCommand();
+                await using NpgsqlCommand schemaCommand = connection.CreateCommand();
                 schemaCommand.CommandText = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = @schema";
                 schemaCommand.Parameters.AddWithValue("@schema", _configuration.SchemaName);
 
                 bool schemaExists = (long)await schemaCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) > 0;
                 if (!schemaExists)
                 {
-                    await using var createSchemaCommand = connection.CreateCommand();
+                    await using NpgsqlCommand createSchemaCommand = connection.CreateCommand();
                     createSchemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS \"{_configuration.SchemaName}\"";
                     await createSchemaCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
 
                 // Check if table exists
-                await using var checkCommand = connection.CreateCommand();
+                await using NpgsqlCommand checkCommand = connection.CreateCommand();
                 checkCommand.CommandText = @"
                     SELECT COUNT(*) 
                     FROM information_schema.tables 
@@ -206,7 +207,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
                 if (!exists)
                 {
                     // Create table
-                    await using var createCommand = connection.CreateCommand();
+                    await using NpgsqlCommand createCommand = connection.CreateCommand();
 
                     string headersType = _configuration.UseJsonbForHeaders ? "JSONB" : "TEXT";
 
@@ -266,7 +267,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
 
                         foreach (string? index in indexes)
                         {
-                            await using var indexCommand = connection.CreateCommand();
+                            await using NpgsqlCommand indexCommand = connection.CreateCommand();
                             indexCommand.CommandText = index;
                             await indexCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                         }
@@ -296,7 +297,7 @@ namespace Zetian.Storage.Providers.PostgreSQL
         private string SerializeHeaders(ISmtpMessage message)
         {
             StringBuilder sb = new();
-            foreach (var header in message.Headers)
+            foreach (KeyValuePair<string, string> header in message.Headers)
             {
                 sb.AppendLine($"{header.Key}: {header.Value}");
             }

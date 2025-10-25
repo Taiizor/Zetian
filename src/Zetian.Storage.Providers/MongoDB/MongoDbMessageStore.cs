@@ -93,7 +93,7 @@ namespace Zetian.Storage.Providers.MongoDB
                 if (useGridFs)
                 {
                     // Store in GridFS
-                    var gridFsId = await StoreInGridFsAsync(message.Id, rawData, cancellationToken).ConfigureAwait(false);
+                    ObjectId gridFsId = await StoreInGridFsAsync(message.Id, rawData, cancellationToken).ConfigureAwait(false);
                     document.GridFsId = gridFsId;
                     document.IsStoredInGridFs = true;
                 }
@@ -149,7 +149,7 @@ namespace Zetian.Storage.Providers.MongoDB
             };
 
             using MemoryStream stream = new(data);
-            var objectId = await _gridFsBucket.UploadFromStreamAsync(
+            ObjectId objectId = await _gridFsBucket.UploadFromStreamAsync(
                 $"{messageId}.eml",
                 stream,
                 options,
@@ -244,7 +244,7 @@ namespace Zetian.Storage.Providers.MongoDB
         {
             try
             {
-                var adminDb = _client.GetDatabase("admin");
+                IMongoDatabase adminDb = _client.GetDatabase("admin");
 
                 // Enable sharding on database
                 BsonDocument enableShardingCommand = new()

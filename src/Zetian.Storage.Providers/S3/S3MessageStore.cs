@@ -136,9 +136,14 @@ namespace Zetian.Storage.Providers.S3
                     BucketName = _configuration.BucketName,
                     Key = objectKey,
                     ContentType = "message/rfc822",
-                    Metadata = metadata,
                     StorageClass = _configuration.StorageClass
                 };
+
+                // Add metadata
+                foreach (KeyValuePair<string, string> kvp in metadata)
+                {
+                    putRequest.Metadata.Add(kvp.Key, kvp.Value);
+                }
 
                 // Set server-side encryption
                 if (_configuration.EnableServerSideEncryption)
@@ -164,7 +169,7 @@ namespace Zetian.Storage.Providers.S3
                 using MemoryStream stream = new(dataToUpload);
                 putRequest.InputStream = stream;
 
-                var response = await _s3Client.PutObjectAsync(putRequest, cancellationToken).ConfigureAwait(false);
+                PutObjectResponse response = await _s3Client.PutObjectAsync(putRequest, cancellationToken).ConfigureAwait(false);
 
                 // Add tags (separate request)
                 if (tags.Count > 0)
@@ -408,7 +413,7 @@ namespace Zetian.Storage.Providers.S3
                     Key = objectKey
                 };
 
-                var response = await _s3Client.GetObjectAsync(getRequest).ConfigureAwait(false);
+                GetObjectResponse response = await _s3Client.GetObjectAsync(getRequest).ConfigureAwait(false);
 
                 using MemoryStream memoryStream = new();
                 await response.ResponseStream.CopyToAsync(memoryStream).ConfigureAwait(false);
@@ -449,7 +454,7 @@ namespace Zetian.Storage.Providers.S3
                 MaxKeys = maxResults
             };
 
-            var response = await _s3Client.ListObjectsV2Async(listRequest).ConfigureAwait(false);
+            ListObjectsV2Response response = await _s3Client.ListObjectsV2Async(listRequest).ConfigureAwait(false);
 
             messages.AddRange(response.S3Objects.Select(obj => obj.Key));
 

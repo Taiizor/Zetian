@@ -122,11 +122,11 @@ namespace Zetian.Storage.Providers.Redis
 
         private async Task StoreAsKeyValueAsync(string messageId, byte[] data, MessageMetadata metadata, CancellationToken cancellationToken)
         {
-            var transaction = _database.CreateTransaction();
+            ITransaction transaction = _database.CreateTransaction();
 
             // Store metadata as hash
             string metadataKey = _configuration.GetMetadataKey(messageId);
-            var hashEntries = new[]
+            HashEntry[] hashEntries = new[]
             {
                 new HashEntry("MessageId", metadata.MessageId),
                 new HashEntry("SessionId", metadata.SessionId),
@@ -218,7 +218,7 @@ namespace Zetian.Storage.Providers.Redis
                 new("Priority", metadata.Priority ?? "")
             };
 
-            var streamId = await _database.StreamAddAsync(_configuration.StreamKey, streamEntries).ConfigureAwait(false);
+            RedisValue streamId = await _database.StreamAddAsync(_configuration.StreamKey, streamEntries).ConfigureAwait(false);
 
             // Trim stream if it gets too large (keep last 1000 messages)
             await _database.StreamTrimAsync(_configuration.StreamKey, 1000, true).ConfigureAwait(false);
@@ -273,7 +273,7 @@ namespace Zetian.Storage.Providers.Redis
             try
             {
                 string metadataKey = _configuration.GetMetadataKey(messageId);
-                var metadata = await _database.HashGetAllAsync(metadataKey).ConfigureAwait(false);
+                HashEntry[] metadata = await _database.HashGetAllAsync(metadataKey).ConfigureAwait(false);
 
                 if (metadata.Length == 0)
                 {
@@ -281,7 +281,7 @@ namespace Zetian.Storage.Providers.Redis
                 }
 
                 // Check if chunked
-                var totalChunksEntry = metadata.FirstOrDefault(x => x.Name == "TotalChunks");
+                HashEntry totalChunksEntry = metadata.FirstOrDefault(x => x.Name == "TotalChunks");
                 if (totalChunksEntry != default && totalChunksEntry.Value.HasValue)
                 {
                     // Retrieve chunks
@@ -291,7 +291,7 @@ namespace Zetian.Storage.Providers.Redis
                     for (int i = 0; i < totalChunks; i++)
                     {
                         string chunkKey = _configuration.GetChunkKey(messageId, i);
-                        var chunk = await _database.StringGetAsync(chunkKey).ConfigureAwait(false);
+                        RedisValue chunk = await _database.StringGetAsync(chunkKey).ConfigureAwait(false);
                         if (chunk.HasValue)
                         {
                             chunks.Add(chunk!);
@@ -304,7 +304,7 @@ namespace Zetian.Storage.Providers.Redis
                 {
                     // Retrieve single key
                     string messageKey = _configuration.GetMessageKey(messageId);
-                    var data = await _database.StringGetAsync(messageKey).ConfigureAwait(false);
+                    RedisValue data = await _database.StringGetAsync(messageKey).ConfigureAwait(false);
                     return data.HasValue ? (byte[])data! : null;
                 }
             }
@@ -332,7 +332,7 @@ namespace Zetian.Storage.Providers.Redis
         /// </summary>
         public async Task ClearAllAsync()
         {
-            var server = _redis.GetServer(_redis.GetEndPoints()[0]);
+            IServer server = _redis.GetServer(_redis.GetEndPoints()[0]);
             await server.FlushDatabaseAsync(_configuration.DatabaseNumber).ConfigureAwait(false);
             _logger?.LogWarning("All messages cleared from Redis database {Database}", _configuration.DatabaseNumber);
         }

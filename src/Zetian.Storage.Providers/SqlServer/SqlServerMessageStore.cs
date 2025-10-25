@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.IO.Compression;
@@ -65,7 +66,7 @@ namespace Zetian.Storage.Providers.SqlServer
                 using SqlConnection connection = new(_configuration.ConnectionString);
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-                using var command = connection.CreateCommand();
+                using SqlCommand command = connection.CreateCommand();
                 command.CommandText = $@"
                     INSERT INTO {_configuration.GetFullTableName()}
                     (MessageId, SessionId, FromAddress, ToAddresses, Subject, ReceivedDate, 
@@ -155,7 +156,7 @@ namespace Zetian.Storage.Providers.SqlServer
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                 // Check if table exists
-                using var checkCommand = connection.CreateCommand();
+                using SqlCommand checkCommand = connection.CreateCommand();
                 checkCommand.CommandText = $@"
                     SELECT COUNT(*) 
                     FROM INFORMATION_SCHEMA.TABLES 
@@ -169,7 +170,7 @@ namespace Zetian.Storage.Providers.SqlServer
                 if (!exists)
                 {
                     // Create table
-                    using var createCommand = connection.CreateCommand();
+                    using SqlCommand createCommand = connection.CreateCommand();
                     createCommand.CommandText = $@"
                         CREATE TABLE {_configuration.GetFullTableName()} (
                             Id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -209,7 +210,7 @@ namespace Zetian.Storage.Providers.SqlServer
 
                     if (!exists)
                     {
-                        using var createAttachCommand = connection.CreateCommand();
+                        using SqlCommand createAttachCommand = connection.CreateCommand();
                         createAttachCommand.CommandText = $@"
                             CREATE TABLE {_configuration.GetFullAttachmentsTableName()} (
                                 Id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -250,7 +251,7 @@ namespace Zetian.Storage.Providers.SqlServer
         private string SerializeHeaders(ISmtpMessage message)
         {
             StringBuilder sb = new();
-            foreach (var header in message.Headers)
+            foreach (KeyValuePair<string, string> header in message.Headers)
             {
                 sb.AppendLine($"{header.Key}: {header.Value}");
             }

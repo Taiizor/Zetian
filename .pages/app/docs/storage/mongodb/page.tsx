@@ -31,19 +31,17 @@ const advancedExample = `var server = new SmtpServerBuilder()
             config.GridFsBucketName = "attachments";
             
             // GridFS for large attachments
-            config.UseGridFsForLargeData = true;
-            config.GridFsThresholdKB = 256;
+            config.UseGridFsForLargeMessages = true;
+            config.GridFsThresholdMB = 50;
             
             // TTL for auto-cleanup
             config.EnableTTL = true;
-            config.MessageTTLDays = 30;
+            config.TTLDays = 30;
             
             // Sharding support
             config.ShardKeyField = "received_date";
             
             // Performance
-            config.WriteConcern = WriteConcern.Majority;
-            config.ReadPreference = ReadPreference.SecondaryPreferred;
             config.CompressMessageBody = true;
         })
     .Build();`;
@@ -57,12 +55,15 @@ var gridFsBucket = new GridFSBucket(database, new GridFSBucketOptions
     BucketName = "attachments"
 });
 
-// Download file
-var downloadStream = await gridFsBucket.OpenDownloadStreamByNameAsync("large-file.pdf");
-var bytes = await downloadStream.ToByteArrayAsync();
+byte[] fileBytes;
+using (var downloadStream = await gridFsBucket.OpenDownloadStreamByNameAsync("large-file.pdf"))
+using (var memoryStream = new MemoryStream())
+{
+    await downloadStream.CopyToAsync(memoryStream);
+    fileBytes = memoryStream.ToArray();
+}
 
-// Upload file
-var uploadStream = gridFsBucket.OpenUploadStream("new-file.pdf");
+using var uploadStream = await gridFsBucket.OpenUploadStreamAsync("new-file.pdf");
 await uploadStream.WriteAsync(fileBytes);
 await uploadStream.CloseAsync();`;
 
@@ -236,13 +237,13 @@ export default function MongoDBStoragePage() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Collection name</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">UseGridFsForLargeData</td>
+                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">UseGridFsForLargeMessages</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">true</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Use GridFS for large data</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">GridFsThresholdKB</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">256</td>
+                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">GridFsThresholdMB</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">10</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">GridFS threshold size</td>
                 </tr>
                 <tr>
@@ -251,7 +252,7 @@ export default function MongoDBStoragePage() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Enable TTL auto-cleanup</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">MessageTTLDays</td>
+                  <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">TTLDays</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">30</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">Days before expiration</td>
                 </tr>

@@ -8,16 +8,16 @@ Azure Blob Storage provider for Zetian SMTP Server. Provides enterprise-grade cl
 
 ## ⚡ Features
 
-- ☁️ **Azure Native** - Full Azure Blob Storage integration
-- 🗂️ **Hierarchical Structure** - Organized folder-like storage
-- ❄️ **Access Tiers** - Hot, Cool, and Archive tier support
-- 🔐 **Azure AD Auth** - Managed identity and service principal
-- 🗑️ **Soft Delete** - Recover deleted messages
-- 📊 **Lifecycle Management** - Automatic tier transitions
-- 🔒 **Encryption** - At-rest and in-transit encryption
 - 📸 **Snapshots** - Point-in-time recovery
-- 🌍 **Geo-Redundancy** - Cross-region replication
+- 🗑️ **Soft Delete** - Recover deleted messages
 - 📈 **Analytics** - Storage analytics and metrics
+- 🌍 **Geo-Redundancy** - Cross-region replication
+- 🔒 **Encryption** - At-rest and in-transit encryption
+- ❄️ **Access Tiers** - Hot, Cool, and Archive tier support
+- ☁️ **Azure Native** - Full Azure Blob Storage integration
+- 📊 **Lifecycle Management** - Automatic tier transitions
+- 🗂️ **Hierarchical Structure** - Organized folder-like storage
+- 🔐 **Azure AD Auth** - Managed identity and service principal
 
 ## 📦 Installation
 
@@ -53,14 +53,14 @@ var server = new SmtpServerBuilder()
         "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;EndpointSuffix=core.windows.net",
         config =>
         {
-            config.ContainerName = "smtp-messages";
-            config.NamingFormat = BlobNamingFormat.DateHierarchy;
-            config.AccessTier = BlobAccessTier.Hot;
-            config.CompressMessageBody = true;
-            config.StoreMetadataAsBlobProperties = true;
-            config.EnableSoftDelete = true;
-            config.SoftDeleteRetentionDays = 7;
             config.MaxMessageSizeMB = 100;
+            config.EnableSoftDelete = true;
+            config.CompressMessageBody = true;
+            config.SoftDeleteRetentionDays = 7;
+            config.AccessTier = BlobAccessTier.Hot;
+            config.ContainerName = "smtp-messages";
+            config.StoreMetadataAsBlobProperties = true;
+            config.NamingFormat = BlobNamingFormat.DateHierarchy;
         })
     .Build();
 ```
@@ -76,8 +76,8 @@ var server = new SmtpServerBuilder()
         config =>
         {
             config.ContainerName = "email-archive";
-            config.NamingFormat = BlobNamingFormat.YearMonth;
             config.AccessTier = BlobAccessTier.Cool;
+            config.NamingFormat = BlobNamingFormat.YearMonth;
         })
     .Build();
 ```
@@ -87,17 +87,17 @@ var server = new SmtpServerBuilder()
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `ConnectionString` | string | - | Azure Storage connection string |
-| `StorageAccountName` | string | - | Storage account name (for AD auth) |
 | `ContainerName` | string | "smtp-messages" | Container name for messages |
 | `UseAzureAdAuthentication` | bool | false | Use Azure AD authentication |
+| `StorageAccountName` | string | - | Storage account name (for AD auth) |
 | `AutoCreateContainer` | bool | true | Auto-create container if needed |
 | `NamingFormat` | enum | DateHierarchy | Blob naming format |
 | `AccessTier` | enum | Hot | Default blob access tier |
 | `StoreMetadataAsBlobProperties` | bool | true | Store metadata as blob properties |
 | `EnableSoftDelete` | bool | false | Enable soft delete feature |
 | `SoftDeleteRetentionDays` | int | 7 | Days to retain deleted blobs |
-| `CompressMessageBody` | bool | false | Compress message bodies |
 | `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
+| `CompressMessageBody` | bool | false | Compress message bodies |
 | `EnableRetry` | bool | true | Enable retry logic |
 | `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
 | `RetryDelayMs` | int | 1000 | Delay between retries |
@@ -126,17 +126,17 @@ var server = new SmtpServerBuilder()
 ### Blob Naming Strategies
 
 ```csharp
-// Date hierarchy: /2024/01/15/msg-123.eml
-config.NamingFormat = BlobNamingFormat.DateHierarchy;
+// Flat structure: /msg-123.eml
+config.NamingFormat = BlobNamingFormat.Flat;
 
 // Year-Month: /2024-01/msg-123.eml
 config.NamingFormat = BlobNamingFormat.YearMonth;
 
-// Flat structure: /msg-123.eml
-config.NamingFormat = BlobNamingFormat.Flat;
-
 // Domain-based naming
 config.NamingFormat = BlobNamingFormat.DomainBased;
+
+// Date hierarchy: /2024/01/15/msg-123.eml
+config.NamingFormat = BlobNamingFormat.DateHierarchy;
 ```
 
 ## 🔐 Authentication Methods
@@ -172,33 +172,6 @@ config.NamingFormat = BlobNamingFormat.DomainBased;
     })
 ```
 
-## 📊 Lifecycle Management
-
-```csharp
-// Configure automatic lifecycle policies
-config.LifecyclePolicies = new[]
-{
-    new LifecyclePolicy
-    {
-        Name = "MoveToCool",
-        DaysAfterCreation = 30,
-        Action = LifecycleAction.TierToCool
-    },
-    new LifecyclePolicy
-    {
-        Name = "MoveToArchive",
-        DaysAfterCreation = 90,
-        Action = LifecycleAction.TierToArchive
-    },
-    new LifecyclePolicy
-    {
-        Name = "DeleteOld",
-        DaysAfterCreation = 365,
-        Action = LifecycleAction.Delete
-    }
-};
-```
-
 ## 🗑️ Soft Delete & Recovery
 
 ```csharp
@@ -212,21 +185,6 @@ foreach (var blob in containerClient.GetBlobs(states: BlobStates.Deleted))
     var blobClient = containerClient.GetBlobClient(blob.Name);
     await blobClient.UndeleteAsync();
 }
-```
-
-## 📸 Snapshots & Versioning
-
-```csharp
-// Enable versioning
-config.EnableVersioning = true;
-
-// Create snapshot
-var snapshotResponse = await blobClient.CreateSnapshotAsync();
-var snapshotId = snapshotResponse.Value.Snapshot;
-
-// Read from snapshot
-var snapshotClient = blobClient.WithSnapshot(snapshotId);
-var content = await snapshotClient.DownloadContentAsync();
 ```
 
 ## 🌍 Geo-Redundancy
@@ -262,22 +220,6 @@ await blobServiceClient.SetPropertiesAsync(serviceProperties);
 ```
 
 ## 🔒 Security Features
-
-### Encryption
-
-```csharp
-// Customer-managed keys
-config.EncryptionScope = "my-encryption-scope";
-
-// Client-side encryption
-var encryptionOptions = new ClientSideEncryptionOptions(
-    ClientSideEncryptionVersion.V2_0)
-{
-    KeyEncryptionKey = keyEncryptionKey,
-    KeyResolver = keyResolver,
-    KeyWrapAlgorithm = "RSA-OAEP"
-};
-```
 
 ### Private Endpoints
 
@@ -331,20 +273,8 @@ await batchClient.SubmitBatchAsync(batch);
 **Authentication Failed**
 ```csharp
 // Check Azure AD permissions
-// Storage Blob Data Contributor role required
 // Verify tenant ID and client credentials
-```
-
-**Request Rate Exceeded**
-```csharp
-// Implement exponential backoff
-config.RetryOptions = new RetryOptions
-{
-    MaxRetries = 5,
-    Delay = TimeSpan.FromSeconds(1),
-    MaxDelay = TimeSpan.FromSeconds(30),
-    Mode = RetryMode.Exponential
-};
+// Storage Blob Data Contributor role required
 ```
 
 **Archive Tier Access**
@@ -359,20 +289,20 @@ if (blobProperties.AccessTier == AccessTier.Archive)
 
 ## 📋 Requirements
 
-- Azure Storage account (General Purpose v2 recommended)
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
 - Azure.Storage.Blobs package (included)
-- For Data Lake: Hierarchical namespace enabled
 - For managed identity: Azure AD configuration
+- For Data Lake: Hierarchical namespace enabled
+- Azure Storage account (General Purpose v2 recommended)
 
 ## 📚 Documentation & Support
 
-- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
-- **Azure Docs**: [Azure Blob Storage Documentation](https://docs.microsoft.com/azure/storage/blobs/)
-- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
+- **Azure Docs**: [Azure Blob Storage Documentation](https://docs.microsoft.com/azure/storage/blobs)
 
 ## 📄 License
 

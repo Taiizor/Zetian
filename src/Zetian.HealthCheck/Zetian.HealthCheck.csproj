@@ -38,7 +38,7 @@
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>health;health-check;monitoring;liveness;readiness;http;endpoint;kubernetes;k8s;probe;smtp;email;server;zetian</PackageTags>
+        <PackageTags>health;health-check;monitoring;liveness;readiness;http;endpoint;docker;kubernetes;k8s;probe;smtp;email;server;zetian</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>

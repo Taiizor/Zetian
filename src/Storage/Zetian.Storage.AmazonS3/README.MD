@@ -8,16 +8,16 @@ Amazon S3 and S3-compatible storage provider for Zetian SMTP Server. Provides en
 
 ## ⚡ Features
 
-- 🌐 **AWS S3 Native** - Full Amazon S3 integration
-- 🔀 **S3-Compatible** - Works with MinIO, Wasabi, DigitalOcean Spaces
-- 🔐 **Encryption** - SSE-S3, SSE-KMS, and client-side encryption
-- 📊 **Lifecycle Rules** - Automatic archival and expiration
-- 📦 **Versioning** - Keep multiple versions of messages
 - 🚀 **Transfer Acceleration** - Fast global uploads
-- 🏷️ **Object Tagging** - Organize and manage messages
-- ❄️ **Storage Classes** - Standard, IA, Glacier, Deep Archive
-- 🌍 **Cross-Region Replication** - Geographic redundancy
+- 🌐 **AWS S3 Native** - Full Amazon S3 integration
+- 📦 **Versioning** - Keep multiple versions of messages
 - 📏 **Intelligent Tiering** - Automatic cost optimization
+- 🏷️ **Object Tagging** - Organize and manage messages
+- 📊 **Lifecycle Rules** - Automatic archival and expiration
+- 🌍 **Cross-Region Replication** - Geographic redundancy
+- ❄️ **Storage Classes** - Standard, IA, Glacier, Deep Archive
+- 🔐 **Encryption** - SSE-S3, SSE-KMS, and client-side encryption
+- 🔀 **S3-Compatible** - Works with MinIO, Wasabi, DigitalOcean Spaces
 
 ## 📦 Installation
 
@@ -132,15 +132,15 @@ var server = new SmtpServerBuilder()
 // Standard storage class
 config.StorageClass = S3StorageClass.Standard;
 
-// Infrequent Access
-config.StorageClass = S3StorageClass.StandardIA;
+// Archive storage
+config.StorageClass = S3StorageClass.Glacier;
+config.StorageClass = S3StorageClass.DeepArchive;
 
 // Intelligent Tiering (automatic)
 config.StorageClass = S3StorageClass.IntelligentTiering;
 
-// Archive storage
-config.StorageClass = S3StorageClass.Glacier;
-config.StorageClass = S3StorageClass.GlacierDeepArchive;
+// Infrequent Access
+config.StorageClass = S3StorageClass.StandardInfrequentAccess;
 ```
 
 ### Object Naming Strategies

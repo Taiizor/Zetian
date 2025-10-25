@@ -8,16 +8,16 @@ SQL Server storage provider for Zetian SMTP Server. Provides high-performance me
 
 ## ⚡ Features
 
-- 🗺️ **Automatic Setup** - Tables and indexes created automatically
-- 🗜️ **Compression** - GZIP compression for message bodies
-- 📎 **Attachment Handling** - Separate table for efficient attachment storage
-- 🔄 **Retry Logic** - Built-in retry mechanism for transient failures
 - 🔒 **ACID Compliance** - Full transactional support
+- 🔍 **Full-Text Search** - Indexed fields for fast searching
 - 🚀 **High Performance** - Optimized queries and indexing
 - 📏 **Size Management** - Configurable message size limits
-- 🔍 **Full-Text Search** - Indexed fields for fast searching
+- 🗜️ **Compression** - GZIP compression for message bodies
 - 📦 **Batch Operations** - Efficient bulk insert/update support
 - 🔐 **Security** - Support for Windows and SQL authentication
+- 🔄 **Retry Logic** - Built-in retry mechanism for transient failures
+- 🗺️ **Automatic Setup** - Tables and indexes created automatically
+- 📎 **Attachment Handling** - Separate table for efficient attachment storage
 
 ## 📦 Installation
 
@@ -73,15 +73,15 @@ var server = new SmtpServerBuilder()
 | `ConnectionString` | string | *required* | SQL Server connection string |
 | `TableName` | string | "SmtpMessages" | Name of the messages table |
 | `SchemaName` | string | "dbo" | Database schema name |
-| `AttachmentsTableName` | string | "SmtpAttachments" | Name of the attachments table |
 | `AutoCreateTable` | bool | true | Auto-create table if it doesn't exist |
 | `StoreAttachmentsSeparately` | bool | false | Store attachments in separate table |
-| `CompressMessageBody` | bool | false | Enable GZIP compression |
+| `AttachmentsTableName` | string | "SmtpAttachments" | Name of the attachments table |
 | `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
-| `EnableRetry` | bool | true | Enable retry on transient failures |
-| `MaxRetryAttempts` | int | 3 | Number of retry attempts |
+| `CompressMessageBody` | bool | false | Compress message bodies |
+| `EnableRetry` | bool | true | Enable retry logic |
+| `MaxRetryAttempts` | int | 3 | Maximum retry attempts |
 | `RetryDelayMs` | int | 1000 | Delay between retries |
-| `ConnectionTimeoutSeconds` | int | 30 | Database connection timeout |
+| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout |
 | `LogErrors` | bool | true | Whether to log errors |
 
 ## 📏 Database Schema
@@ -372,7 +372,6 @@ foreach (var message in pgMessages)
 ```csharp
 // Increase connection timeout
 config.ConnectionTimeoutSeconds = 60;
-config.CommandTimeoutSeconds = 120;
 ```
 
 **Table Creation Failed**
@@ -393,19 +392,19 @@ SELECT * FROM sys.dm_exec_requests WHERE blocking_session_id > 0;
 
 ## 📋 Requirements
 
-- SQL Server 2016 or later (2019+ recommended)
-- Azure SQL Database (all tiers)
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
+- Azure SQL Database (all tiers)
 - Microsoft.Data.SqlClient package (included)
+- SQL Server 2016 or later (2019+ recommended)
 
 ## 📚 Documentation & Support
 
+- **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
+- **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
 - **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 - **SQL Server Docs**: [Microsoft SQL Documentation](https://docs.microsoft.com/sql)
-- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
-- **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
 
 ## 📄 License
 

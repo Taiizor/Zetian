@@ -73,9 +73,9 @@ var server = new SmtpServerBuilder()
 | `TableName` | string | "smtp_messages" | Name of the messages table |
 | `SchemaName` | string | "public" | Database schema name |
 | `AutoCreateTable` | bool | true | Auto-create table and indexes |
+| `UseJsonbForHeaders` | bool | true | Store headers as JSONB |
 | `EnablePartitioning` | bool | false | Enable table partitioning |
 | `PartitionInterval` | enum | Monthly | Partition interval (Daily, Weekly, Monthly, Yearly) |
-| `UseJsonbForHeaders` | bool | true | Store headers as JSONB |
 | `CreateIndexes` | bool | true | Create indexes automatically |
 | `MaxMessageSizeMB` | double | 100 | Maximum message size in MB |
 | `CompressMessageBody` | bool | false | Compress message bodies |

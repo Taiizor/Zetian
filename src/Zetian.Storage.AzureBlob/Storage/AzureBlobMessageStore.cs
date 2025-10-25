@@ -11,8 +11,10 @@ using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Storage.AzureBlob.Configuration;
+using Zetian.Storage.AzureBlob.Enums;
 
-namespace Zetian.Storage.AzureBlob
+namespace Zetian.Storage.AzureBlob.Storage
 {
     /// <summary>
     /// Azure Blob Storage implementation of IMessageStore

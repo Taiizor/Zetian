@@ -1,7 +1,8 @@
 using System;
-using Zetian.Storage.Common;
+using Zetian.Storage.AzureBlob.Enums;
+using Zetian.Storage.Configuration;
 
-namespace Zetian.Storage.AzureBlob
+namespace Zetian.Storage.AzureBlob.Configuration
 {
     /// <summary>
     /// Configuration for Azure Blob Storage message storage
@@ -133,52 +134,5 @@ namespace Zetian.Storage.AzureBlob
 
             return !name.StartsWith("-") && !name.EndsWith("-") && !name.Contains("--");
         }
-    }
-
-    /// <summary>
-    /// Blob naming format options
-    /// </summary>
-    public enum BlobNamingFormat
-    {
-        /// <summary>
-        /// Flat structure (all blobs in root)
-        /// </summary>
-        Flat,
-
-        /// <summary>
-        /// Hierarchical by date (yyyy/MM/dd/)
-        /// </summary>
-        DateHierarchy,
-
-        /// <summary>
-        /// Year and month folders (yyyy-MM/)
-        /// </summary>
-        YearMonth,
-
-        /// <summary>
-        /// Domain-based folders
-        /// </summary>
-        DomainBased
-    }
-
-    /// <summary>
-    /// Azure Blob access tier options
-    /// </summary>
-    public enum BlobAccessTier
-    {
-        /// <summary>
-        /// Hot tier for frequently accessed data
-        /// </summary>
-        Hot,
-
-        /// <summary>
-        /// Cool tier for infrequently accessed data
-        /// </summary>
-        Cool,
-
-        /// <summary>
-        /// Archive tier for rarely accessed data
-        /// </summary>
-        Archive
     }
 }

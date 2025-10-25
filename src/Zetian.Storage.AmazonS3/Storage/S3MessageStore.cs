@@ -10,8 +10,9 @@ using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Storage.AmazonS3.Configuration;
 
-namespace Zetian.Storage.AmazonS3
+namespace Zetian.Storage.AmazonS3.Storage
 {
     /// <summary>
     /// Amazon S3 implementation of IMessageStore

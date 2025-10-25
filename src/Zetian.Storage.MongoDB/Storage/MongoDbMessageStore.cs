@@ -10,8 +10,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Storage.MongoDB.Configuration;
 
-namespace Zetian.Storage.MongoDB
+namespace Zetian.Storage.MongoDB.Storage
 {
     /// <summary>
     /// MongoDB implementation of IMessageStore

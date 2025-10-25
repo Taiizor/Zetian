@@ -1,7 +1,7 @@
 using System;
-using Zetian.Storage.Common;
+using Zetian.Storage.Configuration;
 
-namespace Zetian.Storage.MongoDB
+namespace Zetian.Storage.MongoDB.Configuration
 {
     /// <summary>
     /// Configuration for MongoDB message storage

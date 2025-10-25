@@ -11,8 +11,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Storage.PostgreSQL.Configuration;
 
-namespace Zetian.Storage.PostgreSQL
+namespace Zetian.Storage.PostgreSQL.Storage
 {
     /// <summary>
     /// PostgreSQL implementation of IMessageStore

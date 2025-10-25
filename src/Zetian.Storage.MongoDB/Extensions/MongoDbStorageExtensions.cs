@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using Zetian.Server;
 using Zetian.Storage.Extensions;
+using Zetian.Storage.MongoDB.Configuration;
+using Zetian.Storage.MongoDB.Storage;
 
 namespace Zetian.Storage.MongoDB.Extensions
 {

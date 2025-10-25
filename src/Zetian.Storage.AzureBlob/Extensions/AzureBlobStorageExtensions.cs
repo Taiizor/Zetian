@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using System;
 using Zetian.Server;
+using Zetian.Storage.AzureBlob.Configuration;
+using Zetian.Storage.AzureBlob.Storage;
 using Zetian.Storage.Extensions;
 
 namespace Zetian.Storage.AzureBlob.Extensions

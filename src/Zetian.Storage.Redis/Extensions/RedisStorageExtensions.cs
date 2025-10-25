@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using Zetian.Server;
 using Zetian.Storage.Extensions;
+using Zetian.Storage.Redis.Configuration;
+using Zetian.Storage.Redis.Storage;
 
 namespace Zetian.Storage.Redis.Extensions
 {

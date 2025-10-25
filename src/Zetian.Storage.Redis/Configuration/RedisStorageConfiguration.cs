@@ -1,7 +1,7 @@
 using System;
-using Zetian.Storage.Common;
+using Zetian.Storage.Configuration;
 
-namespace Zetian.Storage.Redis
+namespace Zetian.Storage.Redis.Configuration
 {
     /// <summary>
     /// Configuration for Redis message storage

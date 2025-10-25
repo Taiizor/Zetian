@@ -10,8 +10,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Storage.SqlServer.Configuration;
 
-namespace Zetian.Storage.SqlServer
+namespace Zetian.Storage.SqlServer.Storage
 {
     /// <summary>
     /// SQL Server implementation of IMessageStore

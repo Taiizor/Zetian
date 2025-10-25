@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using System;
 using Zetian.Server;
+using Zetian.Storage.AmazonS3.Configuration;
+using Zetian.Storage.AmazonS3.Storage;
 using Zetian.Storage.Extensions;
 
 namespace Zetian.Storage.AmazonS3.Extensions

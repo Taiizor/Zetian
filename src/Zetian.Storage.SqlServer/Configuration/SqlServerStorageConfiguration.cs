@@ -1,7 +1,7 @@
 using System;
-using Zetian.Storage.Common;
+using Zetian.Storage.Configuration;
 
-namespace Zetian.Storage.SqlServer
+namespace Zetian.Storage.SqlServer.Configuration
 {
     /// <summary>
     /// Configuration for SQL Server message storage

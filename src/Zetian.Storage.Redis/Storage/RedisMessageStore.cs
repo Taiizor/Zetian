@@ -9,8 +9,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Storage.Redis.Configuration;
 
-namespace Zetian.Storage.Redis
+namespace Zetian.Storage.Redis.Storage
 {
     /// <summary>
     /// Redis implementation of IMessageStore

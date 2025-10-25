@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using Zetian.Server;
 using Zetian.Storage.Extensions;
+using Zetian.Storage.PostgreSQL.Configuration;
+using Zetian.Storage.PostgreSQL.Storage;
 
 namespace Zetian.Storage.PostgreSQL.Extensions
 {

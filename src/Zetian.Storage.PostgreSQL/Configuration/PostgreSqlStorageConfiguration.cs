@@ -1,7 +1,8 @@
 using System;
-using Zetian.Storage.Common;
+using Zetian.Storage.Configuration;
+using Zetian.Storage.PostgreSQL.Enums;
 
-namespace Zetian.Storage.PostgreSQL
+namespace Zetian.Storage.PostgreSQL.Configuration
 {
     /// <summary>
     /// Configuration for PostgreSQL message storage
@@ -83,16 +84,5 @@ namespace Zetian.Storage.PostgreSQL
         {
             return $"\"{SchemaName}\".\"{TableName}\"";
         }
-    }
-
-    /// <summary>
-    /// Partition interval options for PostgreSQL
-    /// </summary>
-    public enum PartitionInterval
-    {
-        Daily,
-        Weekly,
-        Monthly,
-        Yearly
     }
 }

@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using Zetian.Server;
 using Zetian.Storage.Extensions;
+using Zetian.Storage.SqlServer.Configuration;
+using Zetian.Storage.SqlServer.Storage;
 
 namespace Zetian.Storage.SqlServer.Extensions
 {

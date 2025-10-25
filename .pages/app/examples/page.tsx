@@ -10,7 +10,8 @@ import {
   FileCode,
   ExternalLink,
   Check,
-  Heart
+  Heart,
+  Layers
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
@@ -119,6 +120,367 @@ server.MessageReceived += (sender, e) => {
 
 await server.StartAsync();
 Console.WriteLine("Secure SMTP Server running with STARTTLS support on port 587");`
+  },
+  {
+    id: 'redis-storage',
+    title: 'Redis Storage',
+    description: 'High-performance in-memory storage with Redis',
+    icon: Zap,
+    color: 'from-red-500 to-orange-600',
+    difficulty: 'Intermediate',
+    code: `using Zetian.Server;
+using Zetian.Storage.Redis.Extensions;
+
+// SMTP server with Redis storage backend
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithRedisStorage("localhost:6379")  // Use Redis for message storage
+    .Build();
+
+// Configure Redis with advanced options
+// using var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .WithRedisStorage("localhost:6379", config =>
+//     {
+//         config.Database = 0;
+//         config.KeyPrefix = "smtp:";
+//         config.ExpirationMinutes = 1440;  // 24 hours
+//         config.MaxMessageSizeMB = 10;
+//         config.UseCompression = true;
+//     })
+//     .Build();
+
+server.MessageReceived += async (sender, e) => {
+    Console.WriteLine($"Message {e.Message.Id} stored in Redis");
+    Console.WriteLine($"From: {e.Message.From?.Address}");
+    Console.WriteLine($"To: {string.Join(", ", e.Message.Recipients.Select(r => r.Address))}");
+    
+    // Message is automatically stored in Redis
+    // Retrieve later using: await redis.GetMessage(messageId);
+};
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server with Redis storage on port 25");`
+  },
+  {
+    id: 'mongodb-storage',
+    title: 'MongoDB Storage',
+    description: 'NoSQL document storage with MongoDB',
+    icon: Database,
+    color: 'from-green-500 to-teal-600',
+    difficulty: 'Intermediate',
+    code: `using Zetian.Server;
+using Zetian.Storage.MongoDB.Extensions;
+
+// SMTP server with MongoDB storage
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithMongoStorage(
+        connectionString: "mongodb://localhost:27017",
+        database: "smtp_server",
+        collection: "messages")
+    .Build();
+
+// Advanced MongoDB configuration
+// using var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .WithMongoStorage("mongodb://localhost:27017", config =>
+//     {
+//         config.DatabaseName = "email_system";
+//         config.CollectionName = "emails";
+//         config.UseGridFS = true;  // For large attachments
+//         config.CreateIndexes = true;
+//         config.TTLDays = 30;  // Auto-delete after 30 days
+//     })
+//     .Build();
+
+server.MessageReceived += async (sender, e) => {
+    var message = e.Message;
+    
+    Console.WriteLine($"Message saved to MongoDB");
+    Console.WriteLine($"  ID: {message.Id}");
+    Console.WriteLine($"  Subject: {message.Subject}");
+    Console.WriteLine($"  Attachments: {message.Attachments.Count()}");
+    
+    // GridFS handles large attachments automatically
+    // TTL index ensures old messages are cleaned up
+};
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server with MongoDB storage running on port 25");`
+  },
+  {
+    id: 'sqlserver-storage',
+    title: 'SQL Server Storage',
+    description: 'Enterprise-grade storage with SQL Server',
+    icon: Database,
+    color: 'from-blue-500 to-indigo-600',
+    difficulty: 'Intermediate',
+    code: `using Zetian.Server;
+using Zetian.Storage.SqlServer.Extensions;
+
+// SMTP server with SQL Server storage
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithSqlServerStorage(
+        "Server=localhost;Database=SmtpDb;Trusted_Connection=true;")
+    .Build();
+
+// Advanced SQL Server configuration
+// using var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .WithSqlServerStorage(connectionString, config =>
+//     {
+//         config.TableName = "EmailMessages";
+//         config.SchemaName = "smtp";
+//         config.AutoCreateTable = true;
+//         config.UseCompression = true;
+//         config.EnablePartitioning = true;  // Monthly partitions
+//         config.RetentionDays = 90;
+//     })
+//     .Build();
+
+server.MessageReceived += async (sender, e) => {
+    Console.WriteLine($"Message stored in SQL Server");
+    Console.WriteLine($"  Table: smtp.EmailMessages");
+    Console.WriteLine($"  Compression: Enabled");
+    
+    // Full-text search available:
+    // SELECT * FROM smtp.EmailMessages 
+    // WHERE CONTAINS(Subject, 'important')
+};
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server with SQL Server storage on port 25");`
+  },
+  {
+    id: 'multi-storage',
+    title: 'Multi-Provider Storage',
+    description: 'Multiple storage backends with failover',
+    icon: Layers,
+    color: 'from-purple-500 to-pink-600',
+    difficulty: 'Advanced',
+    code: `using Zetian.Server;
+using Zetian.Storage.Redis.Extensions;
+using Zetian.Storage.SqlServer.Extensions;
+using Zetian.Storage.AzureBlob.Extensions;
+
+// SMTP server with multiple storage providers
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    // Primary storage: Fast Redis cache
+    .WithRedisStorage("localhost:6379", config =>
+    {
+        config.ExpirationMinutes = 60;  // Short-term cache
+    })
+    // Secondary storage: SQL Server for search
+    .WithSqlServerStorage(
+        "Server=localhost;Database=SmtpDb;Trusted_Connection=true;",
+        config => 
+        {
+            config.EnableFullTextSearch = true;
+            config.RetentionDays = 30;
+        })
+    // Archive storage: Azure Blob for long-term
+    .WithAzureBlobStorage(
+        "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;",
+        config =>
+        {
+            config.ContainerName = "email-archive";
+            config.DefaultAccessTier = AccessTier.Cool;
+            config.ArchiveAfterDays = 7;
+        })
+    .Build();
+
+server.MessageReceived += async (sender, e) => {
+    var message = e.Message;
+    
+    Console.WriteLine("Message stored in multiple backends:");
+    Console.WriteLine("  ✓ Redis (hot cache) - Instant access");
+    Console.WriteLine("  ✓ SQL Server - Full-text searchable");
+    Console.WriteLine("  ✓ Azure Blob - Long-term archive");
+    
+    // Automatic tiering:
+    // - Last 1 hour: Served from Redis
+    // - Last 30 days: Served from SQL Server
+    // - Older: Retrieved from Azure Blob
+};
+
+// Failover is automatic
+server.ErrorOccurred += (sender, e) => {
+    if (e.Exception.Message.Contains("Redis"))
+    {
+        Console.WriteLine("Redis unavailable, falling back to SQL Server");
+    }
+};
+
+await server.StartAsync();
+Console.WriteLine("Multi-provider SMTP server with automatic failover");`
+  },
+  {
+    id: 's3-storage',
+    title: 'Amazon S3 Storage',
+    description: 'Cloud storage with S3 or compatible services',
+    icon: Database,
+    color: 'from-orange-500 to-red-600',
+    difficulty: 'Intermediate',
+    code: `using Zetian.Server;
+using Zetian.Storage.AmazonS3.Extensions;
+
+// SMTP server with Amazon S3 storage
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithS3Storage(
+        accessKeyId: Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"),
+        secretAccessKey: Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY"),
+        bucketName: "smtp-messages",
+        region: "us-west-2")
+    .Build();
+
+// Advanced S3 configuration with encryption and lifecycle
+// using var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .WithS3Storage(accessKeyId, secretAccessKey, bucketName, config =>
+//     {
+//         config.Region = "us-west-2";
+//         config.KeyPrefix = "emails/";
+//         config.MessageKeyFormat = "\\{year\\}/\\{month\\}/\\{day\\}/\\{messageId\\}";
+//         
+//         // Server-side encryption
+//         config.ServerSideEncryption = ServerSideEncryptionMethod.AES256;
+//         config.KmsKeyId = "alias/my-kms-key";
+//         
+//         // Lifecycle rules
+//         config.TransitionToInfrequentAccessDays = 30;
+//         config.TransitionToGlacierDays = 90;
+//         config.DeleteAfterDays = 365;
+//     })
+//     .Build();
+
+server.MessageReceived += async (sender, e) => {
+    Console.WriteLine($"Message uploaded to S3");
+    Console.WriteLine($"  Bucket: smtp-messages");
+    Console.WriteLine($"  Region: us-west-2");
+    Console.WriteLine($"  Encryption: AES-256");
+    
+    // Cost optimization with automatic tiering:
+    // - Standard: First 30 days
+    // - Infrequent Access: 30-90 days  
+    // - Glacier: After 90 days
+};
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server with S3 storage on port 25");`
+  },
+  {
+    id: 'azure-blob-storage',
+    title: 'Azure Blob Storage',
+    description: 'Scalable cloud storage with Azure',
+    icon: Database,
+    color: 'from-blue-600 to-purple-600',
+    difficulty: 'Intermediate',
+    code: `using Zetian.Server;
+using Zetian.Storage.AzureBlob.Extensions;
+
+// SMTP server with Azure Blob storage
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithAzureBlobStorage(
+        "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=mykey;")
+    .Build();
+
+// Advanced Azure Blob configuration
+// using var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .WithAzureBlobStorage(connectionString, config =>
+//     {
+//         config.ContainerName = "smtp-messages";
+//         config.MessagePathFormat = "\\{year\\}/\\{month\\}/\\{day\\}/\\{messageId\\}";
+//         
+//         // Access tiers for cost optimization
+//         config.DefaultAccessTier = AccessTier.Cool;
+//         config.ArchiveAfterDays = 30;
+//         
+//         // Security features
+//         config.EnableSoftDelete = true;
+//         config.SoftDeleteRetentionDays = 7;
+//         config.EnableEncryption = true;
+//         
+//         // Azure AD authentication (instead of connection string)
+//         // config.UseAzureIdentity = true;
+//     })
+//     .Build();
+
+server.MessageReceived += async (sender, e) => {
+    Console.WriteLine($"Message stored in Azure Blob Storage");
+    Console.WriteLine($"  Container: smtp-messages");
+    Console.WriteLine($"  Access Tier: Cool");
+    Console.WriteLine($"  Encryption: Enabled");
+    
+    // Automatic lifecycle management:
+    // - Cool tier: Default for cost savings
+    // - Archive tier: After 30 days
+    // - Soft delete: 7 days retention
+};
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server with Azure Blob storage on port 25");`
+  },
+  {
+    id: 'postgresql-storage',
+    title: 'PostgreSQL Storage',
+    description: 'Advanced JSON storage with PostgreSQL',
+    icon: Database,
+    color: 'from-cyan-500 to-blue-600',
+    difficulty: 'Intermediate',
+    code: `using Zetian.Server;
+using Zetian.Storage.PostgreSQL.Extensions;
+
+// SMTP server with PostgreSQL storage
+using var server = new SmtpServerBuilder()
+    .Port(25)
+    .WithPostgreSqlStorage(
+        "Host=localhost;Database=smtp_db;Username=postgres;Password=postgres")
+    .Build();
+
+// Advanced PostgreSQL with partitioning and JSONB
+// using var server = new SmtpServerBuilder()
+//     .Port(25)
+//     .WithPostgreSqlStorage(connectionString, config =>
+//     {
+//         config.TableName = "email_messages";
+//         config.SchemaName = "smtp";
+//         config.AutoCreateSchema = true;
+//         
+//         // JSONB for headers and metadata
+//         config.UseJsonB = true;
+//         config.CreateGinIndex = true;  // Fast JSON queries
+//         
+//         // Table partitioning for scale
+//         config.EnablePartitioning = true;
+//         config.PartitionInterval = PartitionInterval.Monthly;
+//         
+//         // Retention
+//         config.RetentionMonths = 6;
+//         config.AutoVacuum = true;
+//     })
+//     .Build();
+
+server.MessageReceived += async (sender, e) => {
+    Console.WriteLine($"Message stored in PostgreSQL");
+    Console.WriteLine($"  JSONB storage for flexible queries");
+    Console.WriteLine($"  GIN indexed for fast searches");
+    
+    // Example JSONB queries:
+    // SELECT * FROM smtp.email_messages 
+    // WHERE headers @> '{"X-Spam-Score": "0"}'
+    // 
+    // Full text search:
+    // WHERE to_tsvector('english', body) @@ plainto_tsquery('important')
+};
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server with PostgreSQL storage on port 25");`
   },
   {
     id: 'rate-limited',
@@ -385,7 +747,7 @@ export default function ExamplesPage() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">7</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">14</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Code Examples</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
@@ -393,7 +755,7 @@ export default function ExamplesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Difficulty Levels</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">15+</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">20+</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Features</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">

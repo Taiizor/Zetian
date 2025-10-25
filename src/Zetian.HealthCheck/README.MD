@@ -44,7 +44,7 @@ var healthCheck = server.EnableHealthCheck(8080);
 await healthCheck.StartAsync();
 
 // Health check now available at:
-// http://localhost:8080/health/
+// http://localhost:8080/health
 // http://localhost:8080/health/livez
 // http://localhost:8080/health/readyz
 ```

@@ -2,43 +2,46 @@
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-        <RootNamespace>Zetian.HealthCheck</RootNamespace>
+        <RootNamespace>Zetian.Storage.Providers</RootNamespace>
         <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
         <ImplicitUsings>disable</ImplicitUsings>
         <DefaultLanguage>en-GB</DefaultLanguage>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <!-- AOT Support for .NET 7.0+ (JSON Serialization excluded) -->
+    <!-- AOT Support for .NET 7.0+ -->
     <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0' OR '$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
         <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">true</EnableAotAnalyzer>
-        <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault> <!-- JSON Serialization will use reflection -->
+        <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+        <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+        <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
         <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
         <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
         <IsAotCompatible>true</IsAotCompatible>
+        <IlcTrimMetadata>true</IlcTrimMetadata>
         <IsTrimmable>true</IsTrimmable>
-        <TrimMode>partial</TrimMode>
+        <TrimMode>link</TrimMode>
     </PropertyGroup>
 
     <PropertyGroup>
         <ApplicationIcon>Resources\Zetian.ico</ApplicationIcon>
-        <Version>1.0.5</Version>
+        <Version>1.0.0</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>Zetian.HealthCheck</Title>
-        <PackageId>Zetian.HealthCheck</PackageId>
+        <Title>Zetian.Storage.Providers</Title>
+        <PackageId>Zetian.Storage.Providers</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Server - Health Check</Product>
+        <Product>Zetian SMTP Server - Storage Providers</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>Health check monitoring extension for Zetian SMTP Server. Provides HTTP endpoints for liveness, readiness, and detailed health status monitoring.</Summary>
-        <Description>Health check monitoring extension for Zetian SMTP Server. Provides HTTP endpoints for liveness, readiness, and detailed health status monitoring with customizable checks, metrics, and Kubernetes integration support. Perfect for production monitoring and orchestration systems.</Description>
+        <Summary>Storage providers for Zetian SMTP Server including SQL Server, PostgreSQL, MongoDB, Redis, Azure Blob, and Amazon S3.</Summary>
+        <Description>Storage providers for Zetian SMTP Server. Includes database and cloud storage implementations for SQL Server, PostgreSQL, MongoDB, Redis, Azure Blob Storage, and Amazon S3. Easily extend Zetian with persistent message storage capabilities.</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>health;health-check;monitoring;liveness;readiness;http;endpoint;docker;kubernetes;k8s;probe;smtp;email;server;zetian</PackageTags>
+        <PackageTags>zetian;smtp;email;storage;database;sql;postgresql;mongodb;redis;azure;aws;s3</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
@@ -58,7 +61,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Configurations>Debug;Release</Configurations>
-        <NoWarn>$(NoWarn);1591;IL2026;IL3050</NoWarn>
+        <NoWarn>$(NoWarn);1591</NoWarn>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     </PropertyGroup>
 
@@ -73,11 +76,22 @@
         </PackageReference>
     </ItemGroup>
 
-    <!-- Preserve types for JSON serialization -->
     <ItemGroup>
-        <TrimmerRootDescriptor Include="TrimmerRoots.xml" Condition="Exists('TrimmerRoots.xml')" />
+        <PackageReference Include="Npgsql" Version="9.0.4" />
+        <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
+        <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     </ItemGroup>
-    
+
+    <ItemGroup>
+        <PackageReference Include="AWSSDK.S3" Version="4.0.7.14" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.10" />
+    </ItemGroup>
+
     <ItemGroup>
         <None Include="README.MD">
             <Pack>True</Pack>
@@ -95,10 +109,6 @@
 
     <ItemGroup>
         <Folder Include="Properties\" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <InternalsVisibleTo Include="Zetian.HealthCheck.Tests" />
     </ItemGroup>
 
 </Project>

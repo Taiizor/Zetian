@@ -102,13 +102,13 @@ namespace Zetian.Tests
 
             // Send invalid commands to trigger errors
             bool sessionClosedByServer = false;
-            for (int i = 0; i < 3; i++)
+            for (int i = 1; i <= 3; i++)
             {
                 await writer.WriteLineAsync("INVALID_COMMAND");
                 await writer.FlushAsync();
 
                 string? response = await reader.ReadLineAsync();
-                if (response != null && response.StartsWith("421"))
+                if (response?.StartsWith("421") == true)
                 {
                     // Session closed due to too many errors
                     sessionClosedByServer = true;
@@ -138,7 +138,6 @@ namespace Zetian.Tests
         {
             // Arrange
             int port = TestHelper.GetAvailablePort();
-            bool sessionStillActive = true;
 
             _server = new SmtpServerBuilder()
                 .Port(port)

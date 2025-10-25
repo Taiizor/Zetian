@@ -83,13 +83,40 @@ namespace Zetian.Tests
         }
 
         [Fact]
+        public void TryParse_ValidMailCommand_WithParameters_ShouldParse()
+        {
+            // Act
+            bool result = SmtpCommand.TryParse("MAIL FROM:<sender@example.com> SIZE=1234", out SmtpCommand? command);
+
+            // Assert
+            result.Should().BeTrue();
+            command.Should().NotBeNull();
+            command!.Verb.Should().Be("MAIL");
+            command.Argument.Should().Be("FROM:<sender@example.com> SIZE=1234");
+            command.IsMail.Should().BeTrue();
+            command.Parameters.Should().ContainKey("SIZE");
+            command.Parameters["SIZE"].Should().Be("1234");
+        }
+
+        [Fact]
+        public void TryParse_ValidEhloCommand_ShouldParse()
+        {
+            // Act
+            bool result = SmtpCommand.TryParse("EHLO example.com", out SmtpCommand? command);
+
+            // Assert
+            result.Should().BeTrue();
+            command.Should().NotBeNull();
+            command!.Verb.Should().Be("EHLO");
+            command.Argument.Should().Be("example.com");
+            command.IsEhlo.Should().BeTrue();
+        }
+
+        [Fact]
         public void TryParse_InvalidCommand_ShouldReturnFalse()
         {
-            // Arrange
-            string commandLine = "";
-
             // Act
-            bool result = SmtpCommand.TryParse(commandLine, out SmtpCommand? command);
+            bool result = SmtpCommand.TryParse("", out SmtpCommand? command);
 
             // Assert
             result.Should().BeFalse();

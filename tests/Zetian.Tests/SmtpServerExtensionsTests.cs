@@ -20,9 +20,9 @@ namespace Zetian.Tests
 
         public SmtpServerExtensionsTests()
         {
-            _serverMock = new Mock<ISmtpServer>();
-            _sessionMock = new Mock<ISmtpSession>();
-            _messageMock = new Mock<ISmtpMessage>();
+            _serverMock = new();
+            _sessionMock = new();
+            _messageMock = new();
 
             _sessionMock.Setup(s => s.Properties).Returns(new Dictionary<string, object>());
             _sessionMock.Setup(s => s.RemoteEndPoint).Returns(new IPEndPoint(IPAddress.Loopback, TestHelper.GetAvailablePort()));

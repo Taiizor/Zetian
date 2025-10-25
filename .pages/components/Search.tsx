@@ -75,6 +75,64 @@ const searchData: SearchItem[] = [
     tags: ['extensions', 'plugins', 'rate-limit', 'spam-filter']
   },
   
+  // Storage Providers Documentation
+  { 
+    title: 'Storage Providers', 
+    description: 'Multiple storage backends - SQL Server, MongoDB, Redis, S3, Azure Blob, PostgreSQL', 
+    path: '/docs/storage', 
+    category: 'Documentation',
+    tags: ['storage', 'database', 'providers', 'backend'],
+    popular: true
+  },
+  { 
+    title: 'SQL Server Storage', 
+    description: 'Enterprise SQL Server and Azure SQL Database - ACID compliance, auto table creation, compression, full-text search', 
+    path: '/docs/storage/sql-server', 
+    category: 'Documentation',
+    tags: ['storage', 'sql', 'sqlserver', 'database', 'azure-sql'],
+    code: '.WithSqlServerStorage("Server=localhost;Database=SmtpDb;...")'
+  },
+  { 
+    title: 'PostgreSQL Storage', 
+    description: 'PostgreSQL with JSONB - table partitioning, GIN indexing, advanced queries, time-based retention', 
+    path: '/docs/storage/postgresql', 
+    category: 'Documentation',
+    tags: ['storage', 'postgresql', 'postgres', 'jsonb', 'partitioning'],
+    code: '.WithPostgreSqlStorage("Host=localhost;Database=smtp_db;...")'
+  },
+  { 
+    title: 'MongoDB Storage', 
+    description: 'NoSQL MongoDB with GridFS - large attachments, TTL indexes, sharding support, flexible schema', 
+    path: '/docs/storage/mongodb', 
+    category: 'Documentation',
+    tags: ['storage', 'mongodb', 'nosql', 'gridfs', 'ttl'],
+    code: '.WithMongoDbStorage("mongodb://localhost:27017", "smtp_server")'
+  },
+  { 
+    title: 'Redis Storage', 
+    description: 'High-performance Redis cache - in-memory storage, auto-chunking, Pub/Sub, Redis Streams', 
+    path: '/docs/storage/redis', 
+    category: 'Documentation',
+    tags: ['storage', 'redis', 'cache', 'memory', 'pub-sub'],
+    code: '.WithRedisStorage("localhost:6379")'
+  },
+  { 
+    title: 'Amazon S3 Storage', 
+    description: 'S3 and S3-compatible services - MinIO, Wasabi, KMS encryption, lifecycle rules, cost optimization', 
+    path: '/docs/storage/amazon-s3', 
+    category: 'Documentation',
+    tags: ['storage', 's3', 'aws', 'amazon', 'cloud', 'minio'],
+    code: '.WithS3Storage(accessKeyId, secretAccessKey, bucketName)'
+  },
+  { 
+    title: 'Azure Blob Storage', 
+    description: 'Azure cloud storage - Azure AD auth, access tiers (Hot/Cool/Archive), soft delete, lifecycle policies', 
+    path: '/docs/storage/azure-blob', 
+    category: 'Documentation',
+    tags: ['storage', 'azure', 'blob', 'cloud', 'microsoft'],
+    code: '.WithAzureBlobStorage("DefaultEndpointsProtocol=https;...")'
+  },
+  
   // Core Classes
   { 
     title: 'SmtpServer', 
@@ -196,6 +254,54 @@ const searchData: SearchItem[] = [
     tags: ['storage', 'null', 'discard'],
     code: 'NullMessageStore.Instance'
   },
+  { 
+    title: 'SqlServerMessageStore', 
+    description: 'SQL Server storage implementation - AutoCreateTable, CompressMessageBody, StoreAttachmentsSeparately', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 'sql', 'sqlserver', 'implementation'],
+    code: 'new SqlServerMessageStore(connectionString, configuration)'
+  },
+  { 
+    title: 'PostgreSqlMessageStore', 
+    description: 'PostgreSQL storage - UseJsonbForHeaders, PartitionInterval, CreateIndexes, table partitioning', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 'postgresql', 'postgres', 'implementation'],
+    code: 'new PostgreSqlMessageStore(connectionString, configuration)'
+  },
+  { 
+    title: 'MongoDbMessageStore', 
+    description: 'MongoDB storage - UseGridFsForLargeMessages, TTLDays, AutoCreateIndexes, sharding support', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 'mongodb', 'nosql', 'implementation'],
+    code: 'new MongoDbMessageStore(connectionString, databaseName, configuration)'
+  },
+  { 
+    title: 'RedisMessageStore', 
+    description: 'Redis cache storage - MessageTTLSeconds, UseChunking, KeyPrefix, DatabaseNumber', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 'redis', 'cache', 'implementation'],
+    code: 'new RedisMessageStore(connectionString, configuration)'
+  },
+  { 
+    title: 'S3MessageStore', 
+    description: 'Amazon S3 storage - Region, KeyPrefix, EnableServerSideEncryption, StorageClass', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 's3', 'aws', 'implementation'],
+    code: 'new S3MessageStore(accessKeyId, secretAccessKey, bucketName, configuration)'
+  },
+  { 
+    title: 'AzureBlobMessageStore', 
+    description: 'Azure Blob storage - ContainerName, UseAzureAdAuthentication, EnableSoftDelete, AccessTier', 
+    path: '/api#storage', 
+    category: 'API',
+    tags: ['storage', 'azure', 'blob', 'implementation'],
+    code: 'new AzureBlobMessageStore(connectionString, configuration)'
+  },
   
   // Extension Methods
   { 
@@ -281,6 +387,63 @@ const searchData: SearchItem[] = [
     category: 'Examples',
     tags: ['example', 'storage', 'save', 'database'],
     code: '.WithFileMessageStore(directory, createDateFolders: true)'
+  },
+  { 
+    title: 'Redis Storage Example', 
+    description: 'High-performance Redis caching - compression, expiration, chunking for large messages', 
+    path: '/examples#redis-storage', 
+    category: 'Examples',
+    tags: ['example', 'redis', 'cache', 'storage'],
+    code: '.WithRedisStorage("localhost:6379", config => config.MessageTTLSeconds = 1440)'
+  },
+  { 
+    title: 'MongoDB Storage Example', 
+    description: 'NoSQL MongoDB with GridFS - large attachments, TTL auto-cleanup, sharding', 
+    path: '/examples#mongodb-storage', 
+    category: 'Examples',
+    tags: ['example', 'mongodb', 'nosql', 'gridfs', 'storage'],
+    code: '.WithMongoDbStorage("mongodb://localhost:27017", "smtp_server")'
+  },
+  { 
+    title: 'SQL Server Storage Example', 
+    description: 'Enterprise SQL Server - auto table creation, compression, full-text search', 
+    path: '/examples#sqlserver-storage', 
+    category: 'Examples',
+    tags: ['example', 'sql', 'sqlserver', 'database', 'storage'],
+    code: '.WithSqlServerStorage("Server=localhost;Database=SmtpDb;...")'
+  },
+  { 
+    title: 'PostgreSQL Storage Example', 
+    description: 'Advanced PostgreSQL with JSONB - GIN indexing, table partitioning, flexible queries', 
+    path: '/examples#postgresql-storage', 
+    category: 'Examples',
+    tags: ['example', 'postgresql', 'jsonb', 'storage', 'partitioning'],
+    code: '.WithPostgreSqlStorage("Host=localhost;Database=smtp_db;...")'
+  },
+  { 
+    title: 'S3 Storage Example', 
+    description: 'Amazon S3 and compatible services - lifecycle management, KMS encryption', 
+    path: '/examples#s3-storage', 
+    category: 'Examples',
+    tags: ['example', 's3', 'aws', 'cloud', 'storage'],
+    code: '.WithS3Storage(accessKeyId, secretAccessKey, bucketName)'
+  },
+  { 
+    title: 'Azure Blob Storage Example', 
+    description: 'Azure cloud storage - access tiers, soft delete, Azure AD authentication', 
+    path: '/examples#azure-blob-storage', 
+    category: 'Examples',
+    tags: ['example', 'azure', 'blob', 'cloud', 'storage'],
+    code: '.WithAzureBlobStorage("DefaultEndpointsProtocol=https;...")'
+  },
+  { 
+    title: 'Multi-Provider Storage Example', 
+    description: 'Multiple storage backends with failover - Redis cache + SQL Server + Azure Blob', 
+    path: '/examples#multi-storage', 
+    category: 'Examples',
+    tags: ['example', 'multi', 'failover', 'storage', 'tiered'],
+    popular: true,
+    code: '.WithRedisStorage().WithSqlServerStorage().WithAzureBlobStorage()'
   },
   
   // Protocol Classes
@@ -466,6 +629,15 @@ const searchData: SearchItem[] = [
     category: 'API',
     tags: ['extension', 'builder', 'domain'],
     code: '.WithRecipientDomainWhitelist("mydomain.com")'
+  },
+  { 
+    title: 'Storage Builder Extensions', 
+    description: 'Storage provider extensions - WithSqlServerStorage(), WithPostgreSqlStorage(), WithMongoDbStorage(), WithRedisStorage(), WithS3Storage(), WithAzureBlobStorage()', 
+    path: '/api#extensions', 
+    category: 'API',
+    tags: ['extension', 'builder', 'storage', 'providers'],
+    popular: true,
+    code: '.WithRedisStorage("localhost:6379").WithSqlServerStorage(connectionString)'
   },
   
   // Enum Updates

@@ -189,7 +189,7 @@ namespace Zetian.Storage.PostgreSQL.Storage
                 if (!schemaExists)
                 {
                     await using NpgsqlCommand createSchemaCommand = connection.CreateCommand();
-                    createSchemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS \"{_configuration.SchemaName}\"";
+                    createSchemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS {_configuration.GetSchemaName()}";
                     await createSchemaCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
 

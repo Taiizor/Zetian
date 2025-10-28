@@ -60,6 +60,22 @@ namespace Zetian.Storage.SqlServer.Configuration
                 throw new ArgumentException("SchemaName is required");
             }
 
+            // Validate table/schema names for SQL injection prevention
+            if (!IsValidSqlIdentifier(TableName))
+            {
+                throw new ArgumentException($"Invalid table name: {TableName}. Only alphanumeric characters and underscores are allowed.");
+            }
+
+            if (!IsValidSqlIdentifier(SchemaName))
+            {
+                throw new ArgumentException($"Invalid schema name: {SchemaName}. Only alphanumeric characters and underscores are allowed.");
+            }
+
+            if (!IsValidSqlIdentifier(AttachmentsTableName))
+            {
+                throw new ArgumentException($"Invalid attachments table name: {AttachmentsTableName}. Only alphanumeric characters and underscores are allowed.");
+            }
+
             if (MaxMessageSizeMB < 0)
             {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
@@ -67,19 +83,43 @@ namespace Zetian.Storage.SqlServer.Configuration
         }
 
         /// <summary>
-        /// Gets the fully qualified table name
+        /// Validates SQL identifier to prevent SQL injection
         /// </summary>
-        public string GetFullTableName()
+        private static bool IsValidSqlIdentifier(string identifier)
         {
-            return $"[{SchemaName}].[{TableName}]";
+            if (string.IsNullOrWhiteSpace(identifier))
+            {
+                return false;
+            }
+
+            // Only allow alphanumeric characters and underscores
+            // First character cannot be a number
+            return System.Text.RegularExpressions.Regex.IsMatch(identifier, @"^[a-zA-Z_][a-zA-Z0-9_]*$");
         }
 
         /// <summary>
-        /// Gets the fully qualified attachments table name
+        /// Escapes SQL Server identifier safely
+        /// </summary>
+        private static string EscapeSqlServerIdentifier(string identifier)
+        {
+            // Replace any ] with ]] to properly escape
+            return $"[{identifier.Replace("]", "]]")}]";
+        }
+
+        /// <summary>
+        /// Gets the fully qualified table name with proper escaping
+        /// </summary>
+        public string GetFullTableName()
+        {
+            return $"{EscapeSqlServerIdentifier(SchemaName)}.{EscapeSqlServerIdentifier(TableName)}";
+        }
+
+        /// <summary>
+        /// Gets the fully qualified attachments table name with proper escaping
         /// </summary>
         public string GetFullAttachmentsTableName()
         {
-            return $"[{SchemaName}].[{AttachmentsTableName}]";
+            return $"{EscapeSqlServerIdentifier(SchemaName)}.{EscapeSqlServerIdentifier(AttachmentsTableName)}";
         }
     }
 }

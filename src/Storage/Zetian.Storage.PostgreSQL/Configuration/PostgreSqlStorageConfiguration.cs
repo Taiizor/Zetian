@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using Zetian.Storage.Configuration;
 using Zetian.Storage.PostgreSQL.Enums;
 
@@ -71,6 +72,17 @@ namespace Zetian.Storage.PostgreSQL.Configuration
                 throw new ArgumentException("SchemaName is required");
             }
 
+            // Validate table/schema names for SQL injection prevention
+            if (!IsValidPostgreSqlIdentifier(TableName))
+            {
+                throw new ArgumentException($"Invalid table name: {TableName}. Only lowercase letters, numbers and underscores are allowed.");
+            }
+
+            if (!IsValidPostgreSqlIdentifier(SchemaName))
+            {
+                throw new ArgumentException($"Invalid schema name: {SchemaName}. Only lowercase letters, numbers and underscores are allowed.");
+            }
+
             if (MaxMessageSizeMB < 0)
             {
                 throw new ArgumentException("MaxMessageSizeMB must be non-negative");
@@ -78,11 +90,57 @@ namespace Zetian.Storage.PostgreSQL.Configuration
         }
 
         /// <summary>
-        /// Gets the fully qualified table name
+        /// Validates PostgreSQL identifier to prevent SQL injection
+        /// </summary>
+        private static bool IsValidPostgreSqlIdentifier(string identifier)
+        {
+            if (string.IsNullOrWhiteSpace(identifier))
+            {
+                return false;
+            }
+
+            // PostgreSQL prefers lowercase identifiers
+            // Only allow lowercase letters, numbers and underscores
+            // First character cannot be a number
+            return Regex.IsMatch(identifier, @"^[a-z_][a-z0-9_]*$");
+        }
+
+        /// <summary>
+        /// Escapes PostgreSQL identifier safely
+        /// </summary>
+        private static string EscapePostgreSqlIdentifier(string identifier)
+        {
+            // Replace any " with "" to properly escape
+            return $"\"{identifier.Replace("\"", "\"\"")}\"";
+        }
+
+        /// <summary>
+        /// Returns the escaped table name suitable for use in PostgreSQL queries.
+        /// </summary>
+        /// <remarks>Use this method to obtain a table name that is safely formatted for inclusion in SQL
+        /// statements targeting PostgreSQL. This helps prevent issues with reserved keywords or special characters in
+        /// table names.</remarks>
+        /// <returns>A string containing the table name with PostgreSQL identifier escaping applied.</returns>
+        public string GetTableName()
+        {
+            return EscapePostgreSqlIdentifier(TableName);
+        }
+
+        /// <summary>
+        /// Returns the schema name formatted as a valid PostgreSQL identifier.
+        /// </summary>
+        /// <returns>A string containing the escaped schema name suitable for use in PostgreSQL queries.</returns>
+        public string GetSchemaName()
+        {
+            return EscapePostgreSqlIdentifier(SchemaName);
+        }
+
+        /// <summary>
+        /// Gets the fully qualified table name with proper escaping
         /// </summary>
         public string GetFullTableName()
         {
-            return $"\"{SchemaName}\".\"{TableName}\"";
+            return $"{GetSchemaName()}.{GetTableName()}";
         }
     }
 }

@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Net.Mail;
 using Zetian.Abstractions;
+using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -25,13 +26,32 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("- Queue monitoring");
             Console.WriteLine();
 
-            // Create SMTP server with relay enabled
+            // Create server with relay enabled
             ISmtpServer server = new SmtpServerBuilder()
                 .Port(25025)
-                .ServerName("relay-example.local")
-                .MaxMessageSize(10 * 1024 * 1024) // 10MB
+                .ServerName("relay.local")
                 .LoggerFactory(loggerFactory)
-                .EnableRelay(); // Enable relay with default configuration
+                .Build()
+                .EnableRelay(config =>
+                {
+                    // Configure relay
+                    config.DefaultSmartHost = new SmartHostConfiguration
+                    {
+                        Host = "smtp.relay.provider.com",
+                        Port = 587,
+                        UseStartTls = true,
+                        Credentials = new NetworkCredential("username", "password")
+                    };
+
+                    // Set local domains (no relay needed)
+                    config.LocalDomains.Add("local.domain");
+                    config.LocalDomains.Add("internal.domain");
+
+                    // Configure relay behavior
+                    config.MaxDeliveryAttempts = 5;
+                    config.MaxRetryCount = 10;
+                    config.EnableBounceMessages = true;
+                });
 
             // Handle message received event
             server.MessageReceived += async (sender, e) =>
@@ -44,7 +64,6 @@ namespace Zetian.Relay.Examples
                 await Task.CompletedTask;
             };
 
-            // Start server with relay
             Console.WriteLine("[INFO] Starting SMTP server with relay on port 25025...");
             RelayService relayService = await server.StartWithRelayAsync();
             Console.WriteLine("[INFO] Server started successfully!");

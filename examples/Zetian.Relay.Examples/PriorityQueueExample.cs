@@ -4,7 +4,6 @@ using Zetian.Abstractions;
 using Zetian.Relay.Abstractions;
 using Zetian.Relay.Enums;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -27,11 +26,12 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("- Priority-based delivery order");
             Console.WriteLine();
 
-            // Create server with relay
+            // Create server with priority queue enabled
             ISmtpServer server = new SmtpServerBuilder()
-                .Port(25030)
-                .ServerName("priority-queue.local")
+                .Port(25031)
+                .ServerName("priority.local")
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     config.MaxConcurrentDeliveries = 2; // Low concurrency to see priority effect
@@ -49,14 +49,14 @@ namespace Zetian.Relay.Examples
             // Start server
             Console.WriteLine("[INFO] Starting SMTP server with priority queue...");
             RelayService relayService = await server.StartWithRelayAsync();
-            Console.WriteLine("[INFO] Server started on port 25030");
+            Console.WriteLine("[INFO] Server started on port 25031");
             Console.WriteLine();
 
             // Send messages with different priorities
             Console.WriteLine("[TEST] Sending messages with different priorities...");
             Console.WriteLine();
 
-            using SmtpClient client = new("localhost", 25030)
+            using SmtpClient client = new("localhost", 25031)
             {
                 EnableSsl = false
             };
@@ -153,7 +153,7 @@ Higher priority messages should be processed first.",
                 Console.WriteLine("Time     | Priority | Status    | Subject");
                 Console.WriteLine("---------|----------|-----------|--------------------------------");
 
-                var processedCount = 0;
+                int processedCount = 0;
                 DateTime lastUpdate = DateTime.Now;
 
                 while (processedCount < testMessages.Length)
@@ -199,7 +199,7 @@ Higher priority messages should be processed first.",
                     // Check for processed messages
                     foreach (IRelayMessage? msg in messages.Where(m => m.Status == RelayStatus.InProgress))
                     {
-                        var subject = msg.OriginalMessage.Subject;
+                        string? subject = msg.OriginalMessage.Subject;
                         RelayPriority priority = msg.Priority;
 
                         ConsoleColor originalColor = Console.ForegroundColor;

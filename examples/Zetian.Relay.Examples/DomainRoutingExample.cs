@@ -4,7 +4,6 @@ using Zetian.Abstractions;
 using Zetian.Relay.Builder;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -77,9 +76,10 @@ namespace Zetian.Relay.Examples
             // Create server with domain routing
             ISmtpServer server = new SmtpServerBuilder()
                 .Port(25028)
-                .ServerName("domain-routing.local")
+                .ServerName("routing.local")
                 .LoggerFactory(loggerFactory)
-                .EnableRelay(relayConfig);
+                .Build()
+                .EnableRelay(config => relayConfig);
 
             // Log routing decisions
             server.MessageReceived += async (sender, e) =>
@@ -140,7 +140,7 @@ namespace Zetian.Relay.Examples
             // Test different domain routings
             Console.WriteLine("[TEST] Sending test messages to different domains...");
 
-            using var client = new SmtpClient("localhost", 25028)
+            using SmtpClient client = new("localhost", 25028)
             {
                 EnableSsl = false
             };
@@ -158,7 +158,7 @@ namespace Zetian.Relay.Examples
 
             foreach ((string? recipient, string? subject) in testCases)
             {
-                var message = new MailMessage
+                MailMessage message = new()
                 {
                     From = new MailAddress("sender@domain-routing.local"),
                     Subject = subject,

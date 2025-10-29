@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using Zetian.Abstractions;
@@ -30,23 +29,23 @@ namespace Zetian.Relay.Examples
             Console.WriteLine();
 
             // Create authentication handler
-            AuthenticationHandler authHandler = async (username, password) =>
+            static async Task<AuthenticationResult> authHandler(string? username, string? password)
             {
                 // Define users
-                var users = new Dictionary<string, string>
+                Dictionary<string, string> users = new()
                 {
                     { "relay_user", "relay_pass123" },
                     { "admin", "admin_secret" },
                     { "sender", "sender_password" }
                 };
 
-                if (users.TryGetValue(username, out var expectedPassword) && expectedPassword == password)
+                if (users.TryGetValue(username, out string? expectedPassword) && expectedPassword == password)
                 {
                     return AuthenticationResult.Succeed(username);
                 }
 
                 return AuthenticationResult.Fail("Invalid credentials");
-            };
+            }
 
             // Create server with authentication requirements
             ISmtpServer server = new SmtpServerBuilder()
@@ -58,6 +57,7 @@ namespace Zetian.Relay.Examples
                 .AddAuthenticationMechanism("LOGIN")
                 .AllowPlainTextAuthentication(true)
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     // Require authentication for relay
@@ -100,7 +100,7 @@ namespace Zetian.Relay.Examples
                 }
                 else
                 {
-                    var ipEndPoint = e.Session.RemoteEndPoint as IPEndPoint;
+                    IPEndPoint? ipEndPoint = e.Session.RemoteEndPoint as IPEndPoint;
                     bool isRelayNetwork = ipEndPoint != null &&
                         (ipEndPoint.Address.Equals(IPAddress.Loopback) ||
                          ipEndPoint.Address.Equals(IPAddress.IPv6Loopback) ||
@@ -236,7 +236,7 @@ namespace Zetian.Relay.Examples
         {
             try
             {
-                using var client = new SmtpClient(host, port)
+                using SmtpClient client = new(host, port)
                 {
                     EnableSsl = false,
                     DeliveryMethod = SmtpDeliveryMethod.Network
@@ -247,7 +247,7 @@ namespace Zetian.Relay.Examples
                     client.Credentials = new NetworkCredential(username, password);
                 }
 
-                var message = new MailMessage
+                MailMessage message = new()
                 {
                     From = new MailAddress(from),
                     Subject = subject,
@@ -273,13 +273,13 @@ namespace Zetian.Relay.Examples
         {
             try
             {
-                using var client = new SmtpClient("localhost", 25033)
+                using SmtpClient client = new("localhost", 25033)
                 {
                     EnableSsl = false,
                     Credentials = new NetworkCredential("admin", "admin_secret")
                 };
 
-                var message = new MailMessage
+                MailMessage message = new()
                 {
                     From = new MailAddress("admin@auth-relay.local"),
                     Subject = "Mixed Recipients Test",

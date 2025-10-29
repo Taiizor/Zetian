@@ -127,16 +127,17 @@ namespace Zetian.Relay.Examples
                 return;
             }
 
-            // Create server with custom configuration
+            // Create server with custom relay configuration
             ISmtpServer server = new SmtpServerBuilder()
                 .Port(25034)
-                .ServerName("custom-relay.company.com")
+                .ServerName("custom-relay.local")
                 .MaxMessageSize(25 * 1024 * 1024) // 25MB
                 .MaxConnections(100)
                 .ConnectionTimeout(TimeSpan.FromMinutes(5))
                 .CommandTimeout(TimeSpan.FromMinutes(1))
                 .DataTimeout(TimeSpan.FromMinutes(3))
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(relayConfig);
 
             // Additional manual configuration
@@ -281,7 +282,7 @@ namespace Zetian.Relay.Examples
 
         private static async Task SendTestMessages(int port)
         {
-            using var client = new SmtpClient("localhost", port)
+            using SmtpClient client = new("localhost", port)
             {
                 EnableSsl = false
             };
@@ -299,7 +300,7 @@ namespace Zetian.Relay.Examples
             {
                 try
                 {
-                    var message = new MailMessage
+                    MailMessage message = new()
                     {
                         From = new MailAddress("test@custom-relay.company.com"),
                         Subject = subject,

@@ -4,7 +4,6 @@ using Zetian.Abstractions;
 using Zetian.Relay.Abstractions;
 using Zetian.Relay.Enums;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -28,11 +27,12 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("- Expired message cleanup");
             Console.WriteLine();
 
-            // Create server with relay
+            // Create server with relay enabled
             ISmtpServer server = new SmtpServerBuilder()
-                .Port(25029)
-                .ServerName("queue-mgmt.local")
+                .Port(25030)
+                .ServerName("queue.local")
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     config.MessageLifetime = TimeSpan.FromMinutes(10); // Short lifetime for demo
@@ -68,7 +68,7 @@ namespace Zetian.Relay.Examples
 
             // Send test messages to populate queue
             Console.WriteLine("[TEST] Populating queue with test messages...");
-            using SmtpClient client = new("localhost", 25029)
+            using SmtpClient client = new("localhost", 25030)
             {
                 EnableSsl = false
             };
@@ -119,7 +119,7 @@ namespace Zetian.Relay.Examples
                 Console.WriteLine();
                 Console.Write("Select option: ");
 
-                var choice = Console.ReadLine();
+                string? choice = Console.ReadLine();
                 Console.WriteLine();
 
                 try
@@ -240,8 +240,8 @@ namespace Zetian.Relay.Examples
 
             foreach (IRelayMessage? msg in messages.Take(20))
             {
-                var queueId = msg.QueueId.Length > 30 ? msg.QueueId[..30] + "..." : msg.QueueId;
-                var from = msg.From?.Address ?? "<>";
+                string queueId = msg.QueueId.Length > 30 ? msg.QueueId[..30] + "..." : msg.QueueId;
+                string from = msg.From?.Address ?? "<>";
                 if (from.Length > 16)
                 {
                     from = from[..16] + "...";
@@ -261,7 +261,7 @@ namespace Zetian.Relay.Examples
         private static async Task ListMessagesByStatus(Zetian.Relay.Abstractions.IRelayQueue queue)
         {
             Console.Write("Enter status (Queued/InProgress/Deferred/Delivered/Failed/Expired): ");
-            var statusStr = Console.ReadLine();
+            string? statusStr = Console.ReadLine();
 
             if (!Enum.TryParse<RelayStatus>(statusStr, true, out RelayStatus status))
             {
@@ -302,7 +302,7 @@ namespace Zetian.Relay.Examples
         private static async Task ViewMessage(Zetian.Relay.Abstractions.IRelayQueue queue)
         {
             Console.Write("Enter Queue ID (or first 8 characters): ");
-            var queueId = Console.ReadLine();
+            string? queueId = Console.ReadLine();
 
             if (string.IsNullOrEmpty(queueId))
             {
@@ -357,7 +357,7 @@ namespace Zetian.Relay.Examples
         private static async Task RemoveMessage(Zetian.Relay.Abstractions.IRelayQueue queue)
         {
             Console.Write("Enter Queue ID to remove: ");
-            var queueId = Console.ReadLine();
+            string? queueId = Console.ReadLine();
 
             if (string.IsNullOrEmpty(queueId))
             {
@@ -365,7 +365,7 @@ namespace Zetian.Relay.Examples
                 return;
             }
 
-            var removed = await queue.RemoveAsync(queueId);
+            bool removed = await queue.RemoveAsync(queueId);
 
             if (removed)
             {
@@ -380,7 +380,7 @@ namespace Zetian.Relay.Examples
         private static async Task RescheduleMessage(Zetian.Relay.Abstractions.IRelayQueue queue)
         {
             Console.Write("Enter Queue ID to reschedule: ");
-            var queueId = Console.ReadLine();
+            string? queueId = Console.ReadLine();
 
             if (string.IsNullOrEmpty(queueId))
             {
@@ -389,8 +389,8 @@ namespace Zetian.Relay.Examples
             }
 
             Console.Write("Enter delay in minutes (default 5): ");
-            var delayStr = Console.ReadLine();
-            var delay = int.TryParse(delayStr, out var minutes) ? minutes : 5;
+            string? delayStr = Console.ReadLine();
+            int delay = int.TryParse(delayStr, out int minutes) ? minutes : 5;
 
             await queue.RescheduleAsync(queueId, TimeSpan.FromMinutes(delay));
             Console.WriteLine($"[SUCCESS] Message rescheduled for delivery in {delay} minutes");
@@ -398,14 +398,14 @@ namespace Zetian.Relay.Examples
 
         private static async Task ClearExpiredMessages(Zetian.Relay.Abstractions.IRelayQueue queue)
         {
-            var count = await queue.ClearExpiredAsync();
+            int count = await queue.ClearExpiredAsync();
             Console.WriteLine($"[INFO] Cleared {count} expired messages");
         }
 
         private static async Task SendMoreMessages(SmtpClient client)
         {
             Console.Write("How many messages to send? ");
-            if (!int.TryParse(Console.ReadLine(), out var count))
+            if (!int.TryParse(Console.ReadLine(), out int count))
             {
                 count = 3;
             }

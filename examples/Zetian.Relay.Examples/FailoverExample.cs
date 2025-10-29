@@ -4,7 +4,6 @@ using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -27,11 +26,12 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("- Priority-based server selection");
             Console.WriteLine();
 
-            // Create SMTP server with multiple smart hosts
+            // Create server with multiple smart hosts for failover
             ISmtpServer server = new SmtpServerBuilder()
                 .Port(25027)
-                .ServerName("failover-example.local")
+                .ServerName("failover.local")
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     // Primary smart host (highest priority)

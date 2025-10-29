@@ -4,7 +4,6 @@ using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -31,8 +30,9 @@ namespace Zetian.Relay.Examples
             // Create server with load-balanced smart hosts
             ISmtpServer server = new SmtpServerBuilder()
                 .Port(25032)
-                .ServerName("loadbalance.local")
+                .ServerName("loadbalancer.local")
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     // Configure multiple smart hosts with same priority but different weights
@@ -97,7 +97,7 @@ namespace Zetian.Relay.Examples
             {
                 // Simulate load balancing selection (in real implementation, 
                 // this would be done by the relay service)
-                var selectedServer = SimulateWeightedSelection();
+                string selectedServer = SimulateWeightedSelection();
                 serverStats.AddOrUpdate(selectedServer, 1, (key, oldValue) => oldValue + 1);
 
                 Console.WriteLine($"[LOAD-BALANCE] Message from {e.Message.From?.Address}");
@@ -190,10 +190,10 @@ namespace Zetian.Relay.Examples
 
             foreach ((string? serverName, int expectedPercent) in servers)
             {
-                var actual = serverStats.GetValueOrDefault(serverName, 0);
-                var actualPercent = actual;
-                var deviation = actualPercent - expectedPercent;
-                var deviationStr = deviation >= 0 ? $"+{deviation}%" : $"{deviation}%";
+                int actual = serverStats.GetValueOrDefault(serverName, 0);
+                int actualPercent = actual;
+                int deviation = actualPercent - expectedPercent;
+                string deviationStr = deviation >= 0 ? $"+{deviation}%" : $"{deviation}%";
 
                 Console.WriteLine($"│ {serverName,-31} │   {expectedPercent,2}%    │    {actualPercent,2}%     │  {deviationStr,7}  │");
             }
@@ -231,7 +231,7 @@ namespace Zetian.Relay.Examples
                             Console.WriteLine("\n  Distribution by Smart Host:");
                             foreach (KeyValuePair<string, int> kvp in stats.MessagesBySmartHost)
                             {
-                                var percent = kvp.Value * 100.0 / stats.TotalMessages;
+                                double percent = kvp.Value * 100.0 / stats.TotalMessages;
                                 Console.WriteLine($"    {kvp.Key}: {kvp.Value} messages ({percent:F1}%)");
                             }
                         }
@@ -249,7 +249,7 @@ namespace Zetian.Relay.Examples
         private static string SimulateWeightedSelection()
         {
             // Simulate weighted random selection
-            var random = Random.Shared.Next(100);
+            int random = Random.Shared.Next(100);
 
             if (random < 40)
             {
@@ -271,7 +271,7 @@ namespace Zetian.Relay.Examples
 
         private static void ShowDistribution(System.Collections.Concurrent.ConcurrentDictionary<string, int> stats)
         {
-            var total = stats.Values.Sum();
+            int total = stats.Values.Sum();
             if (total == 0)
             {
                 return;
@@ -280,8 +280,8 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("    Current distribution:");
             foreach (KeyValuePair<string, int> kvp in stats.OrderBy(x => x.Key))
             {
-                var percent = kvp.Value * 100.0 / total;
-                var bar = new string('█', (int)(percent / 2));
+                double percent = kvp.Value * 100.0 / total;
+                string bar = new('█', (int)(percent / 2));
                 Console.WriteLine($"      {kvp.Key.Replace(".loadbalance.example.com", "")}: {bar} {percent:F1}%");
             }
         }

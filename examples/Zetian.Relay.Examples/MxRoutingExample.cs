@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -27,11 +26,12 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("- Fallback smart host on MX failure");
             Console.WriteLine();
 
-            // Create server with MX routing
+            // Create server with MX routing enabled
             ISmtpServer server = new SmtpServerBuilder()
-                .Port(25031)
-                .ServerName("mx-routing.local")
+                .Port(25029)
+                .ServerName("mx-router.local")
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     // Enable MX-based routing
@@ -90,12 +90,12 @@ namespace Zetian.Relay.Examples
             // Start server
             Console.WriteLine("[INFO] Starting SMTP server with MX routing...");
             RelayService relayService = await server.StartWithRelayAsync();
-            Console.WriteLine("[INFO] Server started on port 25031");
+            Console.WriteLine("[INFO] Server started on port 25029");
             Console.WriteLine();
 
             // Display configuration
             Console.WriteLine("[CONFIG] MX Routing Configuration:");
-            Console.WriteLine("  MX Routing: ENABLED");
+            Console.WriteLine("  MX Routing: Enabled");
             Console.WriteLine("  DNS Servers:");
             Console.WriteLine("    - 8.8.8.8 (Google)");
             Console.WriteLine("    - 8.8.4.4 (Google)");
@@ -108,7 +108,7 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("[TEST] Sending test messages to various domains...");
             Console.WriteLine();
 
-            using var client = new SmtpClient("localhost", 25031)
+            using SmtpClient client = new("localhost", 25029)
             {
                 EnableSsl = false
             };
@@ -128,7 +128,7 @@ namespace Zetian.Relay.Examples
             foreach ((string? domain, string? description) in testDomains)
             {
                 string recipient = $"test@{domain}";
-                var message = new MailMessage
+                MailMessage message = new()
                 {
                     From = new MailAddress("sender@mx-routing.local"),
                     Subject = $"MX Routing Test to {description}",

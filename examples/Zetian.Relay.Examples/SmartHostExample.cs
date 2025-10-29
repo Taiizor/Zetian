@@ -4,7 +4,6 @@ using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
-using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -53,6 +52,7 @@ namespace Zetian.Relay.Examples
                 .Port(25026)
                 .ServerName("smarthost-example.local")
                 .LoggerFactory(loggerFactory)
+                .Build()
                 .EnableRelay(config =>
                 {
                     // Configure smart host
@@ -106,12 +106,12 @@ namespace Zetian.Relay.Examples
             Console.Write("Enter recipient email address: ");
             string recipient = Console.ReadLine() ?? "test@example.com";
 
-            using var client = new SmtpClient("localhost", 25026)
+            using SmtpClient client = new("localhost", 25026)
             {
                 EnableSsl = false
             };
 
-            var message = new MailMessage
+            MailMessage message = new()
             {
                 From = new MailAddress("sender@smarthost-example.local", "Smart Host Test"),
                 Subject = $"Test from Smart Host Example - {DateTime.Now:yyyy-MM-dd HH:mm:ss}",

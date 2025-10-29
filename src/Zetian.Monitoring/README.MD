@@ -1,4 +1,4 @@
-# Zetian.Monitoring - Real-Time Metrics & Observability
+# Zetian.Monitoring - Real-time Metrics & Observability
 
 [![NuGet-Version](https://img.shields.io/nuget/v/Zetian.Monitoring.svg?label=NuGet)](https://www.nuget.org/packages/Zetian.Monitoring)
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.Monitoring?label=Download)](https://www.nuget.org/api/v2/package/Zetian.Monitoring)
@@ -9,9 +9,9 @@ Comprehensive monitoring and observability solution for Zetian SMTP Server with 
 ## ⚡ Features
 
 - 💾 **Low Overhead** - Minimal performance impact
-- 📈 **Command Metrics** - Detailed SMTP command statistics
 - 🔄 **Zero-downtime** - Hot-reload metrics without restart
 - 📉 **Histograms & Percentiles** - P95, P99 latency tracking
+- 📈 **Command Metrics** - Detailed SMTP command statistics
 - 📊 **Real-time Metrics** - Live server performance monitoring
 - 🔭 **OpenTelemetry** - Full observability with distributed tracing
 - 🚀 **Performance Tracking** - Throughput, latency, and resource usage
@@ -52,15 +52,26 @@ Console.WriteLine($"Messages/sec: {stats.CurrentThroughput.MessagesPerSecond}");
 ### Prometheus Integration
 
 ```csharp
-// Enable Prometheus exporter on port 9090
+// Enable Prometheus exporter on port 9090 (default host: localhost)
 server.EnablePrometheus(9090);
+
+// With custom host (use "+" for all interfaces - requires admin rights)
+server.EnablePrometheus("0.0.0.0", 9090);  // Listen on all IPv4
+server.EnablePrometheus("localhost", 9090);  // Listen on localhost only (default)
+server.EnablePrometheus("+", 9090);  // Listen on all interfaces (requires admin)
 
 // Or with builder pattern
 server.EnableMonitoring(builder => builder
-    .EnablePrometheus(9090)
+    .EnablePrometheus(9090)  // Uses default host: localhost
     .WithUpdateInterval(TimeSpan.FromSeconds(5)));
 
-// Metrics available at http://localhost:9090/metrics
+// With custom host in builder
+server.EnableMonitoring(builder => builder
+    .EnablePrometheus("0.0.0.0", 9090)
+    .WithPrometheusHost("0.0.0.0")  // Alternative way
+    .WithUpdateInterval(TimeSpan.FromSeconds(5)));
+
+// Metrics available at http://localhost:9090/metrics (or your configured host)
 ```
 
 ### Advanced Configuration
@@ -306,9 +317,9 @@ services:
 ## 📋 Requirements
 
 - .NET 8.0, 9.0, or 10.0
+- OpenTelemetry packages
 - Zetian SMTP Server package
 - Prometheus.NET for metrics export
-- OpenTelemetry packages (optional)
 
 ## 📚 Documentation & Support
 
@@ -317,10 +328,26 @@ services:
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
 - **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 
+## 🙏 Acknowledgments
+
+- Built on top of [Zetian SMTP Server](https://www.nuget.org/packages/Zetian)
+- Community feedback and contributions
+- Inspired by ASP.NET Core Health Checks
+
+## 🔒 Security
+
+**Best Practices:**
+- Configure rate limiting
+- Keep the library updated
+- Implement proper authentication
+- Always use TLS/SSL in production
+
+**Report Security Issues:** taiizor@vegalya.com
+
 ## 📄 License
 
 MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
 
 ---
 
-**Built with ❤️ for observability**
+**Built with ❤️ for the .NET community**

@@ -15,6 +15,13 @@ namespace Zetian.Monitoring
         public bool EnablePrometheus { get; set; }
 
         /// <summary>
+        /// Gets or sets the Prometheus metrics host
+        /// Default is "localhost" to avoid admin permission requirements
+        /// Use "+" or "*" to listen on all interfaces (requires admin rights)
+        /// </summary>
+        public string PrometheusHost { get; set; } = "localhost";
+
+        /// <summary>
         /// Gets or sets the Prometheus metrics port
         /// </summary>
         public int? PrometheusPort { get; set; }

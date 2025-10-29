@@ -21,7 +21,12 @@ namespace Zetian.Monitoring.Examples
                 .Build();
 
             // Enable Prometheus metrics on port 9090
+            // Using localhost by default to avoid admin permission requirements
             server.EnablePrometheus(9090);
+
+            // Alternative: specify custom host
+            // server.EnablePrometheus("0.0.0.0", 9090);  // Listen on all IPs (may require admin)
+            // server.EnablePrometheus("localhost", 9090);  // Explicit localhost
 
             // Start server
             await server.StartAsync();

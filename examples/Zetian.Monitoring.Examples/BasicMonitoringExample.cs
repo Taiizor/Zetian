@@ -22,7 +22,9 @@ namespace Zetian.Monitoring.Examples
 
             // Enable monitoring with Prometheus on port 9090
             server.EnableMonitoring(builder => builder
-                .EnablePrometheus(9090)
+                .EnablePrometheus("localhost", 9090)  // Specify host explicitly
+                                                      // .EnablePrometheus(9090)  // Or use default host (localhost)
+                                                      // .EnablePrometheus("0.0.0.0", 9090)  // Listen on all IPs (requires admin)
                 .WithUpdateInterval(TimeSpan.FromSeconds(5))
                 .WithServiceName("smtp-example")
                 .WithServiceVersion("1.0.0")

@@ -45,6 +45,7 @@ namespace Zetian.Monitoring.Extensions
                 prometheusExporter = new PrometheusExporter(
                     collector,
                     config.PrometheusPort,
+                    config.PrometheusHost,
                     config.PrometheusUrl);
             }
 
@@ -126,7 +127,7 @@ namespace Zetian.Monitoring.Extensions
         }
 
         /// <summary>
-        /// Enables Prometheus metrics exporter
+        /// Enables Prometheus metrics exporter with default host (localhost)
         /// </summary>
         public static ISmtpServer EnablePrometheus(
             this ISmtpServer server,
@@ -134,6 +135,18 @@ namespace Zetian.Monitoring.Extensions
         {
             return server.EnableMonitoring(builder => builder
                 .EnablePrometheus(port));
+        }
+
+        /// <summary>
+        /// Enables Prometheus metrics exporter with custom host and port
+        /// </summary>
+        public static ISmtpServer EnablePrometheus(
+            this ISmtpServer server,
+            string host,
+            int port = 9090)
+        {
+            return server.EnableMonitoring(builder => builder
+                .EnablePrometheus(host, port));
         }
 
         /// <summary>

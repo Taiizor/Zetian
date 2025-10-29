@@ -21,12 +21,34 @@ namespace Zetian.Monitoring
         }
 
         /// <summary>
+        /// Enables Prometheus metrics exporter with custom host and port
+        /// </summary>
+        public MonitoringBuilder EnablePrometheus(string host, int port)
+        {
+            _configuration.EnablePrometheus = true;
+            _configuration.PrometheusHost = host;
+            _configuration.PrometheusPort = port;
+            return this;
+        }
+
+        /// <summary>
         /// Enables Prometheus metrics exporter with custom URL
         /// </summary>
-        public MonitoringBuilder EnablePrometheus(string url)
+        public MonitoringBuilder EnablePrometheusWithUrl(string url)
         {
             _configuration.EnablePrometheus = true;
             _configuration.PrometheusUrl = url;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the Prometheus metrics host
+        /// Default is "localhost" to avoid admin permission requirements
+        /// Use "+" or "*" to listen on all interfaces (requires admin rights)
+        /// </summary>
+        public MonitoringBuilder WithPrometheusHost(string host)
+        {
+            _configuration.PrometheusHost = host;
             return this;
         }
 

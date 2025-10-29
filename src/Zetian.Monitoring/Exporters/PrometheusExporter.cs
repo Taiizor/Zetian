@@ -38,7 +38,7 @@ namespace Zetian.Monitoring.Exporters
         // Summary
         private readonly Summary _sessionDuration;
 
-        public PrometheusExporter(IMetricsCollector collector, int? port = null, string? url = null)
+        public PrometheusExporter(IMetricsCollector collector, int? port = null, string? host = null, string? url = null)
         {
             _collector = collector ?? throw new ArgumentNullException(nameof(collector));
 
@@ -166,12 +166,16 @@ namespace Zetian.Monitoring.Exporters
             // Start metric server if port specified
             if (port.HasValue)
             {
-                _metricServer = new MetricServer(port.Value);
+                // Use provided host or default to "localhost" to avoid admin permission requirements
+                string hostname = !string.IsNullOrEmpty(host) ? host : "localhost";
+                _metricServer = new MetricServer(hostname: hostname, port: port.Value);
                 _metricServer.Start();
             }
             else if (!string.IsNullOrEmpty(url))
             {
-                _metricServer = new MetricServer(hostname: "+", port: 9090, url: url);
+                // For custom URL, still use provided host or default
+                string hostname = !string.IsNullOrEmpty(host) ? host : "localhost";
+                _metricServer = new MetricServer(hostname: hostname, port: 9090, url: url);
                 _metricServer.Start();
             }
         }

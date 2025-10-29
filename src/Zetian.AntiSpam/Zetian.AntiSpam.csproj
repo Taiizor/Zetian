@@ -41,7 +41,7 @@
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>antispam;spam;filter;spf;dkim;dmarc;bayesian;rbl;dnsbl;greylisting;smtp;email;mail;server;smtp;zetian</PackageTags>
+        <PackageTags>antispam;spam;filter;spf;dkim;dmarc;bayesian;rbl;dnsbl;greylisting;smtp;email;mail;server;zetian</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>

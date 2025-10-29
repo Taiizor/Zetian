@@ -5,44 +5,35 @@ namespace Zetian.AntiSpam.Models
     /// <summary>
     /// Represents the result of a spam check
     /// </summary>
-    public class SpamCheckResult
+    /// <remarks>
+    /// Creates a new spam check result
+    /// </remarks>
+    public class SpamCheckResult(bool isSpam, double score, string? reason = null, string? details = null)
     {
-        /// <summary>
-        /// Creates a new spam check result
-        /// </summary>
-        public SpamCheckResult(bool isSpam, double score, string? reason = null, string? details = null)
-        {
-            IsSpam = isSpam;
-            Score = score;
-            Reason = reason;
-            Details = details;
-            CheckedAt = DateTime.UtcNow;
-        }
-
         /// <summary>
         /// Gets whether the message is spam
         /// </summary>
-        public bool IsSpam { get; }
+        public bool IsSpam { get; } = isSpam;
 
         /// <summary>
         /// Gets the spam score (0-100, higher is more spammy)
         /// </summary>
-        public double Score { get; }
+        public double Score { get; } = score;
 
         /// <summary>
         /// Gets the reason for the spam classification
         /// </summary>
-        public string? Reason { get; }
+        public string? Reason { get; } = reason;
 
         /// <summary>
         /// Gets additional details about the check
         /// </summary>
-        public string? Details { get; }
+        public string? Details { get; } = details;
 
         /// <summary>
         /// Gets when the check was performed
         /// </summary>
-        public DateTime CheckedAt { get; }
+        public DateTime CheckedAt { get; } = DateTime.UtcNow;
 
         /// <summary>
         /// Creates a result for a clean message

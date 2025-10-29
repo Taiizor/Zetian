@@ -72,6 +72,7 @@ namespace Zetian.Relay.Examples
                 .WithSmartHost("default.smtp.provider.com", 25)
                 .MaxConcurrentDeliveries(20)
                 .MessageLifetime(TimeSpan.FromDays(3))
+                .RequireAuthentication(false) // Allow unauthenticated relay for local/relay domains
                 .Build();
 
             // Create server with domain routing

@@ -89,6 +89,9 @@ namespace Zetian.Relay.Examples
 
                     config.MaxConcurrentDeliveries = 20;
                     config.ConnectionTimeout = TimeSpan.FromSeconds(10);
+
+                    // Allow relay without authentication for demo
+                    config.RequireAuthentication = false;
                 });
 
             // Track load distribution (simulated for demo purposes)

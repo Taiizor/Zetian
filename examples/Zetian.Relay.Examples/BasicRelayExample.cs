@@ -54,7 +54,13 @@ namespace Zetian.Relay.Examples
                     config.MaxRetryCount = 3;  // Fewer retries for demo
                     config.EnableBounceMessages = true;
                     config.QueueProcessingInterval = TimeSpan.FromSeconds(10);  // Process queue faster
+
+                    // IMPORTANT: For testing, allow relay without authentication
+                    config.RequireAuthentication = false;  // Allow unauthenticated relay for demo
                 });
+
+            Console.WriteLine("[INFO] Starting SMTP server with relay on port 25025...");
+            RelayService relayService = await server.StartWithRelayAsync();
 
             // Handle message received event - just for logging
             // The actual relay queuing is handled by EnableRelay's event handler
@@ -63,24 +69,37 @@ namespace Zetian.Relay.Examples
                 Console.WriteLine($"[SERVER] Message received from {e.Message.From?.Address}");
                 Console.WriteLine($"[SERVER] Recipients: {string.Join(", ", e.Message.Recipients)}");
                 Console.WriteLine($"[SERVER] Subject: {e.Message.Subject}");
+                Console.WriteLine($"[SERVER] Session authenticated: {e.Session.IsAuthenticated}");
 
                 // Check if this will be relayed
-                bool isExternal = e.Message.Recipients.Any(r =>
-                    !r.Host.Equals("relay.local", StringComparison.OrdinalIgnoreCase) &&
-                    !r.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase));
+                RelayConfiguration? config = relayService?.Configuration;
+                if (config != null)
+                {
+                    Console.WriteLine($"[DEBUG] Relay enabled: {config.Enabled}");
+                    Console.WriteLine($"[DEBUG] Local domains: {string.Join(", ", config.LocalDomains)}");
 
-                if (isExternal)
-                {
-                    Console.WriteLine($"[SERVER] Message will be queued for relay");
-                }
-                else
-                {
-                    Console.WriteLine($"[SERVER] Message for local delivery");
+                    foreach (MailAddress recipient in e.Message.Recipients)
+                    {
+                        string domain = recipient.Host.ToLowerInvariant();
+                        bool isLocal = config.LocalDomains.Any(local =>
+                            domain.Equals(local, StringComparison.OrdinalIgnoreCase) ||
+                            domain.EndsWith("." + local, StringComparison.OrdinalIgnoreCase));
+
+                        bool isLocalhost = domain.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                                         domain.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+
+                        if (isLocal || isLocalhost)
+                        {
+                            Console.WriteLine($"  {recipient.Address}: LOCAL (no relay)");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"  {recipient.Address}: EXTERNAL (will relay)");
+                        }
+                    }
                 }
             };
 
-            Console.WriteLine("[INFO] Starting SMTP server with relay on port 25025...");
-            RelayService relayService = await server.StartWithRelayAsync();
             Console.WriteLine("[INFO] Server started successfully!");
             Console.WriteLine();
 

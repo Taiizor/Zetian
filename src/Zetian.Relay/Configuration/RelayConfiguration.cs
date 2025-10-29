@@ -106,7 +106,9 @@ namespace Zetian.Relay.Configuration
         public HashSet<IPAddress> RelayNetworks { get; set; } = [];
 
         /// <summary>
-        /// Gets or sets whether to require authentication for relay
+        /// Gets or sets whether to require authentication for relay.
+        /// When true (default), only authenticated sessions can relay mail.
+        /// Set to false for open relay (NOT RECOMMENDED for production).
         /// </summary>
         public bool RequireAuthentication { get; set; } = true;
 

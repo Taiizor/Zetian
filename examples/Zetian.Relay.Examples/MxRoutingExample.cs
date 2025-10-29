@@ -35,6 +35,8 @@ namespace Zetian.Relay.Examples
                 .Build()
                 .EnableRelay(config =>
                 {
+                    config.RequireAuthentication = false; // Allow unauthenticated relay for testing
+
                     // Enable MX-based routing
                     config.UseMxRouting = true;
 

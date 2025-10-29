@@ -36,6 +36,8 @@ namespace Zetian.Relay.Examples
                 .Build()
                 .EnableRelay(config =>
                 {
+                    config.RequireAuthentication = false; // Allow unauthenticated relay for demo
+
                     config.MessageLifetime = TimeSpan.FromMinutes(10); // Short lifetime for demo
                     config.CleanupInterval = TimeSpan.FromMinutes(1);
                     config.QueueProcessingInterval = TimeSpan.FromSeconds(5);

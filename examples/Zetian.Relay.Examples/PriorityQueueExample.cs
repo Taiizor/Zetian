@@ -35,6 +35,8 @@ namespace Zetian.Relay.Examples
                 .Build()
                 .EnableRelay(config =>
                 {
+                    config.RequireAuthentication = false; // No auth for testing
+
                     config.MaxConcurrentDeliveries = 2; // Low concurrency to see priority effect
                     config.QueueProcessingInterval = TimeSpan.FromSeconds(2);
 

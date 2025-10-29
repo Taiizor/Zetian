@@ -76,6 +76,8 @@ namespace Zetian.Relay.Examples
                     config.ConnectionTimeout = TimeSpan.FromSeconds(30);
                     config.MessageLifetime = TimeSpan.FromDays(3);
                     config.QueueProcessingInterval = TimeSpan.FromSeconds(10);
+
+                    config.RequireAuthentication = false; // Allow anonymous relay for testing
                 });
 
             // Add another smart host via extension method

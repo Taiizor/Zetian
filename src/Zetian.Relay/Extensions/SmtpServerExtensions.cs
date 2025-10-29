@@ -280,19 +280,50 @@ namespace Zetian.Relay.Extensions
         {
             try
             {
+                // Get logger for debugging
+                ILogger? logger = e.Session.Properties.TryGetValue("Logger", out object? loggerObj)
+                    ? loggerObj as ILogger
+                    : null;
+
+                logger?.LogInformation("[RELAY-HANDLER] Message received, checking if should relay");
+
                 // Check if message should be relayed
                 if (ShouldRelayMessage(e.Message, e.Session, relayService.Configuration))
                 {
-                    // Queue message for relay
-                    await relayService.QueueMessageAsync(
-                        e.Message,
-                        e.Session,
-                        DeterminePriority(e.Message));
+                    logger?.LogInformation("[RELAY-HANDLER] Message should be relayed, calling QueueMessageAsync");
+
+                    try
+                    {
+                        // Queue message for relay
+                        IRelayMessage relayMessage = await relayService.QueueMessageAsync(
+                            e.Message,
+                            e.Session,
+                            DeterminePriority(e.Message));
+
+                        logger?.LogInformation("[RELAY-HANDLER] Message queued successfully with ID: {QueueId}", relayMessage?.QueueId);
+                    }
+                    catch (UnauthorizedAccessException uex)
+                    {
+                        logger?.LogWarning("[RELAY-HANDLER] Relay access denied: {Message}", uex.Message);
+                    }
+                    catch (InvalidOperationException iex)
+                    {
+                        logger?.LogWarning("[RELAY-HANDLER] Invalid operation: {Message}", iex.Message);
+                    }
+                    catch (Exception qex)
+                    {
+                        logger?.LogError(qex, "[RELAY-HANDLER] Failed to queue message for relay");
+                        throw;
+                    }
 
                     // Message has been queued for relay
                     // You might want to cancel local delivery in production:
                     // e.Cancel = true;
                     // e.Response = new SmtpResponse(250, "Message queued for relay");
+                }
+                else
+                {
+                    logger?.LogInformation("[RELAY-HANDLER] Message does not need relay (local delivery)");
                 }
             }
             catch (Exception ex)
@@ -302,7 +333,7 @@ namespace Zetian.Relay.Extensions
                     ? loggerObj as ILogger
                     : null;
 
-                logger?.LogError(ex, "Error processing message for relay");
+                logger?.LogError(ex, "[RELAY-HANDLER] Error processing message for relay");
             }
         }
 

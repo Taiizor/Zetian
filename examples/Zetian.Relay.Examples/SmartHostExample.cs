@@ -79,6 +79,8 @@ namespace Zetian.Relay.Examples
                     config.RequireTls = false;
                     config.EnableBounceMessages = true;
                     config.LocalDomain = "smarthost-example.local";
+
+                    config.RequireAuthentication = false; // No auth required for local submissions
                 });
 
             // Log relay events

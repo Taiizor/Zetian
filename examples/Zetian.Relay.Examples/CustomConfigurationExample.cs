@@ -77,7 +77,7 @@ namespace Zetian.Relay.Examples
 
                 // Security settings
                 .EnableTls(true, require: false)
-                .RequireAuthentication(true)
+                .RequireAuthentication(false) // Allow anonymous relay for trusted networks
 
                 // DNS and MX routing
                 .UseMxRouting(true)

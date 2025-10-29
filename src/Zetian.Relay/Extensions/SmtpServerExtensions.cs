@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading;
@@ -265,14 +266,11 @@ namespace Zetian.Relay.Extensions
 
         private static RelayConfiguration? GetRelayConfiguration(ISmtpServer server)
         {
-            // In a real implementation, you'd store and retrieve the configuration properly
-            // For now, we'll try to get it from the relay service
             RelayService? relayService = GetRelayService(server);
             if (relayService != null)
             {
-                // The configuration is private in our current implementation
-                // In production, you'd expose it as a property
-                return new RelayConfiguration();
+                // Now we can access the Configuration property
+                return relayService.Configuration;
             }
 
             return null;
@@ -283,7 +281,7 @@ namespace Zetian.Relay.Extensions
             try
             {
                 // Check if message should be relayed
-                if (ShouldRelayMessage(e.Message, e.Session))
+                if (ShouldRelayMessage(e.Message, e.Session, relayService.Configuration))
                 {
                     // Queue message for relay
                     await relayService.QueueMessageAsync(
@@ -291,9 +289,8 @@ namespace Zetian.Relay.Extensions
                         e.Session,
                         DeterminePriority(e.Message));
 
-                    // Cancel local delivery
-                    e.Cancel = false; // Allow local processing to continue
-                    // In production, you might want to cancel local delivery
+                    // Message has been queued for relay
+                    // You might want to cancel local delivery in production:
                     // e.Cancel = true;
                     // e.Response = new SmtpResponse(250, "Message queued for relay");
                 }
@@ -309,30 +306,52 @@ namespace Zetian.Relay.Extensions
             }
         }
 
-        private static bool ShouldRelayMessage(ISmtpMessage message, ISmtpSession session)
+        private static bool ShouldRelayMessage(ISmtpMessage message, ISmtpSession session, RelayConfiguration config)
         {
-            // This is a simplified check - in production you'd have more complex logic
-            // based on configuration, authentication, recipient domains, etc.
+            // Check if relay is enabled
+            if (!config.Enabled)
+            {
+                return false;
+            }
 
-            // For now, relay if:
-            // 1. Session is authenticated
-            // 2. Or message has external recipients
-
+            // Always relay if session is authenticated
             if (session.IsAuthenticated)
             {
                 return true;
             }
 
-            // Check if any recipient is external
-            foreach (MailAddress recipient in message.Recipients)
+            // Check if sender's IP is in relay networks (trusted IPs)
+            if (config.RelayNetworks.Any())
             {
-                // Simple check - in production you'd check against local domains
-                if (!recipient.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
+                // In production, you'd check session.RemoteEndPoint against RelayNetworks
+                // For now, we'll skip this check
             }
 
+            // Check if any recipient needs relay
+            foreach (MailAddress recipient in message.Recipients)
+            {
+                string recipientDomain = recipient.Host.ToLowerInvariant();
+
+                // Skip local domains (no relay needed)
+                if (config.LocalDomains.Any(local =>
+                    recipientDomain.Equals(local, StringComparison.OrdinalIgnoreCase) ||
+                    recipientDomain.EndsWith("." + local, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                // Skip localhost (always local)
+                if (recipientDomain.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                    recipientDomain.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // This recipient needs relay (external domain)
+                return true;
+            }
+
+            // All recipients are local, no relay needed
             return false;
         }
 

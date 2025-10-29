@@ -23,7 +23,6 @@ namespace Zetian.Relay.Services
     public class RelayService : IDisposable
     {
         private readonly ILogger<RelayService> _logger;
-        private readonly RelayConfiguration _configuration;
         private readonly ConcurrentDictionary<string, ISmtpClient> _clientPool;
         private readonly SemaphoreSlim _deliverySemaphore;
 
@@ -37,13 +36,13 @@ namespace Zetian.Relay.Services
             IRelayQueue? queue = null,
             ILogger<RelayService>? logger = null)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _configuration.Validate();
+            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            Configuration.Validate();
 
             Queue = queue ?? new InMemoryRelayQueue();
             _logger = logger ?? NullLogger<RelayService>.Instance;
             _clientPool = new ConcurrentDictionary<string, ISmtpClient>();
-            _deliverySemaphore = new SemaphoreSlim(_configuration.MaxConcurrentDeliveries);
+            _deliverySemaphore = new SemaphoreSlim(Configuration.MaxConcurrentDeliveries);
         }
 
         /// <summary>
@@ -55,6 +54,11 @@ namespace Zetian.Relay.Services
         /// Gets the relay queue
         /// </summary>
         public IRelayQueue Queue { get; }
+
+        /// <summary>
+        /// Gets the relay configuration
+        /// </summary>
+        public RelayConfiguration Configuration { get; }
 
         /// <summary>
         /// Starts the relay service
@@ -131,7 +135,7 @@ namespace Zetian.Relay.Services
             RelayPriority priority = RelayPriority.Normal,
             CancellationToken cancellationToken = default)
         {
-            if (!_configuration.Enabled)
+            if (!Configuration.Enabled)
             {
                 throw new InvalidOperationException("Relay is not enabled");
             }
@@ -190,7 +194,7 @@ namespace Zetian.Relay.Services
                     else
                     {
                         // No messages, wait before checking again
-                        await Task.Delay(_configuration.QueueProcessingInterval, cancellationToken)
+                        await Task.Delay(Configuration.QueueProcessingInterval, cancellationToken)
                             .ConfigureAwait(false);
                     }
                 }
@@ -262,7 +266,7 @@ namespace Zetian.Relay.Services
                     _logger.LogInformation("Message {QueueId} delivered successfully to {Count} recipients",
                         message.QueueId, result.DeliveredRecipients.Count);
                 }
-                else if (result.IsTemporaryFailure && message.RetryCount < _configuration.MaxRetryCount)
+                else if (result.IsTemporaryFailure && message.RetryCount < Configuration.MaxRetryCount)
                 {
                     // Schedule retry
                     TimeSpan delay = CalculateRetryDelay(message.RetryCount);
@@ -285,7 +289,7 @@ namespace Zetian.Relay.Services
                         message.QueueId, result.Message);
 
                     // Send bounce if enabled
-                    if (_configuration.EnableBounceMessages && message.From != null)
+                    if (Configuration.EnableBounceMessages && message.From != null)
                     {
                         await SendBounceMessageAsync(message, result.Message ?? "Delivery failed")
                             .ConfigureAwait(false);
@@ -296,7 +300,7 @@ namespace Zetian.Relay.Services
             {
                 _logger.LogError(ex, "Error delivering message {QueueId}", message.QueueId);
 
-                if (message.RetryCount < _configuration.MaxRetryCount)
+                if (message.RetryCount < Configuration.MaxRetryCount)
                 {
                     // Schedule retry
                     TimeSpan delay = CalculateRetryDelay(message.RetryCount);
@@ -323,7 +327,7 @@ namespace Zetian.Relay.Services
             {
                 try
                 {
-                    await Task.Delay(_configuration.CleanupInterval, cancellationToken)
+                    await Task.Delay(Configuration.CleanupInterval, cancellationToken)
                         .ConfigureAwait(false);
 
                     int count = await Queue.ClearExpiredAsync(cancellationToken)
@@ -358,14 +362,14 @@ namespace Zetian.Relay.Services
             // Allow relay from specific networks
             if (session.RemoteEndPoint is System.Net.IPEndPoint ipEndPoint)
             {
-                if (_configuration.RelayNetworks.Contains(ipEndPoint.Address))
+                if (Configuration.RelayNetworks.Contains(ipEndPoint.Address))
                 {
                     return true;
                 }
             }
 
             // Require authentication if configured
-            if (_configuration.RequireAuthentication)
+            if (Configuration.RequireAuthentication)
             {
                 return false;
             }
@@ -379,21 +383,21 @@ namespace Zetian.Relay.Services
             foreach (MailAddress recipient in message.Recipients)
             {
                 string domain = recipient.Host;
-                if (_configuration.DomainRouting.ContainsKey(domain))
+                if (Configuration.DomainRouting.ContainsKey(domain))
                 {
-                    SmartHostConfiguration config = _configuration.DomainRouting[domain];
+                    SmartHostConfiguration config = Configuration.DomainRouting[domain];
                     return $"{config.Host}:{config.Port}";
                 }
             }
 
             // Use default smart host if configured
-            if (_configuration.DefaultSmartHost != null)
+            if (Configuration.DefaultSmartHost != null)
             {
-                return $"{_configuration.DefaultSmartHost.Host}:{_configuration.DefaultSmartHost.Port}";
+                return $"{Configuration.DefaultSmartHost.Host}:{Configuration.DefaultSmartHost.Port}";
             }
 
             // Use MX routing if enabled
-            if (_configuration.UseMxRouting)
+            if (Configuration.UseMxRouting)
             {
                 // This would involve DNS MX lookups
                 // For now, return null to indicate direct delivery
@@ -413,7 +417,7 @@ namespace Zetian.Relay.Services
                 int port = parts.Length > 1 && int.TryParse(parts[1], out int p) ? p : 25;
 
                 // Find matching configuration
-                SmartHostConfiguration? config = _configuration.SmartHosts
+                SmartHostConfiguration? config = Configuration.SmartHosts
                     .FirstOrDefault(sh => sh.Host == host && sh.Port == port && sh.Enabled);
 
                 if (config != null)
@@ -426,13 +430,13 @@ namespace Zetian.Relay.Services
                 {
                     Host = host,
                     Port = port,
-                    UseTls = _configuration.EnableTls,
-                    UseStartTls = _configuration.EnableTls,
-                    ConnectionTimeout = _configuration.ConnectionTimeout
+                    UseTls = Configuration.EnableTls,
+                    UseStartTls = Configuration.EnableTls,
+                    ConnectionTimeout = Configuration.ConnectionTimeout
                 };
             }
 
-            return _configuration.DefaultSmartHost;
+            return Configuration.DefaultSmartHost;
         }
 
         private ISmtpClient GetOrCreateClient(SmartHostConfiguration config)
@@ -447,7 +451,7 @@ namespace Zetian.Relay.Services
                     Port = config.Port,
                     EnableSsl = config.UseTls,
                     Credentials = config.Credentials,
-                    LocalDomain = _configuration.LocalDomain,
+                    LocalDomain = Configuration.LocalDomain,
                     Timeout = config.ConnectionTimeout
                 };
 
@@ -477,7 +481,7 @@ namespace Zetian.Relay.Services
             {
                 // Don't send bounce for bounce messages to avoid loops
                 if (message.From == null ||
-                    message.From.Address.Equals(_configuration.BounceSender, StringComparison.OrdinalIgnoreCase) ||
+                    message.From.Address.Equals(Configuration.BounceSender, StringComparison.OrdinalIgnoreCase) ||
                     message.From.Address.StartsWith("<>", StringComparison.OrdinalIgnoreCase) ||
                     message.From.Address.Equals("postmaster", StringComparison.OrdinalIgnoreCase))
                 {
@@ -496,7 +500,7 @@ namespace Zetian.Relay.Services
                 MailMessage bounceMessage = new()
                 {
                     From = new MailAddress(
-                        string.IsNullOrEmpty(_configuration.BounceSender) ? "<>" : _configuration.BounceSender,
+                        string.IsNullOrEmpty(Configuration.BounceSender) ? "<>" : Configuration.BounceSender,
                         "Mail Delivery System"),
                     Subject = bounceSubject,
                     Body = bounceBody,
@@ -514,30 +518,30 @@ namespace Zetian.Relay.Services
                 bounceMessage.Headers.Add("Content-Type", "multipart/report; report-type=delivery-status");
 
                 // Send bounce message
-                if (_configuration.DefaultSmartHost != null)
+                if (Configuration.DefaultSmartHost != null)
                 {
-                    ISmtpClient client = GetOrCreateClient(_configuration.DefaultSmartHost);
+                    ISmtpClient client = GetOrCreateClient(Configuration.DefaultSmartHost);
 
                     // Connect if not connected
                     if (!client.IsConnected)
                     {
                         // Set connection parameters
-                        client.Host = _configuration.DefaultSmartHost.Host;
-                        client.Port = _configuration.DefaultSmartHost.Port;
-                        client.EnableSsl = _configuration.DefaultSmartHost.UseTls || _configuration.DefaultSmartHost.UseStartTls;
-                        client.Credentials = _configuration.DefaultSmartHost.Credentials;
+                        client.Host = Configuration.DefaultSmartHost.Host;
+                        client.Port = Configuration.DefaultSmartHost.Port;
+                        client.EnableSsl = Configuration.DefaultSmartHost.UseTls || Configuration.DefaultSmartHost.UseStartTls;
+                        client.Credentials = Configuration.DefaultSmartHost.Credentials;
 
                         await client.ConnectAsync().ConfigureAwait(false);
 
                         // Authenticate if credentials provided
-                        if (_configuration.DefaultSmartHost.Credentials != null)
+                        if (Configuration.DefaultSmartHost.Credentials != null)
                         {
                             await client.AuthenticateAsync().ConfigureAwait(false);
                         }
                     }
 
                     // Convert bounce message to raw data
-                    string fromAddress = string.IsNullOrEmpty(_configuration.BounceSender) ? "" : _configuration.BounceSender;
+                    string fromAddress = string.IsNullOrEmpty(Configuration.BounceSender) ? "" : Configuration.BounceSender;
                     string[] recipients = new[] { message.From.Address };
 
                     // Build the raw message

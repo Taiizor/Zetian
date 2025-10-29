@@ -328,22 +328,6 @@ services:
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
 - **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 
-## 🙏 Acknowledgments
-
-- Built on top of [Zetian SMTP Server](https://www.nuget.org/packages/Zetian)
-- Community feedback and contributions
-- Inspired by ASP.NET Core Health Checks
-
-## 🔒 Security
-
-**Best Practices:**
-- Configure rate limiting
-- Keep the library updated
-- Implement proper authentication
-- Always use TLS/SSL in production
-
-**Report Security Issues:** taiizor@vegalya.com
-
 ## 📄 License
 
 MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)

@@ -79,7 +79,7 @@ namespace Zetian.Relay.Examples
                 .ServerName("routing.local")
                 .LoggerFactory(loggerFactory)
                 .Build()
-                .EnableRelay(config => relayConfig);
+                .EnableRelay(relayConfig);
 
             // Log routing decisions
             server.MessageReceived += async (sender, e) =>

@@ -48,7 +48,6 @@ namespace Zetian.Relay.Examples
                     config.LocalDomains.Add("internal.domain");
 
                     // Configure relay behavior
-                    config.MaxDeliveryAttempts = 5;
                     config.MaxRetryCount = 10;
                     config.EnableBounceMessages = true;
                 });

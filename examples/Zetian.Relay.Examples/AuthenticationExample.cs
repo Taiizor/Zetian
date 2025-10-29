@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
 using Zetian.Abstractions;
-using Zetian.Delegates;
 using Zetian.Models;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;

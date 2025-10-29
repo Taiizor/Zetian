@@ -1,23 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-        <RootNamespace>Zetian.AntiSpam</RootNamespace>
+        <!--<TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>-->
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <RootNamespace>Zetian.Monitoring</RootNamespace>
         <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
         <ImplicitUsings>disable</ImplicitUsings>
         <DefaultLanguage>en-GB</DefaultLanguage>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <!-- AOT Support for .NET 7.0+ -->
-    <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0' OR '$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
-        <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">true</EnableAotAnalyzer>
+    <!-- AOT Support for .NET 8.0+ -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'">
         <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
         <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
         <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
         <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
         <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <EnableAotAnalyzer>true</EnableAotAnalyzer>
         <IsAotCompatible>true</IsAotCompatible>
         <IlcTrimMetadata>true</IlcTrimMetadata>
         <IsTrimmable>true</IsTrimmable>
@@ -26,24 +27,23 @@
 
     <PropertyGroup>
         <ApplicationIcon>Resources\Zetian.ico</ApplicationIcon>
-        <Version>1.0.2</Version>
+        <Version>1.0.0</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>Zetian.AntiSpam</Title>
-        <PackageId>Zetian.AntiSpam</PackageId>
+        <Title>Zetian.Monitoring</Title>
+        <PackageId>Zetian.Monitoring</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Server - Anti Spam</Product>
+        <Product>Zetian Monitoring Extension</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
-        <Summary>Advanced anti-spam protection for Zetian SMTP Server. Includes SPF/DKIM/DMARC validation, Bayesian filtering, RBL/DNSBL checks, and greylisting.</Summary>
-        <Description>Comprehensive anti-spam solution for Zetian SMTP Server. Features include SPF/DKIM/DMARC email authentication, Bayesian spam filtering with machine learning, RBL/DNSBL reputation checks, greylisting, custom filters, and real-time threat detection. Easy integration with flexible configuration options.</Description>
+        <Summary>Comprehensive monitoring and metrics collection for Zetian SMTP Server with Prometheus and OpenTelemetry support.</Summary>
+        <Description>Comprehensive monitoring and metrics collection for Zetian SMTP Server. Features include real-time metrics, Prometheus/Grafana integration, OpenTelemetry support, command-level statistics, and performance monitoring.</Description>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>antispam;spam;filter;spf;dkim;dmarc;bayesian;rbl;dnsbl;greylisting;smtp;email;mail;server;smtp;zetian</PackageTags>
+        <PackageTags>smtp;monitoring;metrics;prometheus;opentelemetry;grafana;observability;statistics;performance;zetian</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>git://github.com/Taiizor/Zetian</RepositoryUrl>
@@ -61,13 +61,9 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Configurations>Debug;Release</Configurations>
-        <NoWarn>$(NoWarn);1591;IL2026;IL3050</NoWarn>
+        <NoWarn>$(NoWarn);1591</NoWarn>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Zetian\Zetian.csproj" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub">
@@ -77,7 +73,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DnsClient" Version="1.8.0" />
+        <PackageReference Include="prometheus-net" Version="8.2.1" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0-rc.1" />
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.1-beta.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Zetian\Zetian.csproj" />
     </ItemGroup>
 
     <ItemGroup>

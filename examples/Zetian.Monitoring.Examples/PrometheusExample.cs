@@ -80,7 +80,7 @@ namespace Zetian.Monitoring.Examples
 
                 foreach (string line in lines)
                 {
-                    if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("#"))
+                    if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith('#'))
                     {
                         Console.WriteLine(line);
                         displayCount++;

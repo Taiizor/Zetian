@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Monitoring.Exporters;
 using Zetian.Monitoring.Services;
+using Zetian.Server;
 
 namespace Zetian.Monitoring.Extensions
 {
@@ -97,7 +98,7 @@ namespace Zetian.Monitoring.Extensions
             };
 
             // Store collector in server properties for later access
-            if (server is Server.SmtpServer smtpServer)
+            if (server is SmtpServer smtpServer)
             {
                 smtpServer.Configuration.Properties["MetricsCollector"] = collector;
                 smtpServer.Configuration.Properties["PrometheusExporter"] = prometheusExporter;
@@ -154,7 +155,7 @@ namespace Zetian.Monitoring.Extensions
         /// </summary>
         public static MetricsCollector? GetMetricsCollector(this ISmtpServer server)
         {
-            if (server is Server.SmtpServer smtpServer &&
+            if (server is SmtpServer smtpServer &&
                 smtpServer.Configuration.Properties.TryGetValue("MetricsCollector", out object? value))
             {
                 return value as MetricsCollector;
@@ -183,7 +184,7 @@ namespace Zetian.Monitoring.Extensions
             collector?.RecordCommand(command, success, durationMs);
 
             // Also update Prometheus if available
-            if (server is Server.SmtpServer smtpServer &&
+            if (server is SmtpServer smtpServer &&
                 smtpServer.Configuration.Properties.TryGetValue("PrometheusExporter", out object? value) &&
                 value is PrometheusExporter exporter)
             {

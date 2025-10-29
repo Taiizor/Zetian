@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -63,7 +64,7 @@ namespace Zetian.Monitoring.Services
 
         public MetricsCollector(ILogger<MetricsCollector>? logger = null)
         {
-            _logger = logger ?? new Microsoft.Extensions.Logging.Abstractions.NullLogger<MetricsCollector>();
+            _logger = logger ?? new NullLogger<MetricsCollector>();
             _commandMetrics = new ConcurrentDictionary<string, CommandMetrics>(StringComparer.OrdinalIgnoreCase);
             _rejectionReasons = new ConcurrentDictionary<string, long>(StringComparer.OrdinalIgnoreCase);
             _connectionsByIp = new ConcurrentDictionary<string, long>();

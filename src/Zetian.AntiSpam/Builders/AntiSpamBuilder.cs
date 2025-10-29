@@ -1,6 +1,7 @@
 using DnsClient;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Checkers;
 using Zetian.AntiSpam.Services;
@@ -22,6 +23,8 @@ namespace Zetian.AntiSpam.Builders
         public AntiSpamBuilder UseDefaults()
         {
             EnableSpf();
+            EnableDkim();
+            EnableDmarc();
             EnableRbl();
             EnableBayesian();
             return this;
@@ -33,6 +36,8 @@ namespace Zetian.AntiSpam.Builders
         public AntiSpamBuilder UseAggressive()
         {
             EnableSpf(failScore: 70);
+            EnableDkim(failScore: 60, strictMode: true);
+            EnableDmarc(failScore: 80, enforcePolicy: true);
             EnableRbl(scorePerListing: 35);
             EnableBayesian(spamThreshold: 0.7);
             EnableGreylisting(initialDelay: TimeSpan.FromMinutes(10));
@@ -147,6 +152,68 @@ namespace Zetian.AntiSpam.Builders
                 whitelistDuration,
                 maxRetryTime,
                 autoWhitelist));
+            return this;
+        }
+
+        /// <summary>
+        /// Enable DKIM signature checking
+        /// </summary>
+        public AntiSpamBuilder EnableDkim(
+            double failScore = 40,
+            double noneScore = 10,
+            bool strictMode = false)
+        {
+            _checkers.Add(new DkimChecker(
+                _dnsClient,
+                failScore,
+                noneScore,
+                strictMode));
+            return this;
+        }
+
+        /// <summary>
+        /// Enable DMARC policy checking
+        /// </summary>
+        public AntiSpamBuilder EnableDmarc(
+            double failScore = 70,
+            double quarantineScore = 50,
+            double noneScore = 0,
+            bool enforcePolicy = true)
+        {
+            // Find existing SPF and DKIM checkers if available
+            SpfChecker? spfChecker = _checkers.OfType<SpfChecker>().FirstOrDefault();
+            DkimChecker? dkimChecker = _checkers.OfType<DkimChecker>().FirstOrDefault();
+
+            _checkers.Add(new DmarcChecker(
+                _dnsClient,
+                spfChecker,
+                dkimChecker,
+                failScore,
+                quarantineScore,
+                noneScore,
+                enforcePolicy));
+            return this;
+        }
+
+        /// <summary>
+        /// Enable full email authentication (SPF + DKIM + DMARC)
+        /// </summary>
+        public AntiSpamBuilder EnableEmailAuthentication(
+            bool strictMode = false,
+            bool enforcePolicy = true)
+        {
+            // Enable SPF if not already enabled
+            if (!_checkers.Any(c => c is SpfChecker))
+            {
+                EnableSpf();
+            }
+
+            // Enable DKIM
+            EnableDkim(strictMode: strictMode);
+
+            // Enable DMARC (will use existing SPF and DKIM checkers)
+            EnableDmarc(enforcePolicy: enforcePolicy);
+
             return this;
         }
 

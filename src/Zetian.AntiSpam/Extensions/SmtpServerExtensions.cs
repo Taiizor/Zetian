@@ -126,6 +126,51 @@ namespace Zetian.AntiSpam.Extensions
         }
 
         /// <summary>
+        /// Adds DKIM signature checking to the server
+        /// </summary>
+        public static ISmtpServer AddDkimCheck(
+            this ISmtpServer server,
+            double failScore = 40,
+            bool strictMode = false)
+        {
+            DkimChecker dkimChecker = new(
+                failScore: failScore,
+                strictMode: strictMode);
+            return server.AddSpamChecker(dkimChecker);
+        }
+
+        /// <summary>
+        /// Adds DMARC policy checking to the server
+        /// </summary>
+        public static ISmtpServer AddDmarcCheck(
+            this ISmtpServer server,
+            double failScore = 70,
+            double quarantineScore = 50,
+            bool enforcePolicy = true)
+        {
+            DmarcChecker dmarcChecker = new(
+                failScore: failScore,
+                quarantineScore: quarantineScore,
+                enforcePolicy: enforcePolicy);
+            return server.AddSpamChecker(dmarcChecker);
+        }
+
+        /// <summary>
+        /// Adds full email authentication (SPF + DKIM + DMARC)
+        /// </summary>
+        public static ISmtpServer AddEmailAuthentication(
+            this ISmtpServer server,
+            bool strictMode = false,
+            bool enforcePolicy = true)
+        {
+            // Add all authentication methods
+            server.AddSpfCheck();
+            server.AddDkimCheck(strictMode: strictMode);
+            server.AddDmarcCheck(enforcePolicy: enforcePolicy);
+            return server;
+        }
+
+        /// <summary>
         /// Adds a custom spam checker to the server
         /// </summary>
         public static ISmtpServer AddSpamChecker(

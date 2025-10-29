@@ -1,293 +1,301 @@
-using Zetian.AntiSpam.Checkers;
-using Zetian.AntiSpam.Extensions;
-using Zetian.AntiSpam.Models;
-using Zetian.AntiSpam.Services;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Zetian.Server;
+using Zetian.AntiSpam.Extensions;
+using Zetian.AntiSpam.Checkers;
 
 namespace Zetian.AntiSpam.Examples
 {
     /// <summary>
-    /// Example of training and testing the Bayesian spam filter
+    /// Bayesian filter training example
     /// </summary>
     public class BayesianTrainingExample
     {
         public static async Task RunAsync()
         {
-            Console.WriteLine("Bayesian Filter Training and Testing");
-            Console.WriteLine("====================================\n");
+            Console.WriteLine("=== Bayesian Filter Training Example ===\n");
 
-            // Create a standalone Bayesian checker for demonstration
-            BayesianChecker bayesianChecker = new(new BayesianConfiguration
+            // Create Bayesian filter
+            var bayesianFilter = new BayesianSpamFilter(
+                spamThreshold: 0.9,
+                unknownWordProbability: 0.5);
+
+            // Training data samples
+            var spamSamples = GetSpamSamples();
+            var hamSamples = GetHamSamples();
+
+            Console.WriteLine($"Training with {spamSamples.Count} spam samples...");
+            foreach (var spam in spamSamples)
             {
-                SpamThreshold = 0.7,
-                UseBiGrams = true,
-                MaxTokensToConsider = 20
-            });
-
-            // Train the filter with comprehensive dataset
-            TrainWithDataset(bayesianChecker);
-
-            // Test the trained filter
-            await TestFilter(bayesianChecker);
-
-            // Create and run an SMTP server with the trained filter
-            await RunServerWithTrainedFilter(bayesianChecker);
-        }
-
-        private static void TrainWithDataset(BayesianChecker checker)
-        {
-            Console.WriteLine("Training Bayesian filter...\n");
-
-            // Spam training data
-            List<string> spamSamples =
-            [
-                // Financial scams
-                "Make money fast! Earn $5000 per week working from home!",
-                "Congratulations! You've won $1,000,000 in our lottery!",
-                "Get rich quick with this one simple trick!",
-                "Financial freedom is just one click away!",
-                "Double your income in 30 days guaranteed!",
-                
-                // Pharmaceutical spam
-                "Buy cheap viagra online without prescription",
-                "Discount pharmacy - all medications 80% off",
-                "Lose weight fast with our miracle pills",
-                "Get prescription drugs without a doctor",
-                "Natural enhancement products - results guaranteed",
-                
-                // Phishing attempts
-                "URGENT: Your account will be suspended. Click here to verify",
-                "Security alert: Suspicious activity detected. Confirm identity now",
-                "Your payment has been declined. Update billing information immediately",
-                "Tax refund available - claim within 24 hours",
-                "Bank notification: Your account has been locked",
-                
-                // Adult content
-                "Hot singles in your area want to meet you",
-                "Adult content - must be 18+ to view",
-                "Meet lonely housewives tonight",
-                "Free adult webcams - no credit card required",
-                
-                // General spam patterns
-                "This is not spam! 100% legitimate offer!",
-                "Act now! Limited time offer expires soon!",
-                "FREE FREE FREE - No strings attached!",
-                "Click here now for amazing deals!!!",
-                "You have been specially selected for this offer"
-            ];
-
-            // Ham (legitimate) training data
-            List<string> hamSamples =
-            [
-                // Business emails
-                "Please find attached the quarterly report for review",
-                "Meeting scheduled for tomorrow at 2 PM in conference room B",
-                "Thank you for your order. Your receipt is attached",
-                "Project update: We've completed the first milestone",
-                "Could we reschedule our call to next Tuesday?",
-                
-                // Development/Technical
-                "Pull request #234 has been approved and merged",
-                "Build failed on branch develop - please check the logs",
-                "New issue created: Bug in authentication module",
-                "Code review requested for feature branch",
-                "Deployment to staging environment completed successfully",
-                
-                // Customer service
-                "Thank you for contacting our support team",
-                "Your ticket has been updated with a response",
-                "We appreciate your feedback about our service",
-                "Order shipped - tracking number included below",
-                "Your subscription has been renewed successfully",
-                
-                // Personal/Professional
-                "Looking forward to our lunch meeting on Friday",
-                "Happy birthday! Hope you have a great day",
-                "Following up on our conversation from yesterday",
-                "Please review and sign the attached contract",
-                "Reminder: Team building event next week",
-                
-                // Notifications
-                "Your password will expire in 7 days",
-                "Weekly digest of activity in your projects",
-                "New comment on your post",
-                "Backup completed successfully",
-                "System maintenance scheduled for this weekend"
-            ];
-
-            // Train with spam samples
-            foreach (string spam in spamSamples)
-            {
-                checker.Train(spam, isSpam: true);
-            }
-            Console.WriteLine($"✓ Trained with {spamSamples.Count} spam samples");
-
-            // Train with ham samples
-            foreach (string ham in hamSamples)
-            {
-                checker.Train(ham, isSpam: false);
-            }
-            Console.WriteLine($"✓ Trained with {hamSamples.Count} legitimate samples\n");
-        }
-
-        private static async Task TestFilter(BayesianChecker checker)
-        {
-            Console.WriteLine("Testing Bayesian Filter");
-            Console.WriteLine("-----------------------\n");
-
-            var testMessages = new[]
-            {
-                // Should be detected as spam
-                new { Content = "WINNER! You've won £1000! Click here to claim your prize!", ExpectedSpam = true },
-                new { Content = "Viagra for sale - no prescription needed", ExpectedSpam = true },
-                new { Content = "Make $$$ fast working from home!", ExpectedSpam = true },
-                new { Content = "Hot singles near you want to chat", ExpectedSpam = true },
-                new { Content = "URGENT: Verify your account or it will be closed", ExpectedSpam = true },
-                
-                // Should be detected as ham
-                new { Content = "Meeting agenda for tomorrow's standup", ExpectedSpam = false },
-                new { Content = "Your order has been shipped and will arrive tomorrow", ExpectedSpam = false },
-                new { Content = "Please review the attached proposal", ExpectedSpam = false },
-                new { Content = "Thank you for your recent purchase", ExpectedSpam = false },
-                new { Content = "Reminder: Dentist appointment next Tuesday at 3pm", ExpectedSpam = false },
-                
-                // Borderline cases
-                new { Content = "Special offer just for you - 50% discount this week", ExpectedSpam = true },
-                new { Content = "Free trial of our premium service - no credit card required", ExpectedSpam = true }
-            };
-
-            int correctPredictions = 0;
-            int totalTests = testMessages.Length;
-
-            foreach (var test in testMessages)
-            {
-                SpamCheckContext context = new()
-                {
-                    MessageBody = test.Content,
-                    Subject = test.Content // Use content as subject for simplicity
-                };
-
-                SpamCheckResult result = await checker.CheckAsync(context);
-                bool prediction = result.IsSpam;
-                bool correct = prediction == test.ExpectedSpam;
-                correctPredictions += correct ? 1 : 0;
-
-                Console.WriteLine($"Message: \"{test.Content[..Math.Min(50, test.Content.Length)]}...\"");
-                Console.WriteLine($"  Expected: {(test.ExpectedSpam ? "SPAM" : "HAM")}");
-                Console.WriteLine($"  Predicted: {(prediction ? "SPAM" : "HAM")} (Score: {result.Score:F1}, Confidence: {result.Confidence:P})");
-                Console.WriteLine($"  Result: {(correct ? "✓ CORRECT" : "✗ INCORRECT")}");
-                Console.WriteLine();
+                await bayesianFilter.TrainSpamAsync(spam);
             }
 
-            double accuracy = (double)correctPredictions / totalTests * 100;
-            Console.WriteLine($"Accuracy: {correctPredictions}/{totalTests} ({accuracy:F1}%)\n");
-        }
+            Console.WriteLine($"Training with {hamSamples.Count} ham samples...");
+            foreach (var ham in hamSamples)
+            {
+                await bayesianFilter.TrainHamAsync(ham);
+            }
 
-        private static async Task RunServerWithTrainedFilter(BayesianChecker trainedChecker)
-        {
-            Console.WriteLine("\nStarting SMTP Server with Trained Bayesian Filter");
-            Console.WriteLine("==================================================\n");
+            // Display statistics
+            var stats = bayesianFilter.GetStatistics();
+            Console.WriteLine("\n=== Training Statistics ===");
+            Console.WriteLine($"Total Spam Messages: {stats.TotalSpamMessages}");
+            Console.WriteLine($"Total Ham Messages: {stats.TotalHamMessages}");
+            Console.WriteLine($"Unique Words: {stats.UniqueWords}");
 
-            // Create SMTP server with the trained Bayesian filter
-            using SmtpServer server = new SmtpServerBuilder()
-                .Port(2525)
-                .ServerName("Bayesian Training Example Server")
-                .WithAntiSpam(antiSpam => antiSpam
-                    // Add the pre-trained Bayesian checker
-                    .AddCustomChecker(trainedChecker)
-                    // Optionally add other checkers
-                    .AddSpfChecker(spf => spf.Enabled = false)  // Disable for this example
-                    .AddRblChecker(rbl => rbl.Enabled = false)   // Disable for this example
-                    .WithSpamThreshold(50)
-                    .WithRejectThreshold(80)
-                )
+            Console.WriteLine("\nMost Spammy Words:");
+            foreach (var word in stats.MostSpammyWords)
+            {
+                Console.WriteLine($"  {word.Key}: {word.Value:P1}");
+            }
+
+            Console.WriteLine("\nMost Ham Words:");
+            foreach (var word in stats.MostHammyWords)
+            {
+                Console.WriteLine($"  {word.Key}: {word.Value:P1}");
+            }
+
+            // Create server with trained filter
+            var server = new SmtpServerBuilder()
+                .Port(25002)
+                .ServerName("Bayesian Training Server")
                 .Build();
 
-            // Display results
+            // Add the trained Bayesian filter
+            server.AddSpamChecker(bayesianFilter);
+
+            // Test messages
+            var testMessages = GetTestMessages();
+            
+            Console.WriteLine("\n=== Testing Messages ===");
             server.MessageReceived += (sender, e) =>
             {
-                Console.WriteLine($"\n[RECEIVED] From: {e.Message.From?.Address}");
-                Console.WriteLine($"[RECEIVED] Subject: {e.Message.Subject}");
-
-                AntiSpamResult? spamResult = e.Message.GetSpamResult();
-                if (spamResult != null)
+                Console.WriteLine($"\nMessage: {e.Message.Subject}");
+                
+                if (e.Cancel)
                 {
-                    SpamCheckResult? bayesianResult = spamResult.CheckResults.FirstOrDefault(r => r.CheckerName == "Bayesian");
-                    if (bayesianResult != null)
-                    {
-                        Console.WriteLine($"[BAYESIAN] Score: {bayesianResult.Score:F1}");
-                        Console.WriteLine($"[BAYESIAN] Is Spam: {bayesianResult.IsSpam}");
-                        Console.WriteLine($"[BAYESIAN] Confidence: {bayesianResult.Confidence:P}");
-
-                        if (bayesianResult.Details.TryGetValue("bayesian_probability", out object prob))
-                        {
-                            Console.WriteLine($"[BAYESIAN] Probability: {prob:P}");
-                        }
-                    }
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[SPAM] {e.Response}");
                 }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("[HAM] Message looks legitimate");
+                }
+                Console.ResetColor();
             };
 
             await server.StartAsync();
-            Console.WriteLine($"Server is running on port 2525");
-            Console.WriteLine("The Bayesian filter is trained and active");
-            Console.WriteLine("\nPress 'T' to test with a sample message");
-            Console.WriteLine("Press 'Q' to quit");
+            Console.WriteLine($"\nServer running on port 25002 with trained Bayesian filter");
+            Console.WriteLine("The filter has been trained and is ready to classify messages");
+            Console.WriteLine("\nPress any key to stop...\n");
 
-            // Handle user commands
-            while (true)
-            {
-                ConsoleKeyInfo key = Console.ReadKey(true);
-
-                if (key.Key == ConsoleKey.Q)
-                {
-                    break;
-                }
-                else if (key.Key == ConsoleKey.T)
-                {
-                    await TestWithSampleMessage();
-                }
-            }
-
+            Console.ReadKey();
             await server.StopAsync();
-            Console.WriteLine("\nServer stopped.");
         }
 
-        private static async Task TestWithSampleMessage()
+        private static List<string> GetSpamSamples()
         {
-            Console.WriteLine("\n--- Testing with Sample Message ---");
-            Console.WriteLine("Enter a message to test (or press Enter for default):");
-            string? message = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(message))
+            return new List<string>
             {
-                message = "Special offer! Get 50% off all products today only!";
-                Console.WriteLine($"Using default message: \"{message}\"");
-            }
+                // Nigerian prince scam
+                @"Subject: URGENT BUSINESS PROPOSAL
+                Dear Sir/Madam,
+                I am Prince Johnson from Nigeria. I have $10,000,000 USD that I need to transfer.
+                Please send your bank account details and a small fee of $500 to process.
+                This is 100% legitimate and risk-free opportunity!!!
+                Reply immediately for instant wealth!",
 
-            // Create a context and test
-            SpamCheckContext context = new()
-            {
-                MessageBody = message,
-                Subject = message
+                // Lottery scam
+                @"Subject: YOU WON $5,000,000!!!
+                CONGRATULATIONS!!! You have won the international lottery!
+                Click here immediately: http://scam-lottery.fake/claim
+                Send $200 processing fee to claim your millions!
+                Act now! This offer expires in 24 hours!
+                100% guaranteed payout!!!",
+
+                // Pharmaceutical spam
+                @"Subject: Cheap Pills - 80% OFF Today Only!
+                Buy Viagra, Cialis, and other medications online!
+                No prescription needed! Discrete shipping!
+                Lowest prices guaranteed!
+                Order now: http://fake-pharmacy.scam
+                Limited time offer - ACT NOW!!!",
+
+                // Weight loss scam
+                @"Subject: Lose 30 Pounds in 30 Days - GUARANTEED!
+                Amazing new diet pill burns fat while you sleep!
+                No exercise needed! Eat whatever you want!
+                Celebrities hate this one weird trick!
+                Click here for free trial: http://diet-scam.fake
+                Limited supplies - ORDER NOW!!!",
+
+                // Phishing attempt
+                @"Subject: Your Account Will Be Suspended
+                Dear Customer,
+                Your account has been compromised. Click here immediately to verify:
+                http://phishing-site.fake/verify
+                Enter your password and credit card to confirm identity.
+                Failure to act within 24 hours will result in permanent suspension!",
+
+                // Investment scam
+                @"Subject: Make $10,000 Per Week From Home!
+                Secret trading system revealed!
+                No experience necessary! Work only 1 hour per day!
+                Guaranteed profits or your money back!
+                Join now for only $97: http://trading-scam.fake
+                Limited spots available!!!",
+
+                // Adult content spam
+                @"Subject: Hot Singles In Your Area Want To Meet!
+                Thousands of beautiful women are waiting for you!
+                No credit card required! 100% free!
+                Click here now: http://dating-scam.fake
+                Adults only! Must be 18+",
+
+                // Tech support scam
+                @"Subject: WARNING: Your Computer Is Infected!
+                We detected 147 viruses on your system!
+                Download our antivirus NOW to protect your data!
+                http://fake-antivirus.scam/download
+                Act immediately before your files are deleted!",
+
+                // SEO spam
+                @"Subject: Boost Your Website to #1 on Google!
+                Guaranteed first page rankings in 30 days!
+                Thousands of backlinks for only $49!
+                Increase traffic by 500%!
+                Order now: http://seo-scam.fake",
+
+                // Cryptocurrency scam
+                @"Subject: Double Your Bitcoin in 24 Hours!
+                Exclusive trading algorithm generates 200% returns daily!
+                Minimum investment only 0.1 BTC
+                Send to: 1FakeWalletAddress123xyz
+                Limited time offer - Don't miss out!!!"
             };
+        }
 
-            BayesianChecker checker = new();
-            TrainWithDataset(checker); // Quick train for testing
-
-            SpamCheckResult result = await checker.CheckAsync(context);
-
-            Console.WriteLine($"\nBayesian Analysis Result:");
-            Console.WriteLine($"- Spam Score: {result.Score:F1}/100");
-            Console.WriteLine($"- Is Spam: {(result.IsSpam ? "YES" : "NO")}");
-            Console.WriteLine($"- Confidence: {result.Confidence:P}");
-            Console.WriteLine($"- Action: {result.Action}");
-
-            if (result.Details.TryGetValue("bayesian_probability", out object? probability))
+        private static List<string> GetHamSamples()
+        {
+            return new List<string>
             {
-                Console.WriteLine($"- Spam Probability: {probability:P}");
-            }
+                // Business email
+                @"Subject: Project Status Update - Q4 2024
+                Hi Team,
+                I wanted to provide an update on our current project status.
+                We've completed the design phase and are moving into development.
+                The timeline remains on track for December delivery.
+                Please let me know if you have any questions.
+                Best regards,
+                John",
 
-            Console.WriteLine("--- End of Test ---\n");
+                // Newsletter
+                @"Subject: Monthly Newsletter - November Edition
+                Dear Subscribers,
+                Welcome to our November newsletter. This month we're featuring:
+                - Industry trends and analysis
+                - Customer success stories
+                - Upcoming webinar schedule
+                - Product updates and improvements
+                Thank you for your continued support.
+                The Newsletter Team",
+
+                // Order confirmation
+                @"Subject: Order Confirmation #12345
+                Thank you for your order!
+                Your order has been confirmed and will ship within 2-3 business days.
+                Order details:
+                - Product: Wireless Headphones
+                - Quantity: 1
+                - Total: $89.99
+                You can track your order at our website.
+                Customer Service",
+
+                // Meeting invitation
+                @"Subject: Team Meeting - Thursday 2:00 PM
+                Hi everyone,
+                Please join us for our weekly team meeting.
+                Agenda:
+                - Sprint review
+                - Upcoming milestones
+                - Resource planning
+                Location: Conference Room B
+                See you there,
+                Sarah",
+
+                // Personal email
+                @"Subject: Weekend Plans
+                Hey Mike,
+                Are we still on for hiking this weekend?
+                The weather forecast looks great for Saturday.
+                Let me know what time works for you.
+                I can pick you up around 8 AM.
+                Talk soon,
+                Dave",
+
+                // Support ticket response
+                @"Subject: Re: Support Request #789
+                Hello,
+                Thank you for contacting support.
+                We've reviewed your issue and found a solution.
+                Please try restarting the application while holding the shift key.
+                If the problem persists, we can schedule a call to troubleshoot further.
+                Support Team",
+
+                // Job application response
+                @"Subject: Thank you for your application
+                Dear Applicant,
+                We've received your application for the Software Engineer position.
+                Our hiring team will review your qualifications.
+                We'll contact you within 5-7 business days regarding next steps.
+                Thank you for your interest in our company.
+                HR Department",
+
+                // Invoice
+                @"Subject: Invoice #2024-1123
+                Please find attached the invoice for services rendered in October.
+                Amount due: $2,500
+                Payment terms: Net 30
+                Please remit payment to the account details provided.
+                Thank you for your business.
+                Accounting Department",
+
+                // Event invitation
+                @"Subject: You're Invited - Annual Conference 2024
+                We're pleased to invite you to our annual conference.
+                Date: December 15-17, 2024
+                Location: Convention Center
+                Registration is now open at our website.
+                Early bird discount available until November 30.
+                We hope to see you there!",
+
+                // Feedback request
+                @"Subject: How was your recent purchase?
+                Hi valued customer,
+                We hope you're enjoying your recent purchase.
+                We'd appreciate if you could take a moment to share your feedback.
+                Your opinion helps us improve our products and services.
+                Click here to complete a brief survey.
+                Thank you,
+                Customer Experience Team"
+            };
+        }
+
+        private static List<string> GetTestMessages()
+        {
+            return new List<string>
+            {
+                // Should be spam
+                "WIN FREE MONEY!!! Click here now for millions!!!",
+                "Cheap medications online - no prescription needed!",
+                
+                // Should be ham
+                "Meeting scheduled for tomorrow at 10 AM in the conference room",
+                "Thank you for your recent order. It will ship tomorrow."
+            };
         }
     }
 }

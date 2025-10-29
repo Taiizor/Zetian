@@ -53,10 +53,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Storage.Redis", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Storage.SqlServer", "src\Storage\Zetian.Storage.SqlServer\Zetian.Storage.SqlServer.csproj", "{035D95AE-9CDD-8633-7643-C6C7F4D7B691}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.AntiSpam", "src\Zetian.AntiSpam\Zetian.AntiSpam.csproj", "{0C87BAA4-2EC5-9EB9-1494-3429A7E38D57}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.AntiSpam.Examples", "examples\Zetian.AntiSpam.Examples\Zetian.AntiSpam.Examples.csproj", "{5FA431F4-8463-EB53-CF41-DD7600003195}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -131,14 +127,6 @@ Global
 		{035D95AE-9CDD-8633-7643-C6C7F4D7B691}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{035D95AE-9CDD-8633-7643-C6C7F4D7B691}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{035D95AE-9CDD-8633-7643-C6C7F4D7B691}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0C87BAA4-2EC5-9EB9-1494-3429A7E38D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0C87BAA4-2EC5-9EB9-1494-3429A7E38D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0C87BAA4-2EC5-9EB9-1494-3429A7E38D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0C87BAA4-2EC5-9EB9-1494-3429A7E38D57}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5FA431F4-8463-EB53-CF41-DD7600003195}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5FA431F4-8463-EB53-CF41-DD7600003195}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5FA431F4-8463-EB53-CF41-DD7600003195}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5FA431F4-8463-EB53-CF41-DD7600003195}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -162,8 +150,6 @@ Global
 		{34AED453-809A-1967-0E1E-C531820D9BE2} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
 		{CC7EB0A0-D9AD-E97F-7504-7FC98713E77B} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
 		{035D95AE-9CDD-8633-7643-C6C7F4D7B691} = {08125640-7492-4998-ABE2-9D6CF1292B9A}
-		{0C87BAA4-2EC5-9EB9-1494-3429A7E38D57} = {1A2B3C4D-5E6F-7890-AB12-CD34567890EF}
-		{5FA431F4-8463-EB53-CF41-DD7600003195} = {7A6B5C4D-3E2F-1098-7654-321098765432}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1A2C3D4-5E6F-7890-1234-567890FEDCBA}

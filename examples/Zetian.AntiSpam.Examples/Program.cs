@@ -1,50 +1,66 @@
+using System;
+using System.Threading.Tasks;
+
 namespace Zetian.AntiSpam.Examples
 {
     class Program
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Zetian.AntiSpam Examples");
-            Console.WriteLine("========================\n");
-            Console.WriteLine("Select an example to run:");
-            Console.WriteLine("1. Basic Anti-Spam (default configuration)");
-            Console.WriteLine("2. Custom Anti-Spam (advanced configuration)");
-            Console.WriteLine("3. Quarantine Mode (quarantine suspicious messages)");
-            Console.WriteLine("4. Bayesian Training (train and test Bayesian filter)");
-            Console.WriteLine("5. Exit");
-            Console.Write("\nEnter your choice (1-5): ");
+            Console.WriteLine("╔═══════════════════════════════════════════╗");
+            Console.WriteLine("║     Zetian AntiSpam Examples             ║");
+            Console.WriteLine("╚═══════════════════════════════════════════╝\n");
 
-            string? choice = Console.ReadLine();
-
-            try
+            while (true)
             {
-                switch (choice)
+                Console.WriteLine("Select an example to run:");
+                Console.WriteLine("1. Basic Anti-Spam Setup");
+                Console.WriteLine("2. Custom Anti-Spam Configuration");
+                Console.WriteLine("3. Bayesian Filter Training");
+                Console.WriteLine("4. Individual Feature Examples");
+                Console.WriteLine("5. Exit");
+                Console.Write("\nChoice: ");
+
+                var choice = Console.ReadLine();
+                Console.Clear();
+
+                try
                 {
-                    case "1":
-                        await BasicAntiSpamExample.RunAsync();
-                        break;
-                    case "2":
-                        await CustomAntiSpamExample.RunAsync();
-                        break;
-                    case "3":
-                        await QuarantineExample.RunAsync();
-                        break;
-                    case "4":
-                        await BayesianTrainingExample.RunAsync();
-                        break;
-                    case "5":
-                        Console.WriteLine("Exiting...");
-                        return;
-                    default:
-                        Console.WriteLine("Invalid choice. Please run the program again.");
-                        break;
+                    switch (choice)
+                    {
+                        case "1":
+                            await BasicAntiSpamExample.RunAsync();
+                            break;
+                        case "2":
+                            await CustomAntiSpamExample.RunAsync();
+                            break;
+                        case "3":
+                            await BayesianTrainingExample.RunAsync();
+                            break;
+                        case "4":
+                            await IndividualFeaturesExample.RunAsync();
+                            break;
+                        case "5":
+                            Console.WriteLine("Goodbye!");
+                            return;
+                        default:
+                            Console.WriteLine("Invalid choice. Please try again.\n");
+                            break;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"\nError: {ex.Message}");
-                Console.WriteLine("\nPress any key to exit...");
-                Console.ReadKey();
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\nError: {ex.Message}");
+                    Console.ResetColor();
+                }
+
+                if (choice != "5")
+                {
+                    Console.WriteLine("\nPress any key to return to menu...");
+                    Console.ReadKey();
+                    Console.Clear();
+                }
             }
         }
     }

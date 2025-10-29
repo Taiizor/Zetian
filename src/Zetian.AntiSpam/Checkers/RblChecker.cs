@@ -1,380 +1,320 @@
 using DnsClient;
-using DnsClient.Protocol;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.Abstractions;
 using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Models;
 
 namespace Zetian.AntiSpam.Checkers
 {
     /// <summary>
-    /// RBL/DNSBL (Realtime Blackhole List) checker for IP reputation
+    /// Checks IP addresses against RBL/DNSBL (Realtime Blackhole Lists)
     /// </summary>
-    public class RblChecker(RblConfiguration? configuration = null, ILookupClient? dnsClient = null, ILogger<RblChecker>? logger = null) : ISpamChecker
+    public class RblChecker : ISpamChecker
     {
-        private readonly ILookupClient _dnsClient = dnsClient ?? new LookupClient();
-        private readonly RblConfiguration _configuration = configuration ?? new RblConfiguration();
+        private readonly ILookupClient _dnsClient;
+        private readonly List<RblProvider> _providers;
+        private readonly double _scorePerListing;
+        private readonly double _maxScore;
+        private readonly TimeSpan _timeout;
 
-        public string Name => "RBL";
-        public double Weight => _configuration.Weight;
-        public bool IsEnabled => _configuration.Enabled;
-
-        public async Task<SpamCheckResult> CheckAsync(SpamCheckContext context, CancellationToken cancellationToken = default)
+        public RblChecker(
+            ILookupClient? dnsClient = null,
+            IEnumerable<RblProvider>? providers = null,
+            double scorePerListing = 25,
+            double maxScore = 100,
+            TimeSpan? timeout = null)
         {
-            if (!IsEnabled || context.ClientIpAddress == null)
-            {
-                return SpamCheckResult.NotSpam(Name);
-            }
-
-            // Skip RBL checks for authenticated users if configured
-            if (context.IsAuthenticated && _configuration.SkipForAuthenticatedUsers)
-            {
-                logger?.LogDebug("Skipping RBL check for authenticated user {User}", context.AuthenticatedUser);
-                return SpamCheckResult.NotSpam(Name);
-            }
-
-            // Skip RBL checks for private/local IPs
-            if (IsPrivateIp(context.ClientIpAddress))
-            {
-                logger?.LogDebug("Skipping RBL check for private IP {IP}", context.ClientIpAddress);
-                return SpamCheckResult.NotSpam(Name);
-            }
-
-            List<RblServer> listedServers = [];
-            List<Task<RblCheckResult>> tasks = [];
-
-            foreach (RblServer? server in _configuration.Servers.Where(s => s.Enabled))
-            {
-                tasks.Add(CheckServerAsync(server, context.ClientIpAddress, cancellationToken));
-            }
-
-            RblCheckResult[] results = await Task.WhenAll(tasks);
-
-            foreach (RblCheckResult? result in results.Where(r => r.IsListed))
-            {
-                listedServers.Add(result.Server);
-            }
-
-            return BuildSpamCheckResult(listedServers, context);
+            _dnsClient = dnsClient ?? new LookupClient();
+            _providers = providers?.ToList() ?? GetDefaultProviders();
+            _scorePerListing = scorePerListing;
+            _maxScore = maxScore;
+            _timeout = timeout ?? TimeSpan.FromSeconds(5);
+            IsEnabled = true;
         }
 
-        private async Task<RblCheckResult> CheckServerAsync(RblServer server, IPAddress ipAddress, CancellationToken cancellationToken)
+        public string Name => "RBL";
+        
+        public bool IsEnabled { get; set; }
+
+        public async Task<SpamCheckResult> CheckAsync(
+            ISmtpMessage message,
+            ISmtpSession session,
+            CancellationToken cancellationToken = default)
+        {
+            if (!IsEnabled)
+            {
+                return SpamCheckResult.Clean(0, "RBL check disabled");
+            }
+
+            IPAddress? clientIp = GetClientIp(session);
+            if (clientIp == null)
+            {
+                return SpamCheckResult.Clean(0, "Cannot determine client IP");
+            }
+
+            // Skip private IPs
+            if (IsPrivateIp(clientIp))
+            {
+                return SpamCheckResult.Clean(0, "Private IP address");
+            }
+
+            var listings = new List<string>();
+            var tasks = new List<Task<RblResult>>();
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(_timeout);
+
+            foreach (var provider in _providers.Where(p => p.IsEnabled))
+            {
+                tasks.Add(CheckProviderAsync(clientIp, provider, cts.Token));
+            }
+
+            try
+            {
+                var results = await Task.WhenAll(tasks);
+                listings.AddRange(results.Where(r => r.IsListed).Select(r => r.Provider));
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout - use partial results
+            }
+
+            if (listings.Count == 0)
+            {
+                return SpamCheckResult.Clean(0, $"IP {clientIp} not found in any RBL");
+            }
+
+            double score = Math.Min(listings.Count * _scorePerListing, _maxScore);
+            string reason = $"Listed in {listings.Count} RBL(s)";
+            string details = $"IP {clientIp} listed in: {string.Join(", ", listings)}";
+
+            return SpamCheckResult.Spam(score, reason, details);
+        }
+
+        /// <summary>
+        /// Adds a custom RBL provider
+        /// </summary>
+        public void AddProvider(RblProvider provider)
+        {
+            _providers.Add(provider);
+        }
+
+        /// <summary>
+        /// Removes an RBL provider
+        /// </summary>
+        public void RemoveProvider(string name)
+        {
+            _providers.RemoveAll(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Gets the list of configured providers
+        /// </summary>
+        public IReadOnlyList<RblProvider> GetProviders()
+        {
+            return _providers.AsReadOnly();
+        }
+
+        private async Task<RblResult> CheckProviderAsync(IPAddress ip, RblProvider provider, CancellationToken cancellationToken)
         {
             try
             {
-                string queryHost = BuildRblQuery(ipAddress, server.Host);
-                IDnsQueryResponse result = await _dnsClient.QueryAsync(queryHost, QueryType.A, cancellationToken: cancellationToken);
-
+                string query = BuildRblQuery(ip, provider.Zone);
+                
+                var result = await _dnsClient.QueryAsync(query, QueryType.A, cancellationToken: cancellationToken);
+                
                 if (result.Answers.Count > 0)
                 {
-                    IPAddress? returnCode = result.Answers.OfType<ARecord>().FirstOrDefault()?.Address;
-                    bool isListed = IsListedResponse(returnCode, server);
-
-                    if (isListed)
+                    // Check if the response matches expected patterns
+                    var aRecords = result.Answers.OfType<DnsClient.Protocol.ARecord>().ToList();
+                    
+                    if (provider.ExpectedResponses != null && provider.ExpectedResponses.Count > 0)
                     {
-                        logger?.LogWarning("IP {IP} is listed in RBL {Server}: {ReturnCode}",
-                            ipAddress, server.Name, returnCode);
+                        // Check if response matches any expected patterns
+                        foreach (var record in aRecords)
+                        {
+                            string responseIp = record.Address.ToString();
+                            if (provider.ExpectedResponses.Any(expected => responseIp.StartsWith(expected)))
+                            {
+                                return new RblResult { IsListed = true, Provider = provider.Name };
+                            }
+                        }
+                        return new RblResult { IsListed = false, Provider = provider.Name };
                     }
-
-                    return new RblCheckResult
-                    {
-                        Server = server,
-                        IsListed = isListed,
-                        ReturnCode = returnCode?.ToString()
-                    };
+                    
+                    // Any A record response means listed
+                    return new RblResult { IsListed = true, Provider = provider.Name };
                 }
-
-                return new RblCheckResult { Server = server, IsListed = false };
+                
+                return new RblResult { IsListed = false, Provider = provider.Name };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                logger?.LogDebug(ex, "RBL check failed for {IP} on {Server}", ipAddress, server.Name);
-                return new RblCheckResult { Server = server, IsListed = false, Error = ex.Message };
+                // DNS query failed - assume not listed
+                return new RblResult { IsListed = false, Provider = provider.Name };
             }
         }
 
-        private string BuildRblQuery(IPAddress ipAddress, string rblHost)
+        private static string BuildRblQuery(IPAddress ip, string zone)
         {
-            if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            byte[] bytes = ip.GetAddressBytes();
+            
+            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
             {
-                // IPv4: reverse the octets
-                byte[] octets = ipAddress.GetAddressBytes();
-                Array.Reverse(octets);
-                return $"{string.Join(".", octets)}.{rblHost}";
+                // IPv4: reverse octets
+                Array.Reverse(bytes);
+                return $"{string.Join(".", bytes)}.{zone}";
             }
-            else if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
             {
-                // IPv6: reverse the nibbles
-                byte[] bytes = ipAddress.GetAddressBytes();
-                List<string> nibbles = [];
-
-                foreach (byte b in bytes)
-                {
-                    nibbles.Add((b & 0x0F).ToString("x"));
-                    nibbles.Add((b >> 4).ToString("x"));
-                }
-
-                nibbles.Reverse();
-                return $"{string.Join(".", nibbles)}.{rblHost}";
+                // IPv6: reverse nibbles
+                string hex = string.Concat(bytes.Select(b => b.ToString("x2")));
+                char[] chars = hex.ToCharArray();
+                Array.Reverse(chars);
+                return $"{string.Join(".", chars)}.{zone}";
             }
-
-            throw new NotSupportedException($"Unsupported IP address family: {ipAddress.AddressFamily}");
+            
+            throw new ArgumentException($"Unsupported IP address family: {ip.AddressFamily}");
         }
 
-        private bool IsListedResponse(IPAddress? returnCode, RblServer server)
+        private static bool IsPrivateIp(IPAddress ip)
         {
-            if (returnCode == null)
+            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
             {
-                return false;
-            }
-
-            // Most RBLs return 127.0.0.x codes where x indicates the listing type
-            byte[] returnBytes = returnCode.GetAddressBytes();
-
-            // Check if it's in the 127.0.0.x range (standard RBL response)
-            if (returnBytes[0] == 127 && returnBytes[1] == 0 && returnBytes[2] == 0)
-            {
-                // If the server has specific return codes configured, check them
-                if (server.ListedReturnCodes?.Any() == true)
-                {
-                    return server.ListedReturnCodes.Contains(returnBytes[3]);
-                }
-
-                // Otherwise, any 127.0.0.x response indicates listing
-                return true;
-            }
-
-            // Some RBLs might use different ranges
-            return server.CustomListingCheck?.Invoke(returnCode) ?? false;
-        }
-
-        private bool IsPrivateIp(IPAddress ipAddress)
-        {
-            if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-            {
-                byte[] bytes = ipAddress.GetAddressBytes();
-
+                byte[] bytes = ip.GetAddressBytes();
+                
                 // 10.0.0.0/8
                 if (bytes[0] == 10)
-                {
                     return true;
-                }
-
+                
                 // 172.16.0.0/12
                 if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-                {
                     return true;
-                }
-
+                
                 // 192.168.0.0/16
                 if (bytes[0] == 192 && bytes[1] == 168)
-                {
                     return true;
-                }
-
+                
                 // 127.0.0.0/8 (loopback)
                 if (bytes[0] == 127)
-                {
                     return true;
-                }
             }
-            else if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
             {
                 // Check for IPv6 private addresses
-                return ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal;
+                if (IPAddress.IsLoopback(ip))
+                    return true;
+                
+                byte[] bytes = ip.GetAddressBytes();
+                
+                // fc00::/7 (Unique Local Addresses)
+                if ((bytes[0] & 0xfe) == 0xfc)
+                    return true;
+                
+                // fe80::/10 (Link-Local)
+                if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80)
+                    return true;
             }
-
+            
             return false;
         }
 
-        private SpamCheckResult BuildSpamCheckResult(List<RblServer> listedServers, SpamCheckContext context)
+        private IPAddress? GetClientIp(ISmtpSession session)
         {
-            if (!listedServers.Any())
+            if (session.RemoteEndPoint is IPEndPoint ipEndPoint)
             {
-                return new SpamCheckResult
-                {
-                    IsSpam = false,
-                    Score = 0,
-                    CheckerName = Name,
-                    Action = SpamAction.None,
-                    Details = { ["rbl_checked"] = _configuration.Servers.Count(s => s.Enabled) }
-                };
+                return ipEndPoint.Address;
             }
-
-            // Calculate score based on number and severity of listings
-            double totalScore = 0.0;
-            List<string> reasons = [];
-            int highSeverityCount = 0;
-
-            foreach (RblServer server in listedServers)
-            {
-                totalScore += server.Score;
-                reasons.Add($"Listed in {server.Name}");
-
-                if (server.Severity == RblSeverity.High)
-                {
-                    highSeverityCount++;
-                }
-            }
-
-            // Determine action based on severity and count
-            SpamAction action = DetermineAction(listedServers, highSeverityCount);
-
-            // Normalize score to 0-100 range
-            double normalizedScore = Math.Min(100, totalScore);
-
-            return new SpamCheckResult
-            {
-                IsSpam = normalizedScore >= _configuration.SpamThreshold,
-                Score = normalizedScore,
-                CheckerName = Name,
-                Action = action,
-                Reasons = reasons,
-                Confidence = Math.Min(1.0, listedServers.Count / 3.0), // More listings = higher confidence
-                SmtpResponseCode = action == SpamAction.Reject ? 550 : null,
-                SmtpResponseMessage = action == SpamAction.Reject
-                    ? $"Your IP {context.ClientIpAddress} is listed in {listedServers.Count} blacklist(s)"
-                    : null,
-                Details =
-                {
-                    ["rbl_listings"] = listedServers.Select(s => s.Name).ToList(),
-                    ["rbl_count"] = listedServers.Count,
-                    ["ip_address"] = context.ClientIpAddress?.ToString() ?? ""
-                }
-            };
+            return null;
         }
 
-        private SpamAction DetermineAction(List<RblServer> listedServers, int highSeverityCount)
+        private static List<RblProvider> GetDefaultProviders()
         {
-            // If listed in any high-severity RBL, reject
-            if (highSeverityCount > 0 || listedServers.Count >= _configuration.RejectThreshold)
-            {
-                return SpamAction.Reject;
-            }
-
-            // If listed in multiple medium-severity RBLs, quarantine
-            if (listedServers.Count >= _configuration.QuarantineThreshold)
-            {
-                return SpamAction.Quarantine;
-            }
-
-            // If listed in a few low-severity RBLs, just mark
-            if (listedServers.Count > 0)
-            {
-                return SpamAction.Mark;
-            }
-
-            return SpamAction.None;
+            return
+            [
+                new RblProvider
+                {
+                    Name = "Spamhaus ZEN",
+                    Zone = "zen.spamhaus.org",
+                    Description = "Spamhaus Block List",
+                    IsEnabled = true,
+                    ExpectedResponses = ["127.0.0."]
+                },
+                new RblProvider
+                {
+                    Name = "SpamCop",
+                    Zone = "bl.spamcop.net",
+                    Description = "SpamCop Blocking List",
+                    IsEnabled = true,
+                    ExpectedResponses = ["127.0.0.2"]
+                },
+                new RblProvider
+                {
+                    Name = "Barracuda",
+                    Zone = "b.barracudacentral.org",
+                    Description = "Barracuda Reputation Block List",
+                    IsEnabled = true,
+                    ExpectedResponses = ["127.0.0.2"]
+                },
+                new RblProvider
+                {
+                    Name = "SORBS",
+                    Zone = "dnsbl.sorbs.net",
+                    Description = "SORBS DNSBL",
+                    IsEnabled = false, // Often has false positives
+                    ExpectedResponses = ["127.0.0."]
+                },
+                new RblProvider
+                {
+                    Name = "UCEPROTECT L1",
+                    Zone = "dnsbl-1.uceprotect.net",
+                    Description = "UCEPROTECT Level 1",
+                    IsEnabled = false, // Can be aggressive
+                    ExpectedResponses = ["127.0.0.2"]
+                }
+            ];
         }
 
-        private class RblCheckResult
+        private class RblResult
         {
-            public RblServer Server { get; set; } = new();
             public bool IsListed { get; set; }
-            public string? ReturnCode { get; set; }
-            public string? Error { get; set; }
+            public string Provider { get; set; } = string.Empty;
         }
     }
 
     /// <summary>
-    /// Configuration for RBL checking
+    /// Represents an RBL/DNSBL provider
     /// </summary>
-    public class RblConfiguration
+    public class RblProvider
     {
-        public bool Enabled { get; set; } = true;
-        public double Weight { get; set; } = 1.5;
-        public double SpamThreshold { get; set; } = 50.0;
-        public int RejectThreshold { get; set; } = 2;
-        public int QuarantineThreshold { get; set; } = 1;
-        public bool SkipForAuthenticatedUsers { get; set; } = true;
-        public List<RblServer> Servers { get; set; } =
-        [
-            // Popular and reliable RBLs
-            new RblServer
-            {
-                Name = "Spamhaus ZEN",
-                Host = "zen.spamhaus.org",
-                Score = 50,
-                Severity = RblSeverity.High,
-                Enabled = true
-            },
-            new RblServer
-            {
-                Name = "Barracuda",
-                Host = "b.barracudacentral.org",
-                Score = 40,
-                Severity = RblSeverity.High,
-                Enabled = true
-            },
-            new RblServer
-            {
-                Name = "SpamCop",
-                Host = "bl.spamcop.net",
-                Score = 35,
-                Severity = RblSeverity.Medium,
-                Enabled = true
-            },
-            new RblServer
-            {
-                Name = "SURBL",
-                Host = "multi.surbl.org",
-                Score = 30,
-                Severity = RblSeverity.Medium,
-                Enabled = false // Disabled by default, SURBL is for URLs not IPs
-            },
-            new RblServer
-            {
-                Name = "UCEPROTECT L1",
-                Host = "dnsbl-1.uceprotect.net",
-                Score = 25,
-                Severity = RblSeverity.Low,
-                Enabled = false
-            },
-            new RblServer
-            {
-                Name = "Spamhaus XBL",
-                Host = "xbl.spamhaus.org",
-                Score = 45,
-                Severity = RblSeverity.High,
-                Enabled = false // Already covered by ZEN
-            },
-            new RblServer
-            {
-                Name = "Spamhaus PBL",
-                Host = "pbl.spamhaus.org",
-                Score = 20,
-                Severity = RblSeverity.Low,
-                Enabled = false // Policy block list, not spam
-            }
-        ];
-    }
-
-    /// <summary>
-    /// Represents an RBL server configuration
-    /// </summary>
-    public class RblServer
-    {
+        /// <summary>
+        /// Gets or sets the provider name
+        /// </summary>
         public string Name { get; set; } = string.Empty;
-        public string Host { get; set; } = string.Empty;
-        public double Score { get; set; } = 30.0;
-        public RblSeverity Severity { get; set; } = RblSeverity.Medium;
-        public bool Enabled { get; set; } = true;
-        public List<int>? ListedReturnCodes { get; set; }
-        public Func<IPAddress, bool>? CustomListingCheck { get; set; }
-    }
 
-    /// <summary>
-    /// RBL severity levels
-    /// </summary>
-    public enum RblSeverity
-    {
-        Low,
-        Medium,
-        High
+        /// <summary>
+        /// Gets or sets the DNS zone to query
+        /// </summary>
+        public string Zone { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the provider description
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether this provider is enabled
+        /// </summary>
+        public bool IsEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets expected response patterns (e.g., "127.0.0.")
+        /// </summary>
+        public List<string>? ExpectedResponses { get; set; }
     }
 }

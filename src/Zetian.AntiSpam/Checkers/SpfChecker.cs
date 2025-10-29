@@ -1,194 +1,238 @@
 using DnsClient;
-using DnsClient.Protocol;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.Abstractions;
 using Zetian.AntiSpam.Abstractions;
+using Zetian.AntiSpam.Enums;
 using Zetian.AntiSpam.Models;
 
 namespace Zetian.AntiSpam.Checkers
 {
     /// <summary>
-    /// SPF (Sender Policy Framework) email authentication checker
+    /// Checks SPF (Sender Policy Framework) records
     /// </summary>
-    public class SpfChecker(SpfConfiguration? configuration = null, ILookupClient? dnsClient = null, ILogger<SpfChecker>? logger = null) : ISpamChecker
+    public class SpfChecker : ISpamChecker
     {
-        private readonly ILookupClient _dnsClient = dnsClient ?? new LookupClient();
-        private readonly SpfConfiguration _configuration = configuration ?? new SpfConfiguration();
+        private readonly ILookupClient _dnsClient;
+        private readonly double _failScore;
+        private readonly double _softFailScore;
+        private readonly double _neutralScore;
+        private readonly double _noneScore;
+
+        public SpfChecker(
+            ILookupClient? dnsClient = null,
+            double failScore = 50,
+            double softFailScore = 30,
+            double neutralScore = 10,
+            double noneScore = 5)
+        {
+            _dnsClient = dnsClient ?? new LookupClient();
+            _failScore = failScore;
+            _softFailScore = softFailScore;
+            _neutralScore = neutralScore;
+            _noneScore = noneScore;
+            IsEnabled = true;
+        }
 
         public string Name => "SPF";
-        public double Weight => _configuration.Weight;
-        public bool IsEnabled => _configuration.Enabled;
+        
+        public bool IsEnabled { get; set; }
 
-        public async Task<SpamCheckResult> CheckAsync(SpamCheckContext context, CancellationToken cancellationToken = default)
+        public async Task<SpamCheckResult> CheckAsync(
+            ISmtpMessage message,
+            ISmtpSession session,
+            CancellationToken cancellationToken = default)
         {
-            if (!IsEnabled || string.IsNullOrEmpty(context.FromDomain) || context.ClientIpAddress == null)
+            if (!IsEnabled || message.From == null)
             {
-                return SpamCheckResult.NotSpam(Name);
+                return SpamCheckResult.Clean(0, "SPF check skipped");
             }
 
             try
             {
-                string? spfRecord = await GetSpfRecordAsync(context.FromDomain, cancellationToken);
-                if (string.IsNullOrEmpty(spfRecord))
+                string domain = message.From.Host;
+                IPAddress? clientIp = GetClientIp(session);
+                
+                if (clientIp == null)
                 {
-                    logger?.LogDebug("No SPF record found for domain {Domain}", context.FromDomain);
-                    return HandleNoSpfRecord(context);
+                    return SpamCheckResult.Clean(0, "Cannot determine client IP");
                 }
 
-                SpfResult result = await ValidateSpfAsync(spfRecord, context, cancellationToken);
-                return ConvertToSpamCheckResult(result, context);
+                SpfResult result = await CheckSpfAsync(domain, clientIp, cancellationToken);
+                
+                return result switch
+                {
+                    SpfResult.Pass => SpamCheckResult.Clean(0, $"SPF Pass for {domain}"),
+                    SpfResult.Fail => SpamCheckResult.Spam(_failScore, "SPF Fail", $"Domain {domain} does not authorize {clientIp}"),
+                    SpfResult.SoftFail => SpamCheckResult.Spam(_softFailScore, "SPF SoftFail", $"Domain {domain} discourages use of {clientIp}"),
+                    SpfResult.Neutral => SpamCheckResult.Clean(_neutralScore, $"SPF Neutral for {domain}"),
+                    SpfResult.None => SpamCheckResult.Clean(_noneScore, $"No SPF record for {domain}"),
+                    _ => SpamCheckResult.Clean(0, $"SPF check error for {domain}")
+                };
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "SPF check failed for domain {Domain}", context.FromDomain);
-                return HandleSpfError(context);
+                return SpamCheckResult.Clean(0, $"SPF check failed: {ex.Message}");
             }
         }
 
-        private async Task<string?> GetSpfRecordAsync(string domain, CancellationToken cancellationToken)
+        private async Task<SpfResult> CheckSpfAsync(string domain, IPAddress clientIp, CancellationToken cancellationToken)
         {
             try
             {
-                IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, QueryType.TXT, cancellationToken: cancellationToken);
-
-                List<string> spfRecords = result.Answers
-                    .OfType<TxtRecord>()
+                // Query for SPF record (TXT record starting with "v=spf1")
+                var result = await _dnsClient.QueryAsync(domain, QueryType.TXT, cancellationToken: cancellationToken);
+                
+                var spfRecord = result.Answers
+                    .OfType<DnsClient.Protocol.TxtRecord>()
                     .SelectMany(r => r.Text)
-                    .Where(t => t.StartsWith("v=spf1", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                    .FirstOrDefault(t => t.StartsWith("v=spf1", StringComparison.OrdinalIgnoreCase));
 
-                if (spfRecords.Count > 1)
+                if (spfRecord == null)
                 {
-                    logger?.LogWarning("Multiple SPF records found for domain {Domain}", domain);
+                    return SpfResult.None;
                 }
 
-                return spfRecords.FirstOrDefault();
+                // Parse and evaluate SPF record
+                return await EvaluateSpfRecordAsync(spfRecord, domain, clientIp, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                logger?.LogDebug(ex, "Failed to query SPF record for domain {Domain}", domain);
-                return null;
+                return SpfResult.TempError;
             }
         }
 
-        private async Task<SpfResult> ValidateSpfAsync(string spfRecord, SpamCheckContext context, CancellationToken cancellationToken)
+        private async Task<SpfResult> EvaluateSpfRecordAsync(
+            string spfRecord,
+            string domain,
+            IPAddress clientIp,
+            CancellationToken cancellationToken)
         {
-            SpfMechanism[] mechanisms = ParseSpfRecord(spfRecord);
-            IPAddress clientIp = context.ClientIpAddress!;
-
-            foreach (SpfMechanism mechanism in mechanisms)
+            string[] mechanisms = spfRecord.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (string mechanism in mechanisms.Skip(1)) // Skip "v=spf1"
             {
-                bool match = await CheckMechanismAsync(mechanism, clientIp, context.FromDomain, cancellationToken);
-
-                if (match)
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    return mechanism.Qualifier switch
+                    return SpfResult.TempError;
+                }
+
+                // Handle "all" mechanism
+                if (mechanism == "-all")
+                {
+                    return SpfResult.Fail;
+                }
+                if (mechanism == "~all")
+                {
+                    return SpfResult.SoftFail;
+                }
+                if (mechanism == "?all")
+                {
+                    return SpfResult.Neutral;
+                }
+                if (mechanism == "+all" || mechanism == "all")
+                {
+                    return SpfResult.Pass;
+                }
+
+                // Handle IP4 mechanism
+                if (mechanism.StartsWith("ip4:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string ipOrRange = mechanism[4..];
+                    if (IsIpInRange(clientIp, ipOrRange))
                     {
-                        "+" => SpfResult.Pass,
-                        "-" => SpfResult.Fail,
-                        "~" => SpfResult.SoftFail,
-                        "?" => SpfResult.Neutral,
-                        _ => SpfResult.None
-                    };
+                        return SpfResult.Pass;
+                    }
+                }
+
+                // Handle IP6 mechanism
+                if (mechanism.StartsWith("ip6:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string ipOrRange = mechanism[4..];
+                    if (IsIpInRange(clientIp, ipOrRange))
+                    {
+                        return SpfResult.Pass;
+                    }
+                }
+
+                // Handle A mechanism
+                if (mechanism == "a" || mechanism.StartsWith("a:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string checkDomain = mechanism == "a" ? domain : mechanism[2..];
+                    if (await IsIpMatchesARecordAsync(clientIp, checkDomain, cancellationToken))
+                    {
+                        return SpfResult.Pass;
+                    }
+                }
+
+                // Handle MX mechanism
+                if (mechanism == "mx" || mechanism.StartsWith("mx:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string checkDomain = mechanism == "mx" ? domain : mechanism[3..];
+                    if (await IsIpMatchesMxRecordAsync(clientIp, checkDomain, cancellationToken))
+                    {
+                        return SpfResult.Pass;
+                    }
+                }
+
+                // Handle include mechanism
+                if (mechanism.StartsWith("include:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string includeDomain = mechanism[8..];
+                    var includeResult = await CheckSpfAsync(includeDomain, clientIp, cancellationToken);
+                    if (includeResult == SpfResult.Pass)
+                    {
+                        return SpfResult.Pass;
+                    }
                 }
             }
 
-            // Default action if no mechanism matches
             return SpfResult.Neutral;
         }
 
-        private async Task<bool> CheckMechanismAsync(SpfMechanism mechanism, IPAddress clientIp, string domain, CancellationToken cancellationToken)
+        private bool IsIpInRange(IPAddress ip, string ipOrRange)
         {
-            switch (mechanism.Type.ToLowerInvariant())
-            {
-                case "all":
-                    return true;
-
-                case "ip4":
-                case "ip6":
-                    return CheckIpMechanism(mechanism.Value, clientIp);
-
-                case "a":
-                    return await CheckARecordAsync(mechanism.Value ?? domain, clientIp, cancellationToken);
-
-                case "mx":
-                    return await CheckMxRecordAsync(mechanism.Value ?? domain, clientIp, cancellationToken);
-
-                case "include":
-                    if (!string.IsNullOrEmpty(mechanism.Value))
-                    {
-                        string? includedSpf = await GetSpfRecordAsync(mechanism.Value, cancellationToken);
-                        if (!string.IsNullOrEmpty(includedSpf))
-                        {
-                            SpfResult result = await ValidateSpfAsync(includedSpf, new SpamCheckContext
-                            {
-                                ClientIpAddress = clientIp,
-                                FromDomain = domain
-                            }, cancellationToken);
-                            return result == SpfResult.Pass;
-                        }
-                    }
-                    return false;
-
-                case "exists":
-                    return await CheckExistsAsync(mechanism.Value ?? domain, cancellationToken);
-
-                default:
-                    logger?.LogDebug("Unknown SPF mechanism: {Mechanism}", mechanism.Type);
-                    return false;
-            }
-        }
-
-        private bool CheckIpMechanism(string? ipOrRange, IPAddress clientIp)
-        {
-            if (string.IsNullOrEmpty(ipOrRange))
-            {
-                return false;
-            }
-
             try
             {
                 if (ipOrRange.Contains('/'))
                 {
                     // CIDR notation
                     string[] parts = ipOrRange.Split('/');
-                    IPAddress network = IPAddress.Parse(parts[0]);
-                    int prefixLength = int.Parse(parts[1]);
-                    return IsInSubnet(clientIp, network, prefixLength);
+                    if (IPAddress.TryParse(parts[0], out IPAddress? rangeIp) && int.TryParse(parts[1], out int prefixLength))
+                    {
+                        return IsInSubnet(ip, rangeIp, prefixLength);
+                    }
                 }
-                else
+                else if (IPAddress.TryParse(ipOrRange, out IPAddress? singleIp))
                 {
-                    // Single IP
-                    return IPAddress.Parse(ipOrRange).Equals(clientIp);
+                    return ip.Equals(singleIp);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                logger?.LogDebug(ex, "Failed to parse IP mechanism: {Value}", ipOrRange);
-                return false;
+                // Invalid IP format
             }
+            
+            return false;
         }
 
         private bool IsInSubnet(IPAddress address, IPAddress subnet, int prefixLength)
         {
             byte[] addressBytes = address.GetAddressBytes();
             byte[] subnetBytes = subnet.GetAddressBytes();
-
+            
             if (addressBytes.Length != subnetBytes.Length)
             {
                 return false;
             }
 
-            int bytesToCheck = prefixLength / 8;
-            int bitsToCheck = prefixLength % 8;
+            int fullBytes = prefixLength / 8;
+            int remainingBits = prefixLength % 8;
 
-            for (int i = 0; i < bytesToCheck; i++)
+            for (int i = 0; i < fullBytes; i++)
             {
                 if (addressBytes[i] != subnetBytes[i])
                 {
@@ -196,73 +240,26 @@ namespace Zetian.AntiSpam.Checkers
                 }
             }
 
-            if (bitsToCheck > 0 && bytesToCheck < addressBytes.Length)
+            if (remainingBits > 0 && fullBytes < addressBytes.Length)
             {
-                byte mask = (byte)(0xFF << (8 - bitsToCheck));
-                return (addressBytes[bytesToCheck] & mask) == (subnetBytes[bytesToCheck] & mask);
+                byte mask = (byte)(0xFF << (8 - remainingBits));
+                if ((addressBytes[fullBytes] & mask) != (subnetBytes[fullBytes] & mask))
+                {
+                    return false;
+                }
             }
 
             return true;
         }
 
-        private async Task<bool> CheckARecordAsync(string domain, IPAddress clientIp, CancellationToken cancellationToken)
+        private async Task<bool> IsIpMatchesARecordAsync(IPAddress ip, string domain, CancellationToken cancellationToken)
         {
             try
             {
-                IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, QueryType.A, cancellationToken: cancellationToken);
-                List<IPAddress> addresses = result.Answers
-                    .OfType<ARecord>()
-                    .Select(r => r.Address)
-                    .ToList();
-
-                if (clientIp.AddressFamily == AddressFamily.InterNetworkV6)
-                {
-                    IDnsQueryResponse ipv6Result = await _dnsClient.QueryAsync(domain, QueryType.AAAA, cancellationToken: cancellationToken);
-                    addresses.AddRange(ipv6Result.Answers.OfType<AaaaRecord>().Select(r => r.Address));
-                }
-
-                return addresses.Any(a => a.Equals(clientIp));
-            }
-            catch (Exception ex)
-            {
-                logger?.LogDebug(ex, "Failed to check A record for domain {Domain}", domain);
-                return false;
-            }
-        }
-
-        private async Task<bool> CheckMxRecordAsync(string domain, IPAddress clientIp, CancellationToken cancellationToken)
-        {
-            try
-            {
-                IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, QueryType.MX, cancellationToken: cancellationToken);
-                IEnumerable<DnsString> mxHosts = result.Answers
-                    .OfType<MxRecord>()
-                    .OrderBy(r => r.Preference)
-                    .Select(r => r.Exchange);
-
-                foreach (DnsString? mxHost in mxHosts)
-                {
-                    if (await CheckARecordAsync(mxHost.ToString().TrimEnd('.'), clientIp, cancellationToken))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                logger?.LogDebug(ex, "Failed to check MX record for domain {Domain}", domain);
-                return false;
-            }
-        }
-
-        private async Task<bool> CheckExistsAsync(string domain, CancellationToken cancellationToken)
-        {
-            try
-            {
-                IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, QueryType.A, cancellationToken: cancellationToken);
-                return result.Answers.Any();
+                var result = await _dnsClient.QueryAsync(domain, ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? QueryType.AAAA : QueryType.A, cancellationToken: cancellationToken);
+                return result.Answers.Any(a => 
+                    (a is DnsClient.Protocol.ARecord aRecord && aRecord.Address.Equals(ip)) ||
+                    (a is DnsClient.Protocol.AaaaRecord aaaaRecord && aaaaRecord.Address.Equals(ip)));
             }
             catch
             {
@@ -270,157 +267,35 @@ namespace Zetian.AntiSpam.Checkers
             }
         }
 
-        private SpfMechanism[] ParseSpfRecord(string spfRecord)
+        private async Task<bool> IsIpMatchesMxRecordAsync(IPAddress ip, string domain, CancellationToken cancellationToken)
         {
-            string[] parts = spfRecord.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            List<SpfMechanism> mechanisms = [];
-
-            foreach (string? part in parts.Skip(1)) // Skip "v=spf1"
+            try
             {
-                if (part.StartsWith("redirect=") || part.StartsWith("exp="))
+                var mxResult = await _dnsClient.QueryAsync(domain, QueryType.MX, cancellationToken: cancellationToken);
+                
+                foreach (var mx in mxResult.Answers.OfType<DnsClient.Protocol.MxRecord>())
                 {
-                    continue; // Handle modifiers separately if needed
-                }
-
-                string qualifier = "+";
-                string mechanismText = part;
-
-                if ("+-~?".Contains(part[0]))
-                {
-                    qualifier = part[0].ToString();
-                    mechanismText = part[1..];
-                }
-
-                int colonIndex = mechanismText.IndexOf(':');
-                if (colonIndex > 0)
-                {
-                    mechanisms.Add(new SpfMechanism
+                    if (await IsIpMatchesARecordAsync(ip, mx.Exchange, cancellationToken))
                     {
-                        Qualifier = qualifier,
-                        Type = mechanismText[..colonIndex],
-                        Value = mechanismText[(colonIndex + 1)..]
-                    });
-                }
-                else
-                {
-                    mechanisms.Add(new SpfMechanism
-                    {
-                        Qualifier = qualifier,
-                        Type = mechanismText
-                    });
+                        return true;
+                    }
                 }
             }
-
-            return mechanisms.ToArray();
-        }
-
-        private SpamCheckResult ConvertToSpamCheckResult(SpfResult spfResult, SpamCheckContext context)
-        {
-            return spfResult switch
+            catch
             {
-                SpfResult.Pass => new SpamCheckResult
-                {
-                    IsSpam = false,
-                    Score = 0,
-                    CheckerName = Name,
-                    Action = SpamAction.None,
-                    Confidence = 1.0,
-                    Details = { ["spf_result"] = "pass" }
-                },
-                SpfResult.Fail => new SpamCheckResult
-                {
-                    IsSpam = true,
-                    Score = _configuration.FailScore,
-                    CheckerName = Name,
-                    Action = _configuration.FailAction,
-                    Reasons = { $"SPF check failed for {context.FromDomain}" },
-                    SmtpResponseCode = 550,
-                    SmtpResponseMessage = "SPF check failed",
-                    Confidence = 0.9,
-                    Details = { ["spf_result"] = "fail" }
-                },
-                SpfResult.SoftFail => new SpamCheckResult
-                {
-                    IsSpam = _configuration.SoftFailAsSpam,
-                    Score = _configuration.SoftFailScore,
-                    CheckerName = Name,
-                    Action = _configuration.SoftFailAction,
-                    Reasons = { $"SPF soft fail for {context.FromDomain}" },
-                    Confidence = 0.6,
-                    Details = { ["spf_result"] = "softfail" }
-                },
-                _ => new SpamCheckResult
-                {
-                    IsSpam = false,
-                    Score = _configuration.NeutralScore,
-                    CheckerName = Name,
-                    Action = SpamAction.None,
-                    Confidence = 0.5,
-                    Details = { ["spf_result"] = spfResult.ToString().ToLower() }
-                },
-            };
+                // Ignore DNS errors
+            }
+            
+            return false;
         }
 
-        private SpamCheckResult HandleNoSpfRecord(SpamCheckContext context)
+        private IPAddress? GetClientIp(ISmtpSession session)
         {
-            return new SpamCheckResult
+            if (session.RemoteEndPoint is IPEndPoint ipEndPoint)
             {
-                IsSpam = _configuration.NoRecordAsSpam,
-                Score = _configuration.NoRecordScore,
-                CheckerName = Name,
-                Action = _configuration.NoRecordAction,
-                Confidence = 0.3,
-                Details = { ["spf_result"] = "none" }
-            };
+                return ipEndPoint.Address;
+            }
+            return null;
         }
-
-        private SpamCheckResult HandleSpfError(SpamCheckContext context)
-        {
-            return new SpamCheckResult
-            {
-                IsSpam = false,
-                Score = 0,
-                CheckerName = Name,
-                Action = SpamAction.None,
-                Confidence = 0.1,
-                Details = { ["spf_result"] = "temperror" }
-            };
-        }
-
-        private class SpfMechanism
-        {
-            public string Qualifier { get; set; } = "+";
-            public string Type { get; set; } = string.Empty;
-            public string? Value { get; set; }
-        }
-
-        private enum SpfResult
-        {
-            None,
-            Pass,
-            Fail,
-            SoftFail,
-            Neutral,
-            TempError,
-            PermError
-        }
-    }
-
-    /// <summary>
-    /// Configuration for SPF checking
-    /// </summary>
-    public class SpfConfiguration
-    {
-        public bool Enabled { get; set; } = true;
-        public double Weight { get; set; } = 1.0;
-        public double FailScore { get; set; } = 80.0;
-        public double SoftFailScore { get; set; } = 40.0;
-        public double NeutralScore { get; set; } = 10.0;
-        public double NoRecordScore { get; set; } = 20.0;
-        public bool NoRecordAsSpam { get; set; } = false;
-        public bool SoftFailAsSpam { get; set; } = false;
-        public SpamAction FailAction { get; set; } = SpamAction.Reject;
-        public SpamAction SoftFailAction { get; set; } = SpamAction.Mark;
-        public SpamAction NoRecordAction { get; set; } = SpamAction.None;
     }
 }

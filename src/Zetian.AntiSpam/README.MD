@@ -4,18 +4,18 @@
 [![NuGet-Download](https://img.shields.io/nuget/dt/Zetian.AntiSpam?label=Download)](https://www.nuget.org/api/v2/package/Zetian.AntiSpam)
 [![License](https://img.shields.io/github/license/Taiizor/Zetian.svg?label=License)](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
 
-Advanced anti-spam extension for Zetian SMTP Server featuring multiple protection layers including SPF validation, RBL/DNSBL checks, Bayesian filtering, and customizable spam scoring system. Protect your SMTP server from spam, phishing, and email abuse.
+Comprehensive anti-spam solution for Zetian SMTP Server with multiple detection methods, machine learning, and flexible configuration options.
 
 ## ⚡ Features
 
-- **SPF Validation** - Sender Policy Framework authentication
-- **RBL/DNSBL Checks** - Real-time blackhole list verification  
-- **Bayesian Filtering** - Machine learning-based spam detection
-- **Flexible Scoring** - Customizable weighted scoring system
-- **Multiple Actions** - Reject, quarantine, mark, or greylist spam
-- **High Performance** - Parallel checking with configurable timeouts
-- **Easy Integration** - Fluent API with builder pattern
-- **Extensible** - Add custom spam checkers easily
+- 🛡️ **SPF Validation** - Sender Policy Framework verification
+- 📧 **DKIM/DMARC** - Email authentication protocols (coming soon)
+- 🤖 **Bayesian Filtering** - Machine learning-based spam detection
+- 🚫 **RBL/DNSBL** - Realtime blackhole list checking
+- ⏱️ **Greylisting** - Temporary rejection for unknown senders
+- 🔧 **Extensible** - Easy to add custom spam checkers
+- ⚡ **High Performance** - Parallel checking with timeout support
+- 📊 **Statistics** - Detailed metrics and reporting
 
 ## 📦 Installation
 
@@ -23,23 +23,23 @@ Advanced anti-spam extension for Zetian SMTP Server featuring multiple protectio
 # Install Zetian SMTP Server (required)
 dotnet add package Zetian
 
-# Install AntiSpam Extension  
+# Install AntiSpam Extension
 dotnet add package Zetian.AntiSpam
 ```
 
 ## 🚀 Quick Start
 
-### Basic Usage with Default Settings
+### Basic Anti-Spam Setup
 
 ```csharp
 using Zetian.Server;
 using Zetian.AntiSpam.Extensions;
 
-// Create SMTP server with basic anti-spam protection
-var server = new SmtpServerBuilder()
-    .Port(587)
-    .WithBasicAntiSpam()  // Adds SPF, RBL, and Bayesian checks
-    .Build();
+// Create SMTP server with anti-spam
+var server = SmtpServerBuilder.CreateBasic();
+
+// Add anti-spam with default settings
+server.AddAntiSpam();
 
 await server.StartAsync();
 ```
@@ -47,269 +47,264 @@ await server.StartAsync();
 ### Custom Configuration
 
 ```csharp
-using Zetian.Server;
-using Zetian.AntiSpam.Extensions;
-
-var server = new SmtpServerBuilder()
-    .Port(587)
-    .WithAntiSpam(antiSpam => antiSpam
-        .AddSpfChecker(spf => spf.FailAction = SpamAction.Reject)
-        .AddRblChecker(rbl => 
-        {
-            rbl.SpamThreshold = 50;
-            rbl.Servers.Add(new RblServer 
-            { 
-                Name = "Custom RBL",
-                Host = "rbl.example.com"
-            });
-        })
-        .AddBayesianChecker(bayes => bayes.SpamThreshold = 0.8)
-        .WithSpamThreshold(60)
-        .WithRejectThreshold(80)
-    )
-    .Build();
-
-await server.StartAsync();
+// Configure anti-spam features
+server.AddAntiSpam(builder => builder
+    .EnableSpf(failScore: 50)
+    .EnableRbl("zen.spamhaus.org", "bl.spamcop.net")
+    .EnableBayesian(spamThreshold: 0.85)
+    .EnableGreylisting(initialDelay: TimeSpan.FromMinutes(5))
+    .WithOptions(options =>
+    {
+        options.RejectThreshold = 60;
+        options.TempFailThreshold = 40;
+        options.RunChecksInParallel = true;
+    }));
 ```
 
-### Strict Anti-Spam Configuration
+### Aggressive Protection
 
 ```csharp
-// Use strict pre-configured settings
-var server = new SmtpServerBuilder()
-    .Port(587)
-    .WithStrictAntiSpam()  // Lower thresholds, stop on first reject
-    .Build();
+// Use aggressive anti-spam settings
+server.AddAntiSpam(builder => builder.UseAggressive());
 ```
 
-## 🛠️ Advanced Configuration
-
-### Training Bayesian Filter
+### Lenient Protection
 
 ```csharp
-// Train the Bayesian filter with known spam/ham
-server.TrainBayesianFilter("Buy cheap viagra now!", isSpam: true);
-server.TrainBayesianFilter("Meeting scheduled for tomorrow", isSpam: false);
+// Use lenient settings for trusted environments
+server.AddAntiSpam(builder => builder.UseLenient());
+```
 
-// Batch training
-server.TrainBayesianFilterBatch(
-    ("Get rich quick scheme", true),
-    ("Project status update", false),
-    ("Nigerian prince needs help", true),
-    ("Quarterly report attached", false)
+## 🎯 Individual Features
+
+### SPF Checking Only
+
+```csharp
+server.AddSpfCheck(failScore: 50);
+```
+
+### RBL/DNSBL Checking
+
+```csharp
+server.AddRblCheck(
+    "zen.spamhaus.org",
+    "bl.spamcop.net",
+    "b.barracudacentral.org"
 );
 ```
 
-### Adding Custom Spam Checkers
+### Greylisting
 
 ```csharp
-server.WithAntiSpam(antiSpam => antiSpam
-    .AddFunctionChecker("CustomCheck", context =>
+server.AddGreylisting(initialDelay: TimeSpan.FromMinutes(5));
+
+// Whitelist trusted domains
+server.WhitelistDomain("trusted.com");
+```
+
+### Bayesian Filtering
+
+```csharp
+server.AddBayesianFilter(spamThreshold: 0.9);
+
+// Train the filter
+await server.TrainBayesianSpamAsync(spamSamples);
+await server.TrainBayesianHamAsync(legitimateSamples);
+```
+
+## 🔧 Advanced Configuration
+
+### Custom Spam Checker
+
+```csharp
+using Zetian.AntiSpam.Abstractions;
+
+public class CustomSpamChecker : ISpamChecker
+{
+    public string Name => "Custom";
+    public bool IsEnabled { get; set; } = true;
+
+    public async Task<SpamCheckResult> CheckAsync(
+        ISmtpMessage message,
+        ISmtpSession session,
+        CancellationToken cancellationToken)
     {
-        // Custom spam logic
-        if (context.FromAddress.EndsWith(".ru"))
+        // Custom logic here
+        if (IsSpam(message))
         {
-            return SpamCheckResult.Spam("CustomCheck", 70, "Suspicious domain");
+            return SpamCheckResult.Spam(75, "Custom rule triggered");
         }
-        return SpamCheckResult.NotSpam("CustomCheck");
-    })
-    .AddAsyncFunctionChecker("DatabaseCheck", async context =>
-    {
-        var isBlacklisted = await CheckDatabaseAsync(context.FromAddress);
-        return isBlacklisted 
-            ? SpamCheckResult.Spam("DatabaseCheck", 100, "Blacklisted sender")
-            : SpamCheckResult.NotSpam("DatabaseCheck");
-    })
-);
-```
-
-### Content and Subject Filtering
-
-```csharp
-// Add content-based filtering
-server.AddContentFilter(
-    spamKeywords: new[] { "viagra", "casino", "lottery" },
-    scorePerKeyword: 25.0
-);
-
-// Add subject line filtering with regex patterns
-server.AddSubjectFilter(new[] 
-{
-    @"^\[SPAM\]",
-    @"(winner|congratulations|urgent)",
-    @"\${3,}"  // Three or more dollar signs
-});
-```
-
-### Quarantine Mode
-
-```csharp
-// Quarantine spam instead of rejecting
-server.UseQuarantineMode(@"C:\smtp_quarantine");
-
-// Messages marked as spam will be saved to quarantine folder
-// with headers indicating spam status and score
-```
-
-## 📊 Spam Checkers
-
-### SPF (Sender Policy Framework)
-
-Validates sender's IP against domain's SPF records:
-
-```csharp
-.AddSpfChecker(config =>
-{
-    config.Enabled = true;
-    config.Weight = 1.0;
-    config.FailAction = SpamAction.Reject;
-    config.SoftFailAction = SpamAction.Mark;
-    config.NoRecordAction = SpamAction.None;
-})
-```
-
-### RBL/DNSBL (Realtime Blackhole Lists)
-
-Checks IP reputation against multiple blacklists:
-
-```csharp
-.AddRblChecker(config =>
-{
-    config.SpamThreshold = 50.0;
-    config.RejectThreshold = 2;  // Reject if listed in 2+ RBLs
-    config.SkipForAuthenticatedUsers = true;
-    
-    // Configure specific RBL servers
-    config.Servers = new List<RblServer>
-    {
-        new() { Name = "Spamhaus", Host = "zen.spamhaus.org", Score = 50 },
-        new() { Name = "Barracuda", Host = "b.barracudacentral.org", Score = 40 },
-        new() { Name = "SpamCop", Host = "bl.spamcop.net", Score = 35 }
-    };
-})
-```
-
-### Bayesian Filter
-
-Machine learning-based spam detection:
-
-```csharp
-.AddBayesianChecker(config =>
-{
-    config.SpamThreshold = 0.8;  // 80% probability = spam
-    config.UseBiGrams = true;     // Use word pairs for better accuracy
-    config.MaxTokensToConsider = 15;
-    config.MinTokenLength = 3;
-    config.HighConfidenceThreshold = 0.95;  // Auto-reject at 95%
-})
-```
-
-## 🎯 Spam Actions
-
-The anti-spam service can take different actions based on spam scores:
-
-- **None** - Message is clean, no action needed
-- **Mark** - Accept but add spam headers
-- **Quarantine** - Move to quarantine folder for review  
-- **Reject** - Reject with SMTP error code
-- **Greylist** - Temporarily defer (legitimate servers retry)
-- **Discard** - Silently drop the message
-
-## 📈 Spam Scoring
-
-Each checker contributes to an overall spam score (0-100):
-
-```csharp
-// Configure score thresholds
-.WithSpamThreshold(50)      // Mark as spam above 50
-.WithQuarantineThreshold(70) // Quarantine above 70  
-.WithRejectThreshold(85)     // Reject above 85
-```
-
-## 🔍 Accessing Results
-
-Anti-spam results are available in message events:
-
-```csharp
-server.MessageReceived += (sender, e) =>
-{
-    if (e.Context.TryGetValue("spam_result", out var result))
-    {
-        var spamResult = result as AntiSpamResult;
-        Console.WriteLine($"Spam Score: {spamResult.TotalScore}");
-        Console.WriteLine($"Is Spam: {spamResult.IsSpam}");
-        Console.WriteLine($"Action: {spamResult.Action}");
         
-        // Individual checker results
-        foreach (var check in spamResult.CheckResults)
+        return SpamCheckResult.Clean(0);
+    }
+}
+
+// Add custom checker
+server.AddSpamChecker(new CustomSpamChecker());
+```
+
+### Builder Pattern
+
+```csharp
+var builder = new AntiSpamBuilder()
+    .WithDnsClient(customDnsClient)
+    .EnableSpf()
+    .EnableRbl(new[]
+    {
+        new RblProvider
         {
-            Console.WriteLine($"{check.CheckerName}: {check.Score}");
+            Name = "Custom RBL",
+            Zone = "custom.rbl.org",
+            ExpectedResponses = ["127.0.0.2"]
         }
+    })
+    .EnableBayesian()
+    .AddChecker(new CustomSpamChecker());
+
+var antiSpamService = builder.Build();
+```
+
+## 📊 Monitoring & Statistics
+
+```csharp
+// Get anti-spam statistics
+var stats = server.GetAntiSpamStatistics();
+Console.WriteLine($"Messages Checked: {stats.MessagesChecked}");
+Console.WriteLine($"Messages Blocked: {stats.MessagesBlocked}");
+Console.WriteLine($"Block Rate: {stats.BlockRate:P}");
+
+// Get Bayesian statistics
+var service = server.GetAntiSpamService();
+var bayesian = service.GetChecker<BayesianSpamFilter>();
+var bayesianStats = bayesian.GetStatistics();
+Console.WriteLine($"Spam Words: {bayesianStats.TotalSpamMessages}");
+Console.WriteLine($"Ham Words: {bayesianStats.TotalHamMessages}");
+```
+
+## 🎓 Training Bayesian Filter
+
+### From Files
+
+```csharp
+// Load training data
+var spamEmails = Directory.GetFiles("spam/", "*.eml")
+    .Select(File.ReadAllText);
+
+var hamEmails = Directory.GetFiles("ham/", "*.eml")
+    .Select(File.ReadAllText);
+
+// Train the filter
+await server.TrainBayesianSpamAsync(spamEmails);
+await server.TrainBayesianHamAsync(hamEmails);
+```
+
+### Interactive Training
+
+```csharp
+server.MessageReceived += async (sender, e) =>
+{
+    // Let user classify messages
+    if (UserMarksAsSpam(e.Message))
+    {
+        var content = ExtractContent(e.Message);
+        await bayesian.TrainSpamAsync(content);
     }
 };
 ```
 
-## 📋 Message Headers
+## 🛠️ Score Interpretation
 
-The following headers are added to processed messages:
+| Score Range | Action | Description |
+|------------|--------|-------------|
+| 0-30 | Accept | Clean message |
+| 30-50 | Accept with caution | Possible spam indicators |
+| 50-70 | Greylist/Temp Reject | Likely spam |
+| 70-90 | Reject | High confidence spam |
+| 90-100 | Hard Reject | Definite spam |
 
-- `X-Spam-Check-By: Zetian.AntiSpam`
-- `X-Spam-Score: 75.5`
-- `X-Spam-Status: Yes/No`
-- `X-Spam-Checker-Scores: SPF=30.0, RBL=45.5, Bayesian=0.0`
-- `X-Spam-Reasons: Listed in Spamhaus ZEN; SPF check failed`
-- `X-Spam-Quarantine: /path/to/quarantine/file.eml` (if quarantined)
+## 🔍 SPF Results
 
-## 🏗️ Builder Pattern
+| Result | Score Impact | Meaning |
+|--------|-------------|---------|
+| Pass | 0 | Sender authorized |
+| None | 5 | No SPF record |
+| Neutral | 10 | Neither authorized nor forbidden |
+| SoftFail | 30 | Probably not authorized |
+| Fail | 50 | Not authorized |
 
-Create custom anti-spam configurations using the builder:
+## 🌐 Default RBL Providers
+
+- **Spamhaus ZEN** - Comprehensive spam/exploit list
+- **SpamCop** - User-reported spam
+- **Barracuda** - Commercial spam database
+- **SORBS** - Multiple spam databases (disabled by default)
+- **UCEPROTECT** - Aggressive blocking (disabled by default)
+
+## ⚙️ Configuration Options
 
 ```csharp
-using Zetian.AntiSpam.Builders;
-
-var antiSpamService = AntiSpamBuilder.Create()
-    .WithLoggerFactory(loggerFactory)
-    .WithDnsClient(customDnsClient)
-    .AddSpfChecker()
-    .AddRblChecker()
-    .AddBayesianChecker()
-    .AddCustomChecker(myCustomChecker)
-    .WithSpamThreshold(50)
-    .WithRejectThreshold(80)
-    .RunInParallel(true)
-    .WithCheckerTimeout(TimeSpan.FromSeconds(5))
-    .Build();
+public class AntiSpamOptions
+{
+    // Score threshold for rejection (default: 50)
+    public double RejectThreshold { get; set; }
+    
+    // Score threshold for temp failure (default: 30)
+    public double TempFailThreshold { get; set; }
+    
+    // Run checks in parallel (default: true)
+    public bool RunChecksInParallel { get; set; }
+    
+    // Timeout per checker (default: 10 seconds)
+    public TimeSpan CheckerTimeout { get; set; }
+    
+    // Continue after spam detection (default: false)
+    public bool ContinueOnSpamDetection { get; set; }
+    
+    // Enable detailed logging (default: false)
+    public bool EnableDetailedLogging { get; set; }
+}
 ```
 
-## 🔒 Best Practices
+## 📚 Best Practices
 
-1. **Start with default settings** and adjust based on false positives/negatives
-2. **Train the Bayesian filter** with your actual spam/ham for best results
-3. **Use multiple checkers** for better accuracy
-4. **Configure RBL servers carefully** - some are more aggressive than others
-5. **Monitor logs** to fine-tune scoring thresholds
-6. **Consider greylisting** for unknown senders
-7. **Whitelist authenticated users** from certain checks
-8. **Use quarantine mode** initially to evaluate effectiveness
+1. **Start Conservative** - Begin with lenient settings and adjust based on false positives
+2. **Train Bayesian** - Provide adequate training data for better accuracy
+3. **Monitor Statistics** - Regularly review block rates and adjust thresholds
+4. **Whitelist Partners** - Add trusted partners to greylisting whitelist
+5. **Use Multiple Methods** - Combine different checkers for better detection
+6. **Regular Updates** - Keep RBL lists and training data current
 
-## 📊 Performance Considerations
+## 🔒 Security Considerations
 
-- Checks run in parallel by default for better performance
-- DNS lookups are cached automatically
-- Configure timeouts to prevent slow checks from blocking
-- Consider disabling expensive checks for authenticated users
-- Use `StopOnFirstReject` for faster rejection of obvious spam
+- SPF checks require DNS lookups - ensure reliable DNS
+- RBL queries may expose client IPs to third parties
+- Greylisting may delay legitimate mail initially
+- Bayesian filters need balanced training data
 
-## 📚 Examples
+## 🚀 Performance Tips
 
-See the [examples](https://github.com/Taiizor/Zetian/tree/develop/examples/Zetian.AntiSpam.Examples) folder for more detailed usage examples.
+- Enable parallel checking for better performance
+- Set appropriate timeouts for DNS queries
+- Use caching DNS client for repeated lookups
+- Limit RBL providers to essential ones
+- Pre-train Bayesian filter before deployment
 
-## 🆘 Support
+## 📦 Requirements
+
+- Zetian SMTP Server 1.0.0+
+- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- DnsClient.NET for DNS lookups
+
+## 📄 License
+
+MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE) for details
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see our [Contributing Guidelines](https://github.com/Taiizor/Zetian/blob/develop/CONTRIBUTING.md).
+
+## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
 - **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

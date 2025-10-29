@@ -1,47 +1,57 @@
 using DnsClient;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Checkers;
-using Zetian.AntiSpam.Models;
 using Zetian.AntiSpam.Services;
 
 namespace Zetian.AntiSpam.Builders
 {
     /// <summary>
-    /// Builder for configuring and creating an AntiSpam service
+    /// Builder for configuring anti-spam features
     /// </summary>
     public class AntiSpamBuilder
     {
         private readonly List<ISpamChecker> _checkers = [];
-        private AntiSpamConfiguration _configuration = new();
-        private ILogger<AntiSpamService>? _logger;
         private ILookupClient? _dnsClient;
-        private ILoggerFactory? _loggerFactory;
+        private AntiSpamOptions _options = new();
 
         /// <summary>
-        /// Creates a new AntiSpamBuilder instance
+        /// Use default anti-spam configuration
         /// </summary>
-        public static AntiSpamBuilder Create()
+        public AntiSpamBuilder UseDefaults()
         {
-            return new AntiSpamBuilder();
-        }
-
-        /// <summary>
-        /// Sets the logger factory for all components
-        /// </summary>
-        public AntiSpamBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
-        {
-            _loggerFactory = loggerFactory;
-            _logger = loggerFactory?.CreateLogger<AntiSpamService>();
+            EnableSpf();
+            EnableRbl();
+            EnableBayesian();
             return this;
         }
 
         /// <summary>
-        /// Sets a custom DNS client for DNS-based checks
+        /// Use aggressive anti-spam configuration
+        /// </summary>
+        public AntiSpamBuilder UseAggressive()
+        {
+            EnableSpf(failScore: 70);
+            EnableRbl(scorePerListing: 35);
+            EnableBayesian(spamThreshold: 0.7);
+            EnableGreylisting(initialDelay: TimeSpan.FromMinutes(10));
+            return this;
+        }
+
+        /// <summary>
+        /// Use lenient anti-spam configuration
+        /// </summary>
+        public AntiSpamBuilder UseLenient()
+        {
+            EnableSpf(failScore: 30, softFailScore: 15);
+            EnableRbl(scorePerListing: 15);
+            EnableBayesian(spamThreshold: 0.95);
+            return this;
+        }
+
+        /// <summary>
+        /// Set custom DNS client for lookups
         /// </summary>
         public AntiSpamBuilder WithDnsClient(ILookupClient dnsClient)
         {
@@ -50,241 +60,155 @@ namespace Zetian.AntiSpam.Builders
         }
 
         /// <summary>
-        /// Configures the anti-spam service
+        /// Configure general options
         /// </summary>
-        public AntiSpamBuilder Configure(Action<AntiSpamConfiguration> configAction)
+        public AntiSpamBuilder WithOptions(Action<AntiSpamOptions> configure)
         {
-            configAction?.Invoke(_configuration);
+            configure(_options);
             return this;
         }
 
         /// <summary>
-        /// Sets the spam threshold score (0-100)
+        /// Enable SPF checking
         /// </summary>
-        public AntiSpamBuilder WithSpamThreshold(double threshold)
+        public AntiSpamBuilder EnableSpf(
+            double failScore = 50,
+            double softFailScore = 30,
+            double neutralScore = 10,
+            double noneScore = 5)
         {
-            _configuration.SpamThreshold = Math.Max(0, Math.Min(100, threshold));
+            _checkers.Add(new SpfChecker(
+                _dnsClient,
+                failScore,
+                softFailScore,
+                neutralScore,
+                noneScore));
             return this;
         }
 
         /// <summary>
-        /// Sets the reject threshold score (0-100)
+        /// Enable RBL/DNSBL checking
         /// </summary>
-        public AntiSpamBuilder WithRejectThreshold(double threshold)
+        public AntiSpamBuilder EnableRbl(
+            IEnumerable<RblProvider>? providers = null,
+            double scorePerListing = 25,
+            double maxScore = 100)
         {
-            _configuration.RejectThreshold = Math.Max(0, Math.Min(100, threshold));
+            _checkers.Add(new RblChecker(
+                _dnsClient,
+                providers,
+                scorePerListing,
+                maxScore));
             return this;
         }
 
         /// <summary>
-        /// Enables or disables parallel checking
+        /// Enable RBL with specific zones
         /// </summary>
-        public AntiSpamBuilder RunInParallel(bool parallel = true)
+        public AntiSpamBuilder EnableRbl(params string[] zones)
         {
-            _configuration.RunChecksInParallel = parallel;
-            return this;
-        }
-
-        /// <summary>
-        /// Sets the timeout for each checker
-        /// </summary>
-        public AntiSpamBuilder WithCheckerTimeout(TimeSpan timeout)
-        {
-            _configuration.CheckerTimeout = timeout;
-            return this;
-        }
-
-        /// <summary>
-        /// Adds SPF (Sender Policy Framework) checking
-        /// </summary>
-        public AntiSpamBuilder AddSpfChecker(Action<SpfConfiguration>? configAction = null)
-        {
-            SpfConfiguration config = new();
-            configAction?.Invoke(config);
-
-            ILogger<SpfChecker>? logger = _loggerFactory?.CreateLogger<SpfChecker>();
-            _checkers.Add(new SpfChecker(config, _dnsClient, logger));
-
-            return this;
-        }
-
-        /// <summary>
-        /// Adds RBL/DNSBL (Realtime Blackhole List) checking
-        /// </summary>
-        public AntiSpamBuilder AddRblChecker(Action<RblConfiguration>? configAction = null)
-        {
-            RblConfiguration config = new();
-            configAction?.Invoke(config);
-
-            ILogger<RblChecker>? logger = _loggerFactory?.CreateLogger<RblChecker>();
-            _checkers.Add(new RblChecker(config, _dnsClient, logger));
-
-            return this;
-        }
-
-        /// <summary>
-        /// Adds Bayesian spam filtering
-        /// </summary>
-        public AntiSpamBuilder AddBayesianChecker(Action<BayesianConfiguration>? configAction = null)
-        {
-            BayesianConfiguration config = new();
-            configAction?.Invoke(config);
-
-            ILogger<BayesianChecker>? logger = _loggerFactory?.CreateLogger<BayesianChecker>();
-            _checkers.Add(new BayesianChecker(config, logger));
-
-            return this;
-        }
-
-        /// <summary>
-        /// Adds a custom spam checker
-        /// </summary>
-        public AntiSpamBuilder AddCustomChecker(ISpamChecker checker)
-        {
-            if (checker != null)
+            var providers = new List<RblProvider>();
+            foreach (string zone in zones)
             {
-                _checkers.Add(checker);
+                providers.Add(new RblProvider
+                {
+                    Name = zone,
+                    Zone = zone,
+                    IsEnabled = true
+                });
             }
+            return EnableRbl(providers);
+        }
+
+        /// <summary>
+        /// Enable Bayesian spam filtering
+        /// </summary>
+        public AntiSpamBuilder EnableBayesian(
+            double spamThreshold = 0.9,
+            double unknownWordProbability = 0.5)
+        {
+            _checkers.Add(new BayesianSpamFilter(
+                spamThreshold,
+                unknownWordProbability));
             return this;
         }
 
         /// <summary>
-        /// Adds a simple function-based spam checker
+        /// Enable greylisting
         /// </summary>
-        public AntiSpamBuilder AddFunctionChecker(
-            string name,
-            Func<SpamCheckContext, SpamCheckResult> checkFunction,
-            double weight = 1.0,
-            bool enabled = true)
+        public AntiSpamBuilder EnableGreylisting(
+            TimeSpan? initialDelay = null,
+            TimeSpan? whitelistDuration = null,
+            TimeSpan? maxRetryTime = null,
+            bool autoWhitelist = true)
         {
-            _checkers.Add(new FunctionSpamChecker(name, checkFunction, weight, enabled));
+            _checkers.Add(new GreylistingChecker(
+                initialDelay,
+                whitelistDuration,
+                maxRetryTime,
+                autoWhitelist));
             return this;
         }
 
         /// <summary>
-        /// Adds an async function-based spam checker
+        /// Add a custom spam checker
         /// </summary>
-        public AntiSpamBuilder AddAsyncFunctionChecker(
-            string name,
-            Func<SpamCheckContext, Task<SpamCheckResult>> checkFunction,
-            double weight = 1.0,
-            bool enabled = true)
+        public AntiSpamBuilder AddChecker(ISpamChecker checker)
         {
-            _checkers.Add(new AsyncFunctionSpamChecker(name, checkFunction, weight, enabled));
+            _checkers.Add(checker);
             return this;
         }
 
         /// <summary>
-        /// Configures RBL servers to use
-        /// </summary>
-        public AntiSpamBuilder UseRblServers(params string[] servers)
-        {
-            return AddRblChecker(config =>
-            {
-                config.Servers.Clear();
-                foreach (string server in servers)
-                {
-                    config.Servers.Add(new RblServer
-                    {
-                        Name = server,
-                        Host = server,
-                        Enabled = true
-                    });
-                }
-            });
-        }
-
-        /// <summary>
-        /// Adds all default checkers with standard configuration
-        /// </summary>
-        public AntiSpamBuilder AddDefaultCheckers()
-        {
-            return this
-                .AddSpfChecker()
-                .AddRblChecker()
-                .AddBayesianChecker();
-        }
-
-        /// <summary>
-        /// Creates a basic anti-spam configuration for quick setup
-        /// </summary>
-        public static AntiSpamService CreateBasic()
-        {
-            return Create()
-                .AddDefaultCheckers()
-                .WithSpamThreshold(50)
-                .WithRejectThreshold(80)
-                .Build();
-        }
-
-        /// <summary>
-        /// Creates a strict anti-spam configuration
-        /// </summary>
-        public static AntiSpamService CreateStrict()
-        {
-            return Create()
-                .AddDefaultCheckers()
-                .WithSpamThreshold(30)
-                .WithRejectThreshold(60)
-                .Configure(c =>
-                {
-                    c.StopOnFirstReject = true;
-                })
-                .Build();
-        }
-
-        /// <summary>
-        /// Creates a lenient anti-spam configuration
-        /// </summary>
-        public static AntiSpamService CreateLenient()
-        {
-            return Create()
-                .AddSpfChecker(c => c.SoftFailAsSpam = false)
-                .AddBayesianChecker(c => c.SpamThreshold = 0.9)
-                .WithSpamThreshold(70)
-                .WithRejectThreshold(95)
-                .Build();
-        }
-
-        /// <summary>
-        /// Builds the configured AntiSpam service
+        /// Build the anti-spam service
         /// </summary>
         public AntiSpamService Build()
         {
-            return new AntiSpamService(_checkers, _configuration, _logger);
+            return new AntiSpamService(_checkers, _options);
         }
+    }
 
-        // Helper checker implementations for function-based checkers
-        private class FunctionSpamChecker(
-            string name,
-            Func<SpamCheckContext, SpamCheckResult> checkFunction,
-            double weight,
-            bool enabled) : ISpamChecker
+    /// <summary>
+    /// Options for anti-spam configuration
+    /// </summary>
+    public class AntiSpamOptions
+    {
+        /// <summary>
+        /// Gets or sets the spam score threshold for rejection
+        /// </summary>
+        public double RejectThreshold { get; set; } = 50;
+
+        /// <summary>
+        /// Gets or sets the spam score threshold for temporary failure
+        /// </summary>
+        public double TempFailThreshold { get; set; } = 30;
+
+        /// <summary>
+        /// Gets or sets whether to run checks in parallel
+        /// </summary>
+        public bool RunChecksInParallel { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the timeout for each checker
+        /// </summary>
+        public TimeSpan CheckerTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Gets or sets whether to continue checking after first spam detection
+        /// </summary>
+        public bool ContinueOnSpamDetection { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets whether to log detailed check results
+        /// </summary>
+        public bool EnableDetailedLogging { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets custom headers to add to messages
+        /// </summary>
+        public Dictionary<string, string> CustomHeaders { get; set; } = new()
         {
-            public string Name { get; } = name;
-            public double Weight { get; } = weight;
-            public bool IsEnabled { get; } = enabled;
-
-            public Task<SpamCheckResult> CheckAsync(SpamCheckContext context, CancellationToken cancellationToken = default)
-            {
-                return Task.FromResult(checkFunction(context));
-            }
-        }
-
-        private class AsyncFunctionSpamChecker(
-            string name,
-            Func<SpamCheckContext, Task<SpamCheckResult>> checkFunction,
-            double weight,
-            bool enabled) : ISpamChecker
-        {
-            public string Name { get; } = name;
-            public double Weight { get; } = weight;
-            public bool IsEnabled { get; } = enabled;
-
-            public async Task<SpamCheckResult> CheckAsync(SpamCheckContext context, CancellationToken cancellationToken = default)
-            {
-                return await checkFunction(context);
-            }
-        }
+            ["X-Spam-Checker"] = "Zetian.AntiSpam"
+        };
     }
 }

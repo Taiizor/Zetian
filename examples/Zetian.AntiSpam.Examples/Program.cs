@@ -11,9 +11,8 @@ namespace Zetian.AntiSpam.Examples
 
             while (true)
             {
-                Console.WriteLine("╔═══════════════════════════════════════════╗");
-                Console.WriteLine("║     Zetian AntiSpam Examples             ║");
-                Console.WriteLine("╚═══════════════════════════════════════════╝\n");
+                Console.WriteLine("Zetian SMTP Server - Anti Spam Examples");
+                Console.WriteLine("=========================================\n");
 
                 Console.WriteLine("Select an example to run:");
                 Console.WriteLine("1. Basic Anti-Spam Setup");

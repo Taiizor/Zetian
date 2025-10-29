@@ -10,8 +10,8 @@ namespace Zetian.HealthCheck.Examples
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("Zetian Health Check Examples");
-            Console.WriteLine("=============================");
+            Console.WriteLine("Zetian SMTP Server - Health Check Examples");
+            Console.WriteLine("=========================================\n");
             Console.WriteLine();
 
             // Check if running as admin

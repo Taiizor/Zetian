@@ -4,6 +4,7 @@ using Zetian.Abstractions;
 using Zetian.Relay.Abstractions;
 using Zetian.Relay.Enums;
 using Zetian.Relay.Extensions;
+using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -28,8 +29,7 @@ namespace Zetian.Relay.Examples
             Console.WriteLine();
 
             // Create server with relay
-            ISmtpServer server = SmtpServerBuilder
-                .CreateBasic()
+            ISmtpServer server = new SmtpServerBuilder()
                 .Port(25029)
                 .ServerName("queue-mgmt.local")
                 .LoggerFactory(loggerFactory)
@@ -331,7 +331,7 @@ namespace Zetian.Relay.Examples
             Console.WriteLine($"  Failed: {string.Join(", ", message.FailedRecipients.Select(r => r.Address))}");
             Console.WriteLine($"  Queued Time: {message.QueuedTime:yyyy-MM-dd HH:mm:ss}");
             Console.WriteLine($"  Retry Count: {message.RetryCount}");
-            Console.WriteLine($"  Expires: {message.ExpirationTime:yyyy-MM-dd HH:mm:ss}");
+            Console.WriteLine($"  Is Expired: {message.IsExpired}");
 
             if (message.LastAttemptTime.HasValue)
             {

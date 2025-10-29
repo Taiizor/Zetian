@@ -21,9 +21,9 @@ namespace Zetian.Relay.Client
     /// <summary>
     /// SMTP client for relaying messages to remote servers
     /// </summary>
-    public class SmtpRelayClient : ISmtpClient
+    public class SmtpRelayClient(ILogger<SmtpRelayClient>? logger = null) : ISmtpClient
     {
-        private readonly ILogger<SmtpRelayClient> _logger;
+        private readonly ILogger<SmtpRelayClient> _logger = logger ?? NullLogger<SmtpRelayClient>.Instance;
         private TcpClient? _tcpClient;
         private Stream? _stream;
         private StreamReader? _reader;
@@ -31,23 +31,14 @@ namespace Zetian.Relay.Client
         private bool _disposed;
         private Dictionary<string, string>? _serverCapabilities;
 
-        public SmtpRelayClient(ILogger<SmtpRelayClient>? logger = null)
-        {
-            _logger = logger ?? NullLogger<SmtpRelayClient>.Instance;
-            Host = "localhost";
-            Port = 25;
-            Timeout = TimeSpan.FromMinutes(5);
-            SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
-        }
-
-        public string Host { get; set; }
-        public int Port { get; set; }
+        public string Host { get; set; } = "localhost";
+        public int Port { get; set; } = 25;
         public bool EnableSsl { get; set; }
-        public SslProtocols SslProtocols { get; set; }
+        public SslProtocols SslProtocols { get; set; } = SslProtocols.Tls12 | SslProtocols.Tls13;
         public X509Certificate2? ClientCertificate { get; set; }
         public NetworkCredential? Credentials { get; set; }
         public string? LocalDomain { get; set; }
-        public TimeSpan Timeout { get; set; }
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
         public bool IsConnected => _tcpClient?.Connected ?? false;
         public IReadOnlyDictionary<string, string>? ServerCapabilities => _serverCapabilities;
 

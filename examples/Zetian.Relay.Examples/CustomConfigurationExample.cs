@@ -128,8 +128,7 @@ namespace Zetian.Relay.Examples
             }
 
             // Create server with custom configuration
-            ISmtpServer server = SmtpServerBuilder
-                .CreateBasic()
+            ISmtpServer server = new SmtpServerBuilder()
                 .Port(25034)
                 .ServerName("custom-relay.company.com")
                 .MaxMessageSize(25 * 1024 * 1024) // 25MB
@@ -143,14 +142,11 @@ namespace Zetian.Relay.Examples
             // Additional manual configuration
             server.Configuration.SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
             server.Configuration.EnableVerboseLogging = false;
-            server.Configuration.RequireEncryption = false;
+            // RequireEncryption is not supported, use RequireSecureConnection instead
+            // server.Configuration.RequireSecureConnection = false;
 
             // Event handlers for monitoring
-            server.SessionStarted += (sender, e) =>
-            {
-                Console.WriteLine($"[SESSION] Connection from {e.Session.RemoteEndPoint}");
-            };
-
+            // Note: SessionStarted event is not available in current API
             server.MessageReceived += async (sender, e) =>
             {
                 Console.WriteLine($"[MESSAGE] {e.Message.From?.Address} → {string.Join(", ", e.Message.Recipients)}");

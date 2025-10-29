@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Extensions;
+using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -25,8 +26,7 @@ namespace Zetian.Relay.Examples
             Console.WriteLine();
 
             // Create SMTP server with relay enabled
-            ISmtpServer server = SmtpServerBuilder
-                .CreateBasic()
+            ISmtpServer server = new SmtpServerBuilder()
                 .Port(25025)
                 .ServerName("relay-example.local")
                 .MaxMessageSize(10 * 1024 * 1024) // 10MB

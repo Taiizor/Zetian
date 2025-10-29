@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using Zetian.Abstractions;
+using Zetian.Delegates;
+using Zetian.Models;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
 using Zetian.Server;
@@ -26,15 +29,34 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("- Access control based on authentication");
             Console.WriteLine();
 
+            // Create authentication handler
+            AuthenticationHandler authHandler = async (username, password) =>
+            {
+                // Define users
+                var users = new Dictionary<string, string>
+                {
+                    { "relay_user", "relay_pass123" },
+                    { "admin", "admin_secret" },
+                    { "sender", "sender_password" }
+                };
+
+                if (users.TryGetValue(username, out var expectedPassword) && expectedPassword == password)
+                {
+                    return AuthenticationResult.Succeed(username);
+                }
+
+                return AuthenticationResult.Fail("Invalid credentials");
+            };
+
             // Create server with authentication requirements
-            ISmtpServer server = SmtpServerBuilder
-                .CreateBasic()
+            ISmtpServer server = new SmtpServerBuilder()
                 .Port(25033)
                 .ServerName("auth-relay.local")
-                .EnableAuthentication(AuthenticationMechanism.Plain | AuthenticationMechanism.Login)
-                .AddUser("relay_user", "relay_pass123")
-                .AddUser("admin", "admin_secret")
-                .AddUser("sender", "sender_password")
+                .RequireAuthentication(true)
+                .AuthenticationHandler(authHandler)
+                .AddAuthenticationMechanism("PLAIN")
+                .AddAuthenticationMechanism("LOGIN")
+                .AllowPlainTextAuthentication(true)
                 .LoggerFactory(loggerFactory)
                 .EnableRelay(config =>
                 {
@@ -60,18 +82,7 @@ namespace Zetian.Relay.Examples
                     config.LocalDomains.Add("internal.local");
                 });
 
-            // Log authentication and relay events
-            server.SessionStarted += (sender, e) =>
-            {
-                Console.WriteLine($"[SESSION] New connection from {e.Session.RemoteEndPoint}");
-            };
-
-            server.SessionAuthenticated += (sender, e) =>
-            {
-                Console.WriteLine($"[AUTH] User '{e.Username}' authenticated successfully");
-                Console.WriteLine($"  → Relay access: GRANTED");
-            };
-
+            // Log relay events
             server.MessageReceived += async (sender, e) =>
             {
                 bool isLocal = e.Message.Recipients.All(r =>
@@ -84,7 +95,7 @@ namespace Zetian.Relay.Examples
 
                 if (e.Session.IsAuthenticated)
                 {
-                    Console.WriteLine($"  User: {e.Session.AuthenticatedUser}");
+                    Console.WriteLine($"  User: {e.Session.AuthenticatedIdentity}");
                     Console.WriteLine($"  Action: {(isLocal ? "LOCAL DELIVERY" : "RELAY")}");
                 }
                 else

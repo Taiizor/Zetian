@@ -4,6 +4,7 @@ using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
+using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -27,8 +28,7 @@ namespace Zetian.Relay.Examples
             Console.WriteLine();
 
             // Create SMTP server with multiple smart hosts
-            ISmtpServer server = SmtpServerBuilder
-                .CreateBasic()
+            ISmtpServer server = new SmtpServerBuilder()
                 .Port(25027)
                 .ServerName("failover-example.local")
                 .LoggerFactory(loggerFactory)

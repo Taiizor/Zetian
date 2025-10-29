@@ -474,16 +474,198 @@ namespace Zetian.Relay.Services
         {
             try
             {
-                // TODO: Implement bounce message generation and sending
-                _logger.LogDebug("Bounce message would be sent for {QueueId}: {Error}",
-                    message.QueueId, error);
+                // Don't send bounce for bounce messages to avoid loops
+                if (message.From == null ||
+                    message.From.Address.Equals(_configuration.BounceSender, StringComparison.OrdinalIgnoreCase) ||
+                    message.From.Address.StartsWith("<>", StringComparison.OrdinalIgnoreCase) ||
+                    message.From.Address.Equals("postmaster", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Skipping bounce message for {QueueId}: sender is bounce address", message.QueueId);
+                    return;
+                }
 
-                await Task.CompletedTask;
+                _logger.LogInformation("Generating bounce message for {QueueId} to {Sender}",
+                    message.QueueId, message.From.Address);
+
+                // Create bounce message
+                string bounceSubject = $"Undelivered Mail Returned to Sender: {message.OriginalMessage.Subject ?? "(no subject)"}";
+                string bounceBody = GenerateBounceBody(message, error);
+
+                // Create a new SMTP message for the bounce
+                MailMessage bounceMessage = new()
+                {
+                    From = new MailAddress(
+                        string.IsNullOrEmpty(_configuration.BounceSender) ? "<>" : _configuration.BounceSender,
+                        "Mail Delivery System"),
+                    Subject = bounceSubject,
+                    Body = bounceBody,
+                    IsBodyHtml = false,
+                    Priority = MailPriority.High
+                };
+
+                // Add recipient (original sender)
+                bounceMessage.To.Add(message.From);
+
+                // Add headers
+                bounceMessage.Headers.Add("X-Bounce-Message-Id", message.QueueId);
+                bounceMessage.Headers.Add("X-Original-Message-Id", message.OriginalMessage.Id ?? "unknown");
+                bounceMessage.Headers.Add("Auto-Submitted", "auto-replied");
+                bounceMessage.Headers.Add("Content-Type", "multipart/report; report-type=delivery-status");
+
+                // Send bounce message
+                if (_configuration.DefaultSmartHost != null)
+                {
+                    ISmtpClient client = GetOrCreateClient(_configuration.DefaultSmartHost);
+
+                    // Connect if not connected
+                    if (!client.IsConnected)
+                    {
+                        // Set connection parameters
+                        client.Host = _configuration.DefaultSmartHost.Host;
+                        client.Port = _configuration.DefaultSmartHost.Port;
+                        client.EnableSsl = _configuration.DefaultSmartHost.UseTls || _configuration.DefaultSmartHost.UseStartTls;
+                        client.Credentials = _configuration.DefaultSmartHost.Credentials;
+
+                        await client.ConnectAsync().ConfigureAwait(false);
+
+                        // Authenticate if credentials provided
+                        if (_configuration.DefaultSmartHost.Credentials != null)
+                        {
+                            await client.AuthenticateAsync().ConfigureAwait(false);
+                        }
+                    }
+
+                    // Convert bounce message to raw data
+                    string fromAddress = string.IsNullOrEmpty(_configuration.BounceSender) ? "" : _configuration.BounceSender;
+                    string[] recipients = new[] { message.From.Address };
+
+                    // Build the raw message
+                    System.Text.StringBuilder rawMessage = new();
+                    rawMessage.AppendLine($"From: {bounceMessage.From.Address}");
+                    rawMessage.AppendLine($"To: {message.From.Address}");
+                    rawMessage.AppendLine($"Subject: {bounceMessage.Subject}");
+                    rawMessage.AppendLine($"Date: {DateTime.UtcNow:R}");
+                    rawMessage.AppendLine("X-Bounce-Message-Id: " + message.QueueId);
+                    rawMessage.AppendLine("X-Original-Message-Id: " + (message.OriginalMessage.Id ?? "unknown"));
+                    rawMessage.AppendLine("Auto-Submitted: auto-replied");
+                    rawMessage.AppendLine("Content-Type: text/plain; charset=UTF-8");
+                    rawMessage.AppendLine("MIME-Version: 1.0");
+                    rawMessage.AppendLine();
+                    rawMessage.Append(bounceBody);
+
+                    byte[] messageData = System.Text.Encoding.UTF8.GetBytes(rawMessage.ToString());
+
+                    // Send the bounce message
+                    await client.SendRawAsync(fromAddress, recipients, messageData).ConfigureAwait(false);
+
+                    _logger.LogInformation("Bounce message sent for {QueueId} to {Recipient}",
+                        message.QueueId, message.From.Address);
+                }
+                else
+                {
+                    _logger.LogWarning("Cannot send bounce message for {QueueId}: no smart host configured",
+                        message.QueueId);
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error sending bounce message for {QueueId}", message.QueueId);
             }
+        }
+
+        private string GenerateBounceBody(IRelayMessage message, string error)
+        {
+            System.Text.StringBuilder body = new();
+
+            // Header
+            body.AppendLine("***** THIS IS AN AUTOMATED MESSAGE - DO NOT REPLY *****");
+            body.AppendLine();
+            body.AppendLine("Your message could not be delivered to one or more recipients.");
+            body.AppendLine("This is a permanent error. The message will not be retried.");
+            body.AppendLine();
+
+            // Error details
+            body.AppendLine("---------- ERROR DETAILS ----------");
+            body.AppendLine($"Queue ID: {message.QueueId}");
+            body.AppendLine($"Error Time: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            body.AppendLine($"Error Message: {error}");
+            body.AppendLine($"Retry Count: {message.RetryCount}");
+            body.AppendLine($"Message Age: {DateTime.UtcNow - message.QueuedTime:d\\d\\ hh\\:mm\\:ss}");
+            body.AppendLine();
+
+            // Failed recipients
+            body.AppendLine("---------- FAILED RECIPIENTS ----------");
+            if (message.FailedRecipients.Count > 0)
+            {
+                foreach (MailAddress recipient in message.FailedRecipients)
+                {
+                    body.AppendLine($"  - {recipient.Address}");
+                }
+            }
+            else if (message.PendingRecipients.Count > 0)
+            {
+                foreach (MailAddress recipient in message.PendingRecipients)
+                {
+                    body.AppendLine($"  - {recipient.Address}");
+                }
+            }
+            else
+            {
+                foreach (MailAddress recipient in message.Recipients)
+                {
+                    body.AppendLine($"  - {recipient.Address}");
+                }
+            }
+            body.AppendLine();
+
+            // Delivery attempts
+            if (message.LastAttemptTime.HasValue)
+            {
+                body.AppendLine("---------- DELIVERY ATTEMPTS ----------");
+                body.AppendLine($"First Attempt: {message.QueuedTime:yyyy-MM-dd HH:mm:ss} UTC");
+                body.AppendLine($"Last Attempt: {message.LastAttemptTime.Value:yyyy-MM-dd HH:mm:ss} UTC");
+                body.AppendLine($"Total Attempts: {message.RetryCount}");
+                body.AppendLine();
+            }
+
+            // Original message info
+            body.AppendLine("---------- ORIGINAL MESSAGE ----------");
+            body.AppendLine($"From: {message.From?.Address ?? "<unknown>"}");
+            body.AppendLine($"Subject: {message.OriginalMessage.Subject ?? "(no subject)"}");
+            body.AppendLine($"Date: {message.QueuedTime:yyyy-MM-dd HH:mm:ss} UTC");
+            body.AppendLine($"Message-ID: {message.OriginalMessage.Id ?? "<unknown>"}");
+
+            // Recipients
+            body.Append("To: ");
+            body.AppendLine(string.Join(", ", message.Recipients.Select(r => r.Address)));
+
+            // Original headers if available
+            if (message.OriginalMessage.Headers.Count > 0)
+            {
+                body.AppendLine();
+                body.AppendLine("---------- ORIGINAL HEADERS ----------");
+                foreach (KeyValuePair<string, string> header in message.OriginalMessage.Headers)
+                {
+                    body.AppendLine($"{header.Key}: {header.Value}");
+                }
+            }
+
+            // Original body preview (first 500 characters)
+            string? messageBody = message.OriginalMessage.TextBody ?? message.OriginalMessage.HtmlBody;
+            if (!string.IsNullOrEmpty(messageBody))
+            {
+                body.AppendLine();
+                body.AppendLine("---------- MESSAGE PREVIEW (first 500 chars) ----------");
+                string preview = messageBody.Length > 500
+                    ? messageBody[..500] + "..."
+                    : messageBody;
+                body.AppendLine(preview);
+            }
+
+            body.AppendLine();
+            body.AppendLine("---------- END OF BOUNCE MESSAGE ----------");
+
+            return body.ToString();
         }
 
         public void Dispose()

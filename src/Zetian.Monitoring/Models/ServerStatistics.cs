@@ -111,8 +111,8 @@ namespace Zetian.Monitoring
         /// <summary>
         /// Gets the message delivery rate
         /// </summary>
-        public double DeliveryRate => TotalMessagesReceived > 0 
-            ? (double)TotalMessagesDelivered / TotalMessagesReceived * 100 
+        public double DeliveryRate => TotalMessagesReceived > 0
+            ? (double)TotalMessagesDelivered / TotalMessagesReceived * 100
             : 0;
 
         /// <summary>

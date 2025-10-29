@@ -12,7 +12,7 @@ namespace Zetian.Monitoring.Exporters
     {
         private readonly IMetricsCollector _collector;
         private readonly MetricServer? _metricServer;
-        
+
         // Counters
         private readonly Counter _sessionsTotal;
         private readonly Counter _messagesTotal;
@@ -23,30 +23,30 @@ namespace Zetian.Monitoring.Exporters
         private readonly Counter _connectionsTotal;
         private readonly Counter _tlsUpgradesTotal;
         private readonly Counter _rejectionsTotal;
-        
+
         // Gauges
         private readonly Gauge _activeSessions;
         private readonly Gauge _uptime;
         private readonly Gauge _memoryUsage;
         private readonly Gauge _throughputMessages;
         private readonly Gauge _throughputBytes;
-        
+
         // Histograms
         private readonly Histogram _commandDuration;
         private readonly Histogram _messageSize;
-        
+
         // Summary
         private readonly Summary _sessionDuration;
 
         public PrometheusExporter(IMetricsCollector collector, int? port = null, string? url = null)
         {
             _collector = collector ?? throw new ArgumentNullException(nameof(collector));
-            
+
             // Initialize Prometheus metrics
             _sessionsTotal = Metrics.CreateCounter(
                 "zetian_sessions_total",
                 "Total number of SMTP sessions");
-            
+
             _messagesTotal = Metrics.CreateCounter(
                 "zetian_messages_total",
                 "Total number of messages processed",
@@ -54,7 +54,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["status"] // delivered, rejected
                 });
-            
+
             _bytesTotal = Metrics.CreateCounter(
                 "zetian_bytes_total",
                 "Total bytes processed",
@@ -62,7 +62,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["direction"] // in, out
                 });
-            
+
             _errorsTotal = Metrics.CreateCounter(
                 "zetian_errors_total",
                 "Total number of errors",
@@ -70,7 +70,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["type"]
                 });
-            
+
             _commandsTotal = Metrics.CreateCounter(
                 "zetian_commands_total",
                 "Total SMTP commands executed",
@@ -78,7 +78,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["command", "status"] // command name, success/failure
                 });
-            
+
             _authenticationsTotal = Metrics.CreateCounter(
                 "zetian_authentications_total",
                 "Total authentication attempts",
@@ -86,7 +86,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["mechanism", "status"]
                 });
-            
+
             _connectionsTotal = Metrics.CreateCounter(
                 "zetian_connections_total",
                 "Total connection attempts",
@@ -94,7 +94,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["status"] // accepted, rejected
                 });
-            
+
             _tlsUpgradesTotal = Metrics.CreateCounter(
                 "zetian_tls_upgrades_total",
                 "Total TLS upgrade attempts",
@@ -102,7 +102,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["status"] // success, failure
                 });
-            
+
             _rejectionsTotal = Metrics.CreateCounter(
                 "zetian_rejections_total",
                 "Total message rejections",
@@ -110,27 +110,27 @@ namespace Zetian.Monitoring.Exporters
                 {
                     LabelNames = ["reason"]
                 });
-            
+
             _activeSessions = Metrics.CreateGauge(
                 "zetian_active_sessions",
                 "Current active sessions");
-            
+
             _uptime = Metrics.CreateGauge(
                 "zetian_uptime_seconds",
                 "Server uptime in seconds");
-            
+
             _memoryUsage = Metrics.CreateGauge(
                 "zetian_memory_bytes",
                 "Memory usage in bytes");
-            
+
             _throughputMessages = Metrics.CreateGauge(
                 "zetian_throughput_messages_per_second",
                 "Current message throughput");
-            
+
             _throughputBytes = Metrics.CreateGauge(
                 "zetian_throughput_bytes_per_second",
                 "Current bytes throughput");
-            
+
             _commandDuration = Metrics.CreateHistogram(
                 "zetian_command_duration_milliseconds",
                 "SMTP command execution duration",
@@ -139,7 +139,7 @@ namespace Zetian.Monitoring.Exporters
                     LabelNames = ["command"],
                     Buckets = Histogram.ExponentialBuckets(1, 2, 10) // 1ms to ~1s
                 });
-            
+
             _messageSize = Metrics.CreateHistogram(
                 "zetian_message_size_bytes",
                 "Message size distribution",
@@ -147,7 +147,7 @@ namespace Zetian.Monitoring.Exporters
                 {
                     Buckets = Histogram.ExponentialBuckets(1024, 2, 15) // 1KB to ~16MB
                 });
-            
+
             _sessionDuration = Metrics.CreateSummary(
                 "zetian_session_duration_seconds",
                 "Session duration statistics",
@@ -162,7 +162,7 @@ namespace Zetian.Monitoring.Exporters
                         new QuantileEpsilonPair(0.99, 0.001)
                     }
                 });
-            
+
             // Start metric server if port specified
             if (port.HasValue)
             {
@@ -171,7 +171,7 @@ namespace Zetian.Monitoring.Exporters
             }
             else if (!string.IsNullOrEmpty(url))
             {
-                _metricServer = new MetricServer(url);
+                _metricServer = new MetricServer(hostname: "+", port: 9090, url: url);
                 _metricServer.Start();
             }
         }
@@ -185,18 +185,18 @@ namespace Zetian.Monitoring.Exporters
             _sessionsTotal.IncTo(_collector.TotalSessions);
             _bytesTotal.WithLabels("in").IncTo(_collector.TotalBytes);
             _errorsTotal.WithLabels("general").IncTo(_collector.TotalErrors);
-            
+
             // Update gauges
             _activeSessions.Set(_collector.ActiveSessions);
             _uptime.Set(_collector.Uptime.TotalSeconds);
-            
+
             // Update connection metrics
             ConnectionMetrics connMetrics = _collector.ConnectionMetrics;
             _connectionsTotal.WithLabels("accepted").IncTo(connMetrics.AcceptedCount);
             _connectionsTotal.WithLabels("rejected").IncTo(connMetrics.RejectedCount);
             _tlsUpgradesTotal.WithLabels("success").IncTo(connMetrics.TlsUpgrades);
             _tlsUpgradesTotal.WithLabels("failure").IncTo(connMetrics.TlsUpgradeFailures);
-            
+
             // Update authentication metrics
             AuthenticationMetrics authMetrics = _collector.AuthenticationMetrics;
             foreach (KeyValuePair<string, MechanismMetrics> mechanism in authMetrics.PerMechanism)
@@ -208,7 +208,7 @@ namespace Zetian.Monitoring.Exporters
                     .WithLabels(mechanism.Key, "failure")
                     .IncTo(mechanism.Value.Failures);
             }
-            
+
             // Update command metrics
             foreach (KeyValuePair<string, CommandMetrics> cmd in _collector.CommandMetrics)
             {
@@ -218,7 +218,7 @@ namespace Zetian.Monitoring.Exporters
                 _commandsTotal
                     .WithLabels(cmd.Key, "failure")
                     .IncTo(cmd.Value.FailureCount);
-                
+
                 // Record command duration if available
                 if (cmd.Value.AverageDurationMs > 0)
                 {
@@ -227,13 +227,13 @@ namespace Zetian.Monitoring.Exporters
                         .Observe(cmd.Value.AverageDurationMs);
                 }
             }
-            
+
             // Update rejection reasons
             foreach (KeyValuePair<string, long> rejection in _collector.RejectionReasons)
             {
                 _rejectionsTotal.WithLabels(rejection.Key).IncTo(rejection.Value);
             }
-            
+
             // Update throughput
             ThroughputMetrics throughput = _collector.GetThroughput(TimeSpan.FromMinutes(1));
             _throughputMessages.Set(throughput.MessagesPerSecond);

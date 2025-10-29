@@ -21,11 +21,11 @@ namespace Zetian.Monitoring.Services
         private readonly ConcurrentDictionary<string, long> _connectionsByIp;
         private readonly ConcurrentDictionary<string, MechanismMetrics> _authMechanisms;
         private readonly ConcurrentDictionary<string, HashSet<string>> _uniqueUsers;
-        
+
         private readonly DateTime _startTime;
         private readonly Timer _cleanupTimer;
         private readonly Process _currentProcess;
-        
+
         private long _totalSessions;
         private long _totalMessages;
         private long _totalErrors;
@@ -69,10 +69,10 @@ namespace Zetian.Monitoring.Services
             _connectionsByIp = new ConcurrentDictionary<string, long>();
             _authMechanisms = new ConcurrentDictionary<string, MechanismMetrics>(StringComparer.OrdinalIgnoreCase);
             _uniqueUsers = new ConcurrentDictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-            
+
             _startTime = DateTime.UtcNow;
             _currentProcess = Process.GetCurrentProcess();
-            
+
             // Cleanup old throughput data every minute
             _cleanupTimer = new Timer(CleanupOldData, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
         }
@@ -88,7 +88,7 @@ namespace Zetian.Monitoring.Services
         {
             Interlocked.Increment(ref _totalSessions);
             int current = Interlocked.Increment(ref _activeSessions);
-            
+
             // Update peak concurrent connections
             int currentPeak = _peakConcurrentConnections;
             while (current > currentPeak)
@@ -103,7 +103,7 @@ namespace Zetian.Monitoring.Services
             Interlocked.Increment(ref _totalMessages);
             Interlocked.Add(ref _totalBytes, message.Size);
             Interlocked.Increment(ref _messagesDelivered);
-            
+
             // Track throughput
             lock (_throughputLock)
             {
@@ -129,48 +129,79 @@ namespace Zetian.Monitoring.Services
         public IReadOnlyDictionary<string, CommandMetrics> CommandMetrics => _commandMetrics;
         public IReadOnlyDictionary<string, long> RejectionReasons => _rejectionReasons;
 
-        public AuthenticationMetrics AuthenticationMetrics => new()
+        public AuthenticationMetrics AuthenticationMetrics
         {
-            TotalAttempts = _authAttempts,
-            SuccessCount = _authSuccesses,
-            FailureCount = _authFailures,
-            BruteForceAttempts = _bruteForceAttempts,
-            PerMechanism = _authMechanisms.ToDictionary(k => k.Key, v => v.Value),
-            UniqueUsers = _uniqueUsers.Count
-        };
+            get
+            {
+                AuthenticationMetrics metrics = new()
+                {
+                    TotalAttempts = _authAttempts,
+                    SuccessCount = _authSuccesses,
+                    FailureCount = _authFailures,
+                    BruteForceAttempts = _bruteForceAttempts,
+                    UniqueUsers = _uniqueUsers.Count
+                };
 
-        public ConnectionMetrics ConnectionMetrics => new()
+                foreach (KeyValuePair<string, MechanismMetrics> kvp in _authMechanisms)
+                {
+                    metrics.PerMechanism[kvp.Key] = kvp.Value;
+                }
+
+                return metrics;
+            }
+        }
+
+        public ConnectionMetrics ConnectionMetrics
         {
-            TotalAttempts = _connectionAttempts,
-            AcceptedCount = _connectionsAccepted,
-            RejectedCount = _connectionsRejected,
-            ActiveConnections = _activeSessions,
-            PeakConcurrentConnections = _peakConcurrentConnections,
-            TlsUpgrades = _tlsUpgrades,
-            TlsUpgradeFailures = _tlsUpgradeFailures,
-            RateLimitedCount = _rateLimitedConnections,
-            ConnectionsByIp = _connectionsByIp.ToDictionary(k => k.Key, v => v.Value),
-            LastConnectionTime = _connectionAttempts > 0 ? DateTime.UtcNow : null
-        };
+            get
+            {
+                ConnectionMetrics metrics = new()
+                {
+                    TotalAttempts = _connectionAttempts,
+                    AcceptedCount = _connectionsAccepted,
+                    RejectedCount = _connectionsRejected,
+                    ActiveConnections = _activeSessions,
+                    PeakConcurrentConnections = _peakConcurrentConnections,
+                    TlsUpgrades = _tlsUpgrades,
+                    TlsUpgradeFailures = _tlsUpgradeFailures,
+                    RateLimitedCount = _rateLimitedConnections,
+                    LastConnectionTime = _connectionAttempts > 0 ? DateTime.UtcNow : null
+                };
+
+                foreach (KeyValuePair<string, long> kvp in _connectionsByIp)
+                {
+                    metrics.ConnectionsByIp[kvp.Key] = kvp.Value;
+                }
+
+                return metrics;
+            }
+        }
 
         public void RecordCommand(string command, bool success, double durationMs)
         {
-            CommandMetrics metrics = _commandMetrics.GetOrAdd(command.ToUpperInvariant(), 
+            CommandMetrics metrics = _commandMetrics.GetOrAdd(command.ToUpperInvariant(),
                 _ => new CommandMetrics { Command = command.ToUpperInvariant() });
-            
-            Interlocked.Increment(ref metrics.TotalCount);
-            
-            if (success)
-                Interlocked.Increment(ref metrics.SuccessCount);
-            else
-                Interlocked.Increment(ref metrics.FailureCount);
-            
-            // Update duration statistics (not thread-safe for exact values, but good enough for metrics)
-            metrics.TotalDurationMs += durationMs;
-            metrics.MinDurationMs = Math.Min(metrics.MinDurationMs, durationMs);
-            metrics.MaxDurationMs = Math.Max(metrics.MaxDurationMs, durationMs);
-            metrics.LastExecutionTime = DateTime.UtcNow;
-            
+
+            // Use lock for thread-safe updates
+            lock (metrics)
+            {
+                metrics.TotalCount++;
+
+                if (success)
+                {
+                    metrics.SuccessCount++;
+                }
+                else
+                {
+                    metrics.FailureCount++;
+                }
+
+                metrics.TotalDurationMs += durationMs;
+                metrics.MinDurationMs = Math.Min(metrics.MinDurationMs, durationMs);
+                metrics.MaxDurationMs = Math.Max(metrics.MaxDurationMs, durationMs);
+                metrics.LastExecutionTime = DateTime.UtcNow;
+            }
+
             // Track throughput
             lock (_throughputLock)
             {
@@ -181,27 +212,38 @@ namespace Zetian.Monitoring.Services
         public void RecordAuthentication(bool success, string mechanism)
         {
             Interlocked.Increment(ref _authAttempts);
-            
+
             if (success)
+            {
                 Interlocked.Increment(ref _authSuccesses);
+            }
             else
+            {
                 Interlocked.Increment(ref _authFailures);
-            
+            }
+
             // Track per-mechanism
             MechanismMetrics mechMetrics = _authMechanisms.GetOrAdd(mechanism,
                 _ => new MechanismMetrics { Mechanism = mechanism });
-            
-            Interlocked.Increment(ref mechMetrics.Attempts);
-            if (success)
-                Interlocked.Increment(ref mechMetrics.Successes);
-            else
-                Interlocked.Increment(ref mechMetrics.Failures);
+
+            lock (mechMetrics)
+            {
+                mechMetrics.Attempts++;
+                if (success)
+                {
+                    mechMetrics.Successes++;
+                }
+                else
+                {
+                    mechMetrics.Failures++;
+                }
+            }
         }
 
         public void RecordConnection(string ipAddress, bool accepted)
         {
             Interlocked.Increment(ref _connectionAttempts);
-            
+
             if (accepted)
             {
                 Interlocked.Increment(ref _connectionsAccepted);
@@ -211,7 +253,7 @@ namespace Zetian.Monitoring.Services
             {
                 Interlocked.Increment(ref _connectionsRejected);
             }
-            
+
             // Track throughput
             lock (_throughputLock)
             {
@@ -222,9 +264,13 @@ namespace Zetian.Monitoring.Services
         public void RecordTlsUpgrade(bool success)
         {
             if (success)
+            {
                 Interlocked.Increment(ref _tlsUpgrades);
+            }
             else
+            {
                 Interlocked.Increment(ref _tlsUpgradeFailures);
+            }
         }
 
         public void RecordRejection(string reason)
@@ -239,13 +285,13 @@ namespace Zetian.Monitoring.Services
             {
                 DateTime cutoff = DateTime.UtcNow - window;
                 double windowSeconds = window.TotalSeconds;
-                
+
                 // Calculate metrics for the window
                 long messages = CountRecentMetrics(_recentMessages, cutoff);
                 long bytes = CountRecentMetrics(_recentBytes, cutoff);
                 long connections = CountRecentMetrics(_recentConnections, cutoff);
                 long commands = CountRecentMetrics(_recentCommands, cutoff);
-                
+
                 return new ThroughputMetrics
                 {
                     Window = window,
@@ -268,14 +314,14 @@ namespace Zetian.Monitoring.Services
             _connectionsByIp.Clear();
             _authMechanisms.Clear();
             _uniqueUsers.Clear();
-            
+
             Interlocked.Exchange(ref _totalSessions, 0);
             Interlocked.Exchange(ref _totalMessages, 0);
             Interlocked.Exchange(ref _totalErrors, 0);
             Interlocked.Exchange(ref _totalBytes, 0);
             Interlocked.Exchange(ref _activeSessions, 0);
             Interlocked.Exchange(ref _peakConcurrentConnections, 0);
-            
+
             lock (_throughputLock)
             {
                 _recentMessages.Clear();
@@ -302,7 +348,7 @@ namespace Zetian.Monitoring.Services
         /// </summary>
         public void RecordAuthenticatedUser(string username, string mechanism)
         {
-            _uniqueUsers.GetOrAdd(mechanism, _ => new HashSet<string>()).Add(username);
+            _uniqueUsers.GetOrAdd(mechanism, _ => []).Add(username);
         }
 
         /// <summary>
@@ -319,8 +365,8 @@ namespace Zetian.Monitoring.Services
         public ServerStatistics GetStatistics()
         {
             _currentProcess.Refresh();
-            
-            return new ServerStatistics
+
+            ServerStatistics stats = new()
             {
                 StartTime = _startTime,
                 TotalSessions = _totalSessions,
@@ -333,13 +379,25 @@ namespace Zetian.Monitoring.Services
                 TotalErrors = _totalErrors,
                 ConnectionMetrics = ConnectionMetrics,
                 AuthenticationMetrics = AuthenticationMetrics,
-                CommandMetrics = _commandMetrics.ToDictionary(k => k.Key, v => v.Value),
-                RejectionReasons = _rejectionReasons.ToDictionary(k => k.Key, v => v.Value),
                 CurrentThroughput = GetThroughput(TimeSpan.FromMinutes(1)),
                 MemoryUsageBytes = _currentProcess.WorkingSet64,
                 ThreadCount = _currentProcess.Threads.Count,
                 LastUpdated = DateTime.UtcNow
             };
+
+            // Copy command metrics
+            foreach (KeyValuePair<string, CommandMetrics> kvp in _commandMetrics)
+            {
+                stats.CommandMetrics[kvp.Key] = kvp.Value;
+            }
+
+            // Copy rejection reasons
+            foreach (KeyValuePair<string, long> kvp in _rejectionReasons)
+            {
+                stats.RejectionReasons[kvp.Key] = kvp.Value;
+            }
+
+            return stats;
         }
 
         #endregion
@@ -353,7 +411,7 @@ namespace Zetian.Monitoring.Services
             {
                 queue.Dequeue();
             }
-            
+
             return queue.Sum(m => m.Value);
         }
 
@@ -365,7 +423,7 @@ namespace Zetian.Monitoring.Services
                 {
                     // Keep only last hour of data
                     DateTime cutoff = DateTime.UtcNow - TimeSpan.FromHours(1);
-                    
+
                     CleanupQueue(_recentMessages, cutoff);
                     CleanupQueue(_recentBytes, cutoff);
                     CleanupQueue(_recentConnections, cutoff);
@@ -390,8 +448,11 @@ namespace Zetian.Monitoring.Services
 
         public void Dispose()
         {
-            if (_disposed) return;
-            
+            if (_disposed)
+            {
+                return;
+            }
+
             _disposed = true;
             _cleanupTimer?.Dispose();
             _currentProcess?.Dispose();

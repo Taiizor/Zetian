@@ -90,7 +90,7 @@ namespace Zetian.Monitoring
         /// </summary>
         public MonitoringBuilder WithLabels(params (string Key, string Value)[] labels)
         {
-            foreach (var (key, value) in labels)
+            foreach ((string? key, string? value) in labels)
             {
                 _configuration.CustomLabels[key] = value;
             }

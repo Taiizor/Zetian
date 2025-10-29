@@ -87,7 +87,7 @@ namespace Zetian.Monitoring
         /// <summary>
         /// Gets or sets histogram buckets for message size (bytes)
         /// </summary>
-        public double[] MessageSizeBuckets { get; set; } = 
+        public double[] MessageSizeBuckets { get; set; } =
             [1024, 5120, 10240, 51200, 102400, 512000, 1024000, 5120000, 10240000, 52428800, 104857600];
 
         /// <summary>

@@ -35,7 +35,8 @@ namespace Zetian.Monitoring.Extensions
             MonitoringConfiguration config = builder.Build();
 
             // Create metrics collector
-            MetricsCollector collector = new(config.Logger);
+            ILogger<MetricsCollector>? logger = config.Logger as ILogger<MetricsCollector>;
+            MetricsCollector collector = new(logger);
 
             // Create Prometheus exporter if enabled
             PrometheusExporter? prometheusExporter = null;
@@ -65,7 +66,7 @@ namespace Zetian.Monitoring.Extensions
             server.SessionCompleted += (sender, e) =>
             {
                 collector.SessionCompleted();
-                
+
                 if (prometheusExporter != null)
                 {
                     double duration = (DateTime.UtcNow - e.Session.StartTime).TotalSeconds;
@@ -78,9 +79,9 @@ namespace Zetian.Monitoring.Extensions
             {
                 if (e.Cancel)
                 {
-                    collector.RecordRejection(e.Response?.Description ?? "Unknown");
+                    collector.RecordRejection(e.Response?.Message ?? "Unknown");
                     prometheusExporter?.RecordMessage(e.Message.Size, false);
-                    prometheusExporter?.RecordRejection(e.Response?.Description ?? "Unknown");
+                    prometheusExporter?.RecordRejection(e.Response?.Message ?? "Unknown");
                 }
                 else
                 {

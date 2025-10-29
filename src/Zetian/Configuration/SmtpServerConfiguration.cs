@@ -205,6 +205,11 @@ namespace Zetian.Configuration
         public IMailboxFilter? MailboxFilter { get; set; }
 
         /// <summary>
+        /// Gets or sets additional properties for extensions
+        /// </summary>
+        public Dictionary<string, object> Properties { get; } = [];
+
+        /// <summary>
         /// Validates the configuration
         /// </summary>
         public void Validate()

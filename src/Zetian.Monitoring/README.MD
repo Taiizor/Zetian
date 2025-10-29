@@ -45,8 +45,8 @@ await server.StartAsync();
 
 // Get statistics
 var stats = server.GetStatistics();
-Console.WriteLine($"Active Sessions: {stats.ActiveSessions}");
-Console.WriteLine($"Messages/sec: {stats.CurrentThroughput.MessagesPerSecond}");
+Console.WriteLine($"Active Sessions: {stats?.ActiveSessions}");
+Console.WriteLine($"Messages/sec: {stats?.CurrentThroughput?.MessagesPerSecond}");
 ```
 
 ### Prometheus Integration
@@ -189,8 +189,11 @@ collector.RecordRejection("Custom rejection reason");
 ## 🔭 OpenTelemetry Integration
 
 ```csharp
+using OpenTelemetry;
+using Zetian.Server;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using Zetian.Monitoring.Extensions;
 
 // Configure OpenTelemetry
 var tracerProvider = Sdk.CreateTracerProviderBuilder()
@@ -275,7 +278,7 @@ public class MonitoringConfiguration
 ### With Docker
 
 ```dockerfile
-FROM mcr.microsoft.com/dotnet/runtime:8.0
+FROM mcr.microsoft.com/dotnet/runtime:9.0
 EXPOSE 25 9090
 # SMTP on 25, Metrics on 9090
 ```

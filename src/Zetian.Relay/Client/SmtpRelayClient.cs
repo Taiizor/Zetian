@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Protocol;
 using Zetian.Relay.Abstractions;
+using Zetian.Relay.Models;
 
 namespace Zetian.Relay.Client
 {

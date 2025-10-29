@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Relay.Enums;
+using Zetian.Relay.Models;
 
 namespace Zetian.Relay.Abstractions
 {

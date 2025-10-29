@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Zetian.Relay
+namespace Zetian.Relay.Models
 {
     /// <summary>
     /// Represents the result of an SMTP delivery attempt

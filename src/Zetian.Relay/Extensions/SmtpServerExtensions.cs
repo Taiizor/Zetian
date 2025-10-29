@@ -9,6 +9,7 @@ using Zetian.Models.EventArgs;
 using Zetian.Relay.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Enums;
+using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 
 namespace Zetian.Relay.Extensions

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Zetian.Relay.Enums;
 
-namespace Zetian.Relay
+namespace Zetian.Relay.Models
 {
     /// <summary>
     /// Represents statistics for the relay queue

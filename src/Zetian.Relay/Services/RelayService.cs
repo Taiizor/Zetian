@@ -12,6 +12,7 @@ using Zetian.Relay.Abstractions;
 using Zetian.Relay.Client;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Enums;
+using Zetian.Relay.Models;
 using Zetian.Relay.Queue;
 
 namespace Zetian.Relay.Services

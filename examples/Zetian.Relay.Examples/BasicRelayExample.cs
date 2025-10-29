@@ -4,6 +4,7 @@ using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
+using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -35,32 +36,47 @@ namespace Zetian.Relay.Examples
                 .EnableRelay(config =>
                 {
                     // Configure relay
+                    // Note: Using a non-existent host to keep messages in queue for demo
                     config.DefaultSmartHost = new SmartHostConfiguration
                     {
-                        Host = "smtp.relay.provider.com",
+                        Host = "demo.smtp.example.com",  // Non-existent for demo
                         Port = 587,
                         UseStartTls = true,
-                        Credentials = new NetworkCredential("username", "password")
+                        Credentials = new NetworkCredential("username", "password"),
+                        ConnectionTimeout = TimeSpan.FromSeconds(5)  // Short timeout for demo
                     };
 
                     // Set local domains (no relay needed)
-                    config.LocalDomains.Add("local.domain");
-                    config.LocalDomains.Add("internal.domain");
+                    config.LocalDomains.Add("relay.local");  // Server's own domain
+                    config.LocalDomains.Add("localhost");     // Localhost is always local
 
                     // Configure relay behavior
-                    config.MaxRetryCount = 10;
+                    config.MaxRetryCount = 3;  // Fewer retries for demo
                     config.EnableBounceMessages = true;
+                    config.QueueProcessingInterval = TimeSpan.FromSeconds(10);  // Process queue faster
                 });
 
-            // Handle message received event
-            server.MessageReceived += async (sender, e) =>
+            // Handle message received event - just for logging
+            // The actual relay queuing is handled by EnableRelay's event handler
+            server.MessageReceived += (sender, e) =>
             {
                 Console.WriteLine($"[SERVER] Message received from {e.Message.From?.Address}");
                 Console.WriteLine($"[SERVER] Recipients: {string.Join(", ", e.Message.Recipients)}");
                 Console.WriteLine($"[SERVER] Subject: {e.Message.Subject}");
 
-                // Message will be automatically queued for relay if needed
-                await Task.CompletedTask;
+                // Check if this will be relayed
+                bool isExternal = e.Message.Recipients.Any(r =>
+                    !r.Host.Equals("relay.local", StringComparison.OrdinalIgnoreCase) &&
+                    !r.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase));
+
+                if (isExternal)
+                {
+                    Console.WriteLine($"[SERVER] Message will be queued for relay");
+                }
+                else
+                {
+                    Console.WriteLine($"[SERVER] Message for local delivery");
+                }
             };
 
             Console.WriteLine("[INFO] Starting SMTP server with relay on port 25025...");
@@ -94,22 +110,36 @@ namespace Zetian.Relay.Examples
                 Console.WriteLine($"[ERROR] Failed to send message: {ex.Message}");
             }
 
-            // Wait a bit for processing
+            // Wait a bit for message to be queued
             await Task.Delay(2000);
 
-            // Check relay queue statistics
+            // Check relay queue statistics directly from relay service
             Console.WriteLine();
             Console.WriteLine("[INFO] Checking relay queue statistics...");
-            RelayQueueStatistics? stats = await server.GetRelayStatisticsAsync();
 
-            if (stats != null)
+            // Get statistics directly from relay service queue
+            if (relayService != null && relayService.Queue != null)
             {
+                RelayQueueStatistics stats = await relayService.Queue.GetStatisticsAsync();
                 Console.WriteLine($"  Total Messages: {stats.TotalMessages}");
                 Console.WriteLine($"  Queued: {stats.QueuedMessages}");
                 Console.WriteLine($"  In Progress: {stats.InProgressMessages}");
                 Console.WriteLine($"  Delivered: {stats.DeliveredMessages}");
                 Console.WriteLine($"  Failed: {stats.FailedMessages}");
                 Console.WriteLine($"  Deferred: {stats.DeferredMessages}");
+                Console.WriteLine($"  Expired: {stats.ExpiredMessages}");
+
+                if (stats.TotalMessages == 0)
+                {
+                    Console.WriteLine("\n[WARNING] No messages in queue. Possible reasons:");
+                    Console.WriteLine("  - Message was for local delivery (not relayed)");
+                    Console.WriteLine("  - Message relay failed immediately");
+                    Console.WriteLine("  - Relay service is not properly configured");
+                }
+            }
+            else
+            {
+                Console.WriteLine("[ERROR] Could not get relay service queue statistics");
             }
 
             // Keep server running for a while
@@ -126,11 +156,11 @@ namespace Zetian.Relay.Examples
 
                 if (key.Key == ConsoleKey.S)
                 {
-                    // Show current statistics
-                    stats = await server.GetRelayStatisticsAsync();
-                    if (stats != null)
+                    // Show current statistics from relay service
+                    if (relayService != null && relayService.Queue != null)
                     {
-                        Console.WriteLine($"[STATS] Queue: {stats.QueuedMessages}, Progress: {stats.InProgressMessages}, Delivered: {stats.DeliveredMessages}");
+                        RelayQueueStatistics stats = await relayService.Queue.GetStatisticsAsync();
+                        Console.WriteLine($"[STATS] Total: {stats.TotalMessages} | Queue: {stats.QueuedMessages} | InProgress: {stats.InProgressMessages} | Delivered: {stats.DeliveredMessages} | Failed: {stats.FailedMessages} | Deferred: {stats.DeferredMessages}");
                     }
                 }
             }

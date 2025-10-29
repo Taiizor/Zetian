@@ -4,6 +4,7 @@ using System.Net.Mail;
 using Zetian.Abstractions;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Extensions;
+using Zetian.Relay.Models;
 using Zetian.Relay.Services;
 using Zetian.Server;
 
@@ -90,20 +91,18 @@ namespace Zetian.Relay.Examples
                     config.ConnectionTimeout = TimeSpan.FromSeconds(10);
                 });
 
-            // Track load distribution
+            // Track load distribution (simulated for demo purposes)
             ConcurrentDictionary<string, int> serverStats = new();
 
-            server.MessageReceived += async (sender, e) =>
+            server.MessageReceived += (sender, e) =>
             {
-                // Simulate load balancing selection (in real implementation, 
-                // this would be done by the relay service)
+                // Note: This is just simulation for demo visualization
+                // Actual load balancing happens in the relay service
                 string selectedServer = SimulateWeightedSelection();
                 serverStats.AddOrUpdate(selectedServer, 1, (key, oldValue) => oldValue + 1);
 
                 Console.WriteLine($"[LOAD-BALANCE] Message from {e.Message.From?.Address}");
                 Console.WriteLine($"  → Assigned to: {selectedServer}");
-
-                await Task.CompletedTask;
             };
 
             // Start server
@@ -217,16 +216,24 @@ namespace Zetian.Relay.Examples
 
                 if (key.Key == ConsoleKey.S)
                 {
-                    RelayQueueStatistics? stats = await server.GetRelayStatisticsAsync();
-                    if (stats != null)
+                    // Get real statistics from relay service
+                    if (relayService != null && relayService.Queue != null)
                     {
+                        RelayQueueStatistics stats = await relayService.Queue.GetStatisticsAsync();
                         Console.WriteLine($"\n[STATISTICS] {DateTime.Now:HH:mm:ss}");
                         Console.WriteLine($"  Total Messages: {stats.TotalMessages}");
                         Console.WriteLine($"  Active Deliveries: {stats.InProgressMessages}");
                         Console.WriteLine($"  Queued: {stats.QueuedMessages}");
                         Console.WriteLine($"  Delivered: {stats.DeliveredMessages}");
+                        Console.WriteLine($"  Failed: {stats.FailedMessages}");
+                        Console.WriteLine($"  Deferred: {stats.DeferredMessages}");
 
-                        if (stats.MessagesBySmartHost?.Count > 0)
+                        if (stats.TotalMessages == 0)
+                        {
+                            Console.WriteLine("\n[INFO] No messages in relay queue");
+                            Console.WriteLine("  Messages may have been delivered locally or failed immediately");
+                        }
+                        else if (stats.MessagesBySmartHost?.Count > 0)
                         {
                             Console.WriteLine("\n  Distribution by Smart Host:");
                             foreach (KeyValuePair<string, int> kvp in stats.MessagesBySmartHost)
@@ -235,6 +242,10 @@ namespace Zetian.Relay.Examples
                                 Console.WriteLine($"    {kvp.Key}: {kvp.Value} messages ({percent:F1}%)");
                             }
                         }
+                    }
+                    else
+                    {
+                        Console.WriteLine("[ERROR] Relay service not available");
                     }
                 }
             }

@@ -8,14 +8,14 @@ Comprehensive monitoring and observability solution for Zetian SMTP Server with 
 
 ## ⚡ Features
 
-- 📊 **Real-time Metrics** - Live server performance monitoring
-- 🎯 **Prometheus Ready** - Native Prometheus exporter with /metrics endpoint
-- 🔭 **OpenTelemetry** - Full observability with distributed tracing
-- 📈 **Command Metrics** - Detailed SMTP command statistics
-- 🚀 **Performance Tracking** - Throughput, latency, and resource usage
-- 📉 **Histograms & Percentiles** - P95, P99 latency tracking
-- 🔄 **Zero-downtime** - Hot-reload metrics without restart
 - 💾 **Low Overhead** - Minimal performance impact
+- 📈 **Command Metrics** - Detailed SMTP command statistics
+- 🔄 **Zero-downtime** - Hot-reload metrics without restart
+- 📉 **Histograms & Percentiles** - P95, P99 latency tracking
+- 📊 **Real-time Metrics** - Live server performance monitoring
+- 🔭 **OpenTelemetry** - Full observability with distributed tracing
+- 🚀 **Performance Tracking** - Throughput, latency, and resource usage
+- 🎯 **Prometheus Ready** - Native Prometheus exporter with /metrics endpoint
 
 ## 📦 Installation
 
@@ -168,12 +168,12 @@ collector.RecordRejection("Custom rejection reason");
 
 ### Key Panels
 
-- **Overview** - Sessions, messages, errors, uptime
-- **Performance** - Latency percentiles, throughput graphs
-- **Connections** - Active/peak connections, TLS usage
-- **Authentication** - Success rates by mechanism
-- **Commands** - Execution counts and durations
 - **Rejections** - Reasons and trends
+- **Commands** - Execution counts and durations
+- **Authentication** - Success rates by mechanism
+- **Overview** - Sessions, messages, errors, uptime
+- **Connections** - Active/peak connections, TLS usage
+- **Performance** - Latency percentiles, throughput graphs
 
 ## 🔭 OpenTelemetry Integration
 
@@ -238,26 +238,26 @@ public class MonitoringConfiguration
 
 ## 📊 Monitoring Best Practices
 
-1. **Set appropriate update intervals** - Balance between real-time data and performance
-2. **Use custom labels** - Add environment, region, instance for multi-server setups
-3. **Configure alerting** - Set up Prometheus alerts for critical metrics
-4. **Monitor trends** - Use Grafana for long-term trend analysis
-5. **Optimize histogram buckets** - Adjust buckets based on your traffic patterns
-6. **Enable only needed metrics** - Disable unused features to reduce overhead
+1. **Monitor trends** - Use Grafana for long-term trend analysis
+2. **Configure alerting** - Set up Prometheus alerts for critical metrics
+3. **Enable only needed metrics** - Disable unused features to reduce overhead
+4. **Optimize histogram buckets** - Adjust buckets based on your traffic patterns
+5. **Use custom labels** - Add environment, region, instance for multi-server setups
+6. **Set appropriate update intervals** - Balance between real-time data and performance
 
 ## 🎯 Performance Impact
 
-- **CPU Overhead**: < 1% with default settings
-- **Memory Usage**: ~10-50MB depending on traffic
-- **Network**: Minimal (metrics endpoint only)
 - **Storage**: No persistent storage required
+- **CPU Overhead**: < 1% with default settings
+- **Network**: Minimal (metrics endpoint only)
+- **Memory Usage**: ~10-50MB depending on traffic
 
 ## 🔒 Security
 
-- Metrics endpoint should be protected in production
-- Use authentication/firewall rules for Prometheus endpoint
-- Sanitize custom labels to prevent metric explosion
 - Monitor for high cardinality metrics
+- Metrics endpoint should be protected in production
+- Sanitize custom labels to prevent metric explosion
+- Use authentication/firewall rules for Prometheus endpoint
 
 ## 📚 Integration Examples
 
@@ -305,7 +305,7 @@ services:
 
 ## 📋 Requirements
 
-- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- .NET 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
 - Prometheus.NET for metrics export
 - OpenTelemetry packages (optional)

@@ -34,9 +34,14 @@ dotnet add package Zetian.AntiSpam
 ```csharp
 using Zetian.Server;
 using Zetian.AntiSpam.Extensions;
+using Zetian.AntiSpam.Checkers;  // For direct checker usage
+using Zetian.AntiSpam.Builders; // For builder pattern
 
-// Create SMTP server with anti-spam
-var server = SmtpServerBuilder.CreateBasic();
+// Create SMTP server
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .ServerName("My SMTP Server")
+    .Build();
 
 // Add anti-spam with default settings
 server.AddAntiSpam();
@@ -96,20 +101,30 @@ server.AddRblCheck(
 ### Greylisting
 
 ```csharp
+// Add greylisting
 server.AddGreylisting(initialDelay: TimeSpan.FromMinutes(5));
 
-// Whitelist trusted domains
-server.WhitelistDomain("trusted.com");
+// Note: Domain whitelisting needs to be done at greylisting creation
+// or by accessing the GreylistingChecker directly
+var greylistingChecker = new GreylistingChecker(
+    initialDelay: TimeSpan.FromMinutes(5));
+greylistingChecker.Whitelist("trusted.com");
+server.AddSpamChecker(greylistingChecker);
 ```
 
 ### Bayesian Filtering
 
 ```csharp
+// Option 1: Add Bayesian to server
 server.AddBayesianFilter(spamThreshold: 0.9);
 
-// Train the filter
-await server.TrainBayesianSpamAsync(spamSamples);
-await server.TrainBayesianHamAsync(legitimateSamples);
+// Option 2: Work with Bayesian directly for training
+var bayesianFilter = new BayesianSpamFilter(spamThreshold: 0.9);
+await bayesianFilter.TrainSpamAsync("spam content");
+await bayesianFilter.TrainHamAsync("legitimate content");
+
+// Then add trained filter to server
+server.AddSpamChecker(bayesianFilter);
 ```
 
 ### DKIM Signature Verification
@@ -207,17 +222,23 @@ var antiSpamService = builder.Build();
 
 ```csharp
 // Get anti-spam statistics
+// NOTE: Currently returns empty stats due to implementation limitations
+// Future versions will properly track statistics
 var stats = server.GetAntiSpamStatistics();
 Console.WriteLine($"Messages Checked: {stats.MessagesChecked}");
 Console.WriteLine($"Messages Blocked: {stats.MessagesBlocked}");
-Console.WriteLine($"Block Rate: {stats.BlockRate:P}");
+Console.WriteLine($"Block Rate: {stats.BlockRate:F1}%");
+
+// Work with Bayesian filter directly
+var bayesianFilter = new BayesianSpamFilter();
+await bayesianFilter.TrainSpamAsync("spam content here");
+await bayesianFilter.TrainHamAsync("legitimate content here");
 
 // Get Bayesian statistics
-var service = server.GetAntiSpamService();
-var bayesian = service.GetChecker<BayesianSpamFilter>();
-var bayesianStats = bayesian.GetStatistics();
-Console.WriteLine($"Spam Words: {bayesianStats.TotalSpamMessages}");
-Console.WriteLine($"Ham Words: {bayesianStats.TotalHamMessages}");
+var bayesianStats = bayesianFilter.GetStatistics();
+Console.WriteLine($"Total Spam Messages: {bayesianStats.TotalSpamMessages}");
+Console.WriteLine($"Total Ham Messages: {bayesianStats.TotalHamMessages}");
+Console.WriteLine($"Unique Words: {bayesianStats.UniqueWords}");
 ```
 
 ## 🎓 Training Bayesian Filter
@@ -225,6 +246,9 @@ Console.WriteLine($"Ham Words: {bayesianStats.TotalHamMessages}");
 ### From Files
 
 ```csharp
+// Create and train Bayesian filter
+var bayesianFilter = new BayesianSpamFilter();
+
 // Load training data
 var spamEmails = Directory.GetFiles("spam/", "*.eml")
     .Select(File.ReadAllText);
@@ -233,20 +257,34 @@ var hamEmails = Directory.GetFiles("ham/", "*.eml")
     .Select(File.ReadAllText);
 
 // Train the filter
-await server.TrainBayesianSpamAsync(spamEmails);
-await server.TrainBayesianHamAsync(hamEmails);
+foreach (var spam in spamEmails)
+{
+    await bayesianFilter.TrainSpamAsync(spam);
+}
+
+foreach (var ham in hamEmails)
+{
+    await bayesianFilter.TrainHamAsync(ham);
+}
+
+// Add trained filter to server
+server.AddSpamChecker(bayesianFilter);
 ```
 
 ### Interactive Training
 
 ```csharp
+// Create Bayesian filter for training
+var bayesianFilter = new BayesianSpamFilter();
+server.AddSpamChecker(bayesianFilter);
+
 server.MessageReceived += async (sender, e) =>
 {
     // Let user classify messages
     if (UserMarksAsSpam(e.Message))
     {
         var content = ExtractContent(e.Message);
-        await bayesian.TrainSpamAsync(content);
+        await bayesianFilter.TrainSpamAsync(content);
     }
 };
 ```

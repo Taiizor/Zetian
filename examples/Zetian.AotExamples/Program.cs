@@ -1,3 +1,4 @@
+using System.Text;
 using Zetian.Configuration;
 using Zetian.HealthCheck.Checks;
 using Zetian.HealthCheck.Options;
@@ -10,6 +11,9 @@ namespace Zetian.AotExamples
     {
         static async Task Main()
         {
+            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.UTF8;
+
             Console.WriteLine("Starting Zetian SMTP Server with AOT Support...");
 
             // Create SMTP server configuration

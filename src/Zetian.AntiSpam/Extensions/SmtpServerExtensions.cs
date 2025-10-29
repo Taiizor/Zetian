@@ -169,7 +169,7 @@ namespace Zetian.AntiSpam.Extensions
                 BayesianSpamFilter? bayesian = service.GetChecker<BayesianSpamFilter>();
                 if (bayesian != null)
                 {
-                    foreach (var sample in spamSamples)
+                    foreach (string sample in spamSamples)
                     {
                         await bayesian.TrainSpamAsync(sample);
                     }
@@ -191,7 +191,7 @@ namespace Zetian.AntiSpam.Extensions
                 BayesianSpamFilter? bayesian = service.GetChecker<BayesianSpamFilter>();
                 if (bayesian != null)
                 {
-                    foreach (var sample in hamSamples)
+                    foreach (string sample in hamSamples)
                     {
                         await bayesian.TrainHamAsync(sample);
                     }
@@ -222,7 +222,22 @@ namespace Zetian.AntiSpam.Extensions
         public static AntiSpamStatistics GetAntiSpamStatistics(this ISmtpServer server)
         {
             AntiSpamService? service = GetAntiSpamService(server);
-            return service?.GetStatistics() ?? new AntiSpamStatistics();
+            if (service == null)
+            {
+                return new AntiSpamStatistics();
+            }
+
+            AntiSpamServiceStatistics stats = service.GetStatistics();
+            return new AntiSpamStatistics
+            {
+                RblHits = 0,
+                GreylistDelays = 0,
+                BayesianBlocks = 0,
+                MessagesBlocked = stats.MessagesBlocked,
+                MessagesChecked = stats.MessagesChecked,
+                SpfFailures = 0, // These would need to be tracked separately
+                AverageSpamScore = stats.MessagesChecked > 0 ? stats.BlockRate : 0
+            };
         }
 
         private static AntiSpamService? GetAntiSpamService(ISmtpServer server)

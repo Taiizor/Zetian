@@ -1,8 +1,8 @@
-using System;
-using System.Threading.Tasks;
-using Zetian.Server;
+using Zetian.Abstractions;
+using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Extensions;
-using Zetian.AntiSpam.Checkers;
+using Zetian.AntiSpam.Models;
+using Zetian.Server;
 
 namespace Zetian.AntiSpam.Examples
 {
@@ -21,7 +21,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("4. Custom Spam Checker");
             Console.Write("\nChoice: ");
 
-            var choice = Console.ReadLine();
+            string? choice = Console.ReadLine();
             Console.Clear();
 
             switch (choice)
@@ -48,7 +48,7 @@ namespace Zetian.AntiSpam.Examples
         {
             Console.WriteLine("=== SPF Validation Example ===\n");
 
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25003)
                 .ServerName("SPF Test Server")
                 .Build();
@@ -60,7 +60,7 @@ namespace Zetian.AntiSpam.Examples
             {
                 Console.WriteLine($"Message from: {e.Message.From?.Address}");
                 Console.WriteLine($"SPF Check Result:");
-                
+
                 if (e.Cancel)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -80,7 +80,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("\nSPF validates that the sending server is authorized to send mail for the domain.");
             Console.WriteLine("It checks the domain's DNS records for SPF policies.\n");
             Console.WriteLine("Press any key to stop...");
-            
+
             Console.ReadKey();
             await server.StopAsync();
         }
@@ -89,7 +89,7 @@ namespace Zetian.AntiSpam.Examples
         {
             Console.WriteLine("=== RBL/DNSBL Checking Example ===\n");
 
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25004)
                 .ServerName("RBL Test Server")
                 .Build();
@@ -113,7 +113,7 @@ namespace Zetian.AntiSpam.Examples
                 checkedCount++;
                 Console.WriteLine($"\nChecking IP against RBLs...");
                 Console.WriteLine($"Client IP: {e.Session.RemoteEndPoint}");
-                
+
                 if (e.Cancel)
                 {
                     blockedCount++;
@@ -127,7 +127,7 @@ namespace Zetian.AntiSpam.Examples
                     Console.WriteLine("[CLEAN] IP not found in RBLs");
                 }
                 Console.ResetColor();
-                
+
                 Console.WriteLine($"Stats: Checked={checkedCount}, Blocked={blockedCount}");
             };
 
@@ -139,7 +139,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("  - Spamhaus ZEN");
             Console.WriteLine("  - SpamCop");
             Console.WriteLine("\nPress any key to stop...");
-            
+
             Console.ReadKey();
             await server.StopAsync();
         }
@@ -148,7 +148,7 @@ namespace Zetian.AntiSpam.Examples
         {
             Console.WriteLine("=== Greylisting Example ===\n");
 
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25005)
                 .ServerName("Greylisting Test Server")
                 .Build();
@@ -156,19 +156,22 @@ namespace Zetian.AntiSpam.Examples
             // Add greylisting with short delay for testing
             server.AddGreylisting(initialDelay: TimeSpan.FromMinutes(1));
 
-            var greylistStats = new System.Collections.Generic.Dictionary<string, int>();
+            Dictionary<string, int> greylistStats = [];
 
             server.MessageReceived += (sender, e) =>
             {
                 string from = e.Message.From?.Address ?? "unknown";
-                
+
                 if (!greylistStats.ContainsKey(from))
+                {
                     greylistStats[from] = 0;
+                }
+
                 greylistStats[from]++;
-                
+
                 Console.WriteLine($"\n[{DateTime.Now:HH:mm:ss}] Message from: {from}");
                 Console.WriteLine($"Attempt #{greylistStats[from]} for this sender");
-                
+
                 if (e.Cancel)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
@@ -191,7 +194,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("Initial delay: 1 minute (for testing - normally 5-15 minutes)\n");
             Console.WriteLine("Try sending multiple messages from the same address to see it work.\n");
             Console.WriteLine("Press any key to stop...");
-            
+
             Console.ReadKey();
             await server.StopAsync();
         }
@@ -200,20 +203,20 @@ namespace Zetian.AntiSpam.Examples
         {
             Console.WriteLine("=== Custom Spam Checker Example ===\n");
 
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25006)
                 .ServerName("Custom Checker Server")
                 .Build();
 
             // Create and add a custom spam checker
-            var customChecker = new KeywordSpamChecker();
+            KeywordSpamChecker customChecker = new();
             server.AddSpamChecker(customChecker);
 
             server.MessageReceived += (sender, e) =>
             {
                 Console.WriteLine($"\nMessage Subject: {e.Message.Subject}");
                 Console.WriteLine($"Message Size: {e.Message.Size} bytes");
-                
+
                 if (e.Cancel)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -240,7 +243,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("  - Suspicious phrases\n");
             Console.WriteLine("Try sending messages with these patterns to test.\n");
             Console.WriteLine("Press any key to stop...");
-            
+
             Console.ReadKey();
             await server.StopAsync();
         }
@@ -248,9 +251,9 @@ namespace Zetian.AntiSpam.Examples
         /// <summary>
         /// Custom spam checker that looks for keywords
         /// </summary>
-        private class KeywordSpamChecker : Zetian.AntiSpam.Abstractions.ISpamChecker
+        private class KeywordSpamChecker : ISpamChecker
         {
-            private readonly string[] _spamKeywords = 
+            private readonly string[] _spamKeywords =
             {
                 "viagra", "cialis", "lottery", "winner", "congratulations",
                 "click here", "act now", "limited time", "free money",
@@ -260,18 +263,18 @@ namespace Zetian.AntiSpam.Examples
             public string Name => "Keyword Filter";
             public bool IsEnabled { get; set; } = true;
 
-            public Task<Zetian.AntiSpam.Models.SpamCheckResult> CheckAsync(
-                Zetian.Abstractions.ISmtpMessage message,
-                Zetian.Abstractions.ISmtpSession session,
-                System.Threading.CancellationToken cancellationToken = default)
+            public Task<SpamCheckResult> CheckAsync(
+                ISmtpMessage message,
+                ISmtpSession session,
+                CancellationToken cancellationToken = default)
             {
                 double score = 0;
-                var reasons = new System.Collections.Generic.List<string>();
+                List<string> reasons = [];
 
                 // Check subject and body for spam keywords
                 string content = $"{message.Subject} {message.TextBody}".ToLower();
-                
-                foreach (var keyword in _spamKeywords)
+
+                foreach (string keyword in _spamKeywords)
                 {
                     if (content.Contains(keyword))
                     {
@@ -308,13 +311,13 @@ namespace Zetian.AntiSpam.Examples
                 if (score >= 50)
                 {
                     return Task.FromResult(
-                        Zetian.AntiSpam.Models.SpamCheckResult.Spam(
-                            score, 
+                        SpamCheckResult.Spam(
+                            score,
                             $"Custom rules triggered: {string.Join(", ", reasons)}"));
                 }
 
                 return Task.FromResult(
-                    Zetian.AntiSpam.Models.SpamCheckResult.Clean(score));
+                    SpamCheckResult.Clean(score));
             }
         }
     }

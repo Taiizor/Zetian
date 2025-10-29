@@ -16,9 +16,9 @@ namespace Zetian.AntiSpam.Abstractions
         string Name { get; }
 
         /// <summary>
-        /// Gets whether this checker is enabled
+        /// Gets or sets whether this checker is enabled
         /// </summary>
-        bool IsEnabled { get; }
+        bool IsEnabled { get; set; }
 
         /// <summary>
         /// Checks if a message is spam

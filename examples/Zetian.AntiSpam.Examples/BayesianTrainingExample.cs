@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Zetian.Server;
-using Zetian.AntiSpam.Extensions;
 using Zetian.AntiSpam.Checkers;
+using Zetian.AntiSpam.Extensions;
+using Zetian.Server;
 
 namespace Zetian.AntiSpam.Examples
 {
@@ -18,47 +14,47 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("=== Bayesian Filter Training Example ===\n");
 
             // Create Bayesian filter
-            var bayesianFilter = new BayesianSpamFilter(
+            BayesianSpamFilter bayesianFilter = new(
                 spamThreshold: 0.9,
                 unknownWordProbability: 0.5);
 
             // Training data samples
-            var spamSamples = GetSpamSamples();
-            var hamSamples = GetHamSamples();
+            List<string> spamSamples = GetSpamSamples();
+            List<string> hamSamples = GetHamSamples();
 
             Console.WriteLine($"Training with {spamSamples.Count} spam samples...");
-            foreach (var spam in spamSamples)
+            foreach (string spam in spamSamples)
             {
                 await bayesianFilter.TrainSpamAsync(spam);
             }
 
             Console.WriteLine($"Training with {hamSamples.Count} ham samples...");
-            foreach (var ham in hamSamples)
+            foreach (string ham in hamSamples)
             {
                 await bayesianFilter.TrainHamAsync(ham);
             }
 
             // Display statistics
-            var stats = bayesianFilter.GetStatistics();
+            BayesianStatistics stats = bayesianFilter.GetStatistics();
             Console.WriteLine("\n=== Training Statistics ===");
             Console.WriteLine($"Total Spam Messages: {stats.TotalSpamMessages}");
             Console.WriteLine($"Total Ham Messages: {stats.TotalHamMessages}");
             Console.WriteLine($"Unique Words: {stats.UniqueWords}");
 
             Console.WriteLine("\nMost Spammy Words:");
-            foreach (var word in stats.MostSpammyWords)
+            foreach (KeyValuePair<string, double> word in stats.MostSpammyWords)
             {
                 Console.WriteLine($"  {word.Key}: {word.Value:P1}");
             }
 
             Console.WriteLine("\nMost Ham Words:");
-            foreach (var word in stats.MostHammyWords)
+            foreach (KeyValuePair<string, double> word in stats.MostHammyWords)
             {
                 Console.WriteLine($"  {word.Key}: {word.Value:P1}");
             }
 
             // Create server with trained filter
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25002)
                 .ServerName("Bayesian Training Server")
                 .Build();
@@ -67,13 +63,13 @@ namespace Zetian.AntiSpam.Examples
             server.AddSpamChecker(bayesianFilter);
 
             // Test messages
-            var testMessages = GetTestMessages();
-            
+            List<string> testMessages = GetTestMessages();
+
             Console.WriteLine("\n=== Testing Messages ===");
             server.MessageReceived += (sender, e) =>
             {
                 Console.WriteLine($"\nMessage: {e.Message.Subject}");
-                
+
                 if (e.Cancel)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -98,8 +94,8 @@ namespace Zetian.AntiSpam.Examples
 
         private static List<string> GetSpamSamples()
         {
-            return new List<string>
-            {
+            return
+            [
                 // Nigerian prince scam
                 @"Subject: URGENT BUSINESS PROPOSAL
                 Dear Sir/Madam,
@@ -175,13 +171,13 @@ namespace Zetian.AntiSpam.Examples
                 Minimum investment only 0.1 BTC
                 Send to: 1FakeWalletAddress123xyz
                 Limited time offer - Don't miss out!!!"
-            };
+            ];
         }
 
         private static List<string> GetHamSamples()
         {
-            return new List<string>
-            {
+            return
+            [
                 // Business email
                 @"Subject: Project Status Update - Q4 2024
                 Hi Team,
@@ -281,13 +277,13 @@ namespace Zetian.AntiSpam.Examples
                 Click here to complete a brief survey.
                 Thank you,
                 Customer Experience Team"
-            };
+            ];
         }
 
         private static List<string> GetTestMessages()
         {
-            return new List<string>
-            {
+            return
+            [
                 // Should be spam
                 "WIN FREE MONEY!!! Click here now for millions!!!",
                 "Cheap medications online - no prescription needed!",
@@ -295,7 +291,7 @@ namespace Zetian.AntiSpam.Examples
                 // Should be ham
                 "Meeting scheduled for tomorrow at 10 AM in the conference room",
                 "Thank you for your recent order. It will ship tomorrow."
-            };
+            ];
         }
     }
 }

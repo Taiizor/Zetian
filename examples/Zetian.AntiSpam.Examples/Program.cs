@@ -1,5 +1,4 @@
-using System;
-using System.Threading.Tasks;
+using System.Text;
 
 namespace Zetian.AntiSpam.Examples
 {
@@ -7,9 +6,8 @@ namespace Zetian.AntiSpam.Examples
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("╔═══════════════════════════════════════════╗");
-            Console.WriteLine("║     Zetian AntiSpam Examples             ║");
-            Console.WriteLine("╚═══════════════════════════════════════════╝\n");
+            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.UTF8;
 
             while (true)
             {
@@ -21,7 +19,7 @@ namespace Zetian.AntiSpam.Examples
                 Console.WriteLine("5. Exit");
                 Console.Write("\nChoice: ");
 
-                var choice = Console.ReadLine();
+                string? choice = Console.ReadLine();
                 Console.Clear();
 
                 try

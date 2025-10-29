@@ -167,7 +167,7 @@ namespace Zetian.AntiSpam.Checkers
 
         private string ExtractContent(ISmtpMessage message)
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
 
             // Add subject
             if (!string.IsNullOrWhiteSpace(message.Subject))
@@ -242,7 +242,7 @@ namespace Zetian.AntiSpam.Checkers
 
         private HashSet<string> Tokenize(string content)
         {
-            var tokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> tokens = new(StringComparer.OrdinalIgnoreCase);
 
             // Split by word boundaries
             MatchCollection matches = Regex.Matches(content, @"\b[\w']+\b");
@@ -320,7 +320,7 @@ namespace Zetian.AntiSpam.Checkers
                 return _unknownWordProbability;
             }
 
-            var probabilities = new List<double>();
+            List<double> probabilities = [];
 
             foreach (string token in tokens.Take(15)) // Use most significant tokens
             {

@@ -1,7 +1,5 @@
-using System;
-using System.Threading.Tasks;
-using Zetian.Server;
 using Zetian.AntiSpam.Extensions;
+using Zetian.Server;
 
 namespace Zetian.AntiSpam.Examples
 {
@@ -15,7 +13,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("=== Basic Anti-Spam Example ===\n");
 
             // Create SMTP server
-            var server = new SmtpServerBuilder()
+            SmtpServer server = new SmtpServerBuilder()
                 .Port(25000)
                 .ServerName("AntiSpam Test Server")
                 .Build();
@@ -28,7 +26,7 @@ namespace Zetian.AntiSpam.Examples
             {
                 Console.WriteLine($"Message from: {e.Message.From?.Address}");
                 Console.WriteLine($"Subject: {e.Message.Subject}");
-                
+
                 // The anti-spam system will automatically set e.Cancel = true
                 // and e.Response if the message is spam
                 if (e.Cancel)

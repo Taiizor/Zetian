@@ -61,6 +61,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Monitoring", "src\Ze
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Monitoring.Examples", "examples\Zetian.Monitoring.Examples\Zetian.Monitoring.Examples.csproj", "{C14C93C1-F9A3-56F9-1270-FAB983C7C656}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zetian.Relay", "src\Zetian.Relay\Zetian.Relay.csproj", "{4D5C5931-37B5-9D94-ED76-B6DD18E04D06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -151,6 +153,10 @@ Global
 		{C14C93C1-F9A3-56F9-1270-FAB983C7C656}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C14C93C1-F9A3-56F9-1270-FAB983C7C656}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C14C93C1-F9A3-56F9-1270-FAB983C7C656}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D5C5931-37B5-9D94-ED76-B6DD18E04D06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D5C5931-37B5-9D94-ED76-B6DD18E04D06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D5C5931-37B5-9D94-ED76-B6DD18E04D06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D5C5931-37B5-9D94-ED76-B6DD18E04D06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -178,6 +184,7 @@ Global
 		{5FA431F4-8463-EB53-CF41-DD7600003195} = {7A6B5C4D-3E2F-1098-7654-321098765432}
 		{125A59B3-05B7-343A-C2CF-70D49722D63A} = {1A2B3C4D-5E6F-7890-AB12-CD34567890EF}
 		{C14C93C1-F9A3-56F9-1270-FAB983C7C656} = {7A6B5C4D-3E2F-1098-7654-321098765432}
+		{4D5C5931-37B5-9D94-ED76-B6DD18E04D06} = {1A2B3C4D-5E6F-7890-AB12-CD34567890EF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1A2C3D4-5E6F-7890-1234-567890FEDCBA}

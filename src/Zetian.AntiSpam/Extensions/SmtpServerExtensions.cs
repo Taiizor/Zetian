@@ -260,5 +260,12 @@ namespace Zetian.AntiSpam.Extensions
         public long GreylistDelays { get; set; }
         public long BayesianBlocks { get; set; }
         public double AverageSpamScore { get; set; }
+
+        /// <summary>
+        /// Gets the percentage of messages that were blocked
+        /// </summary>
+        public double BlockRate => MessagesChecked > 0
+            ? (double)MessagesBlocked / MessagesChecked * 100
+            : 0;
     }
 }

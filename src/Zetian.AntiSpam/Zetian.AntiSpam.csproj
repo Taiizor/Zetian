@@ -32,7 +32,7 @@
         <Title>Zetian.AntiSpam</Title>
         <PackageId>Zetian.AntiSpam</PackageId>
         <Authors>Taiizor</Authors>
-        <Product>Zetian SMTP Server - AntiSpam</Product>
+        <Product>Zetian SMTP Server - Anti Spam</Product>
         <Copyright>Copyright © $([System.DateTime]::Today.ToString(yyyy)) $(Authors)</Copyright>
         <Summary>Advanced anti-spam protection for Zetian SMTP Server. Includes SPF/DKIM/DMARC validation, Bayesian filtering, RBL/DNSBL checks, and greylisting.</Summary>
         <Description>Comprehensive anti-spam solution for Zetian SMTP Server. Features include SPF/DKIM/DMARC email authentication, Bayesian spam filtering with machine learning, RBL/DNSBL reputation checks, greylisting, custom filters, and real-time threat detection. Easy integration with flexible configuration options.</Description>
@@ -41,8 +41,9 @@
         <PackageLicenseExpression></PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>All changes are detailed at https://zetian.soferity.com/changelog.</PackageReleaseNotes>
-        <PackageTags>antispam;spam;filter;spf;dkim;dmarc;bayesian;rbl;dnsbl;greylisting;smtp;email;mail;server;zetian</PackageTags>
+        <PackageTags>antispam;spam;filter;spf;dkim;dmarc;bayesian;rbl;dnsbl;greylisting;smtp;email;mail;server;smtp;zetian</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!--<DocumentationFile>..\$(Title)\bin$(OutputPath)\$(Configuration)\$(TargetFramework)\$(Title).xml</DocumentationFile>-->
         <PackageProjectUrl>https://zetian.soferity.com</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>git://github.com/Taiizor/Zetian</RepositoryUrl>
@@ -60,7 +61,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Configurations>Debug;Release</Configurations>
-        <NoWarn>$(NoWarn);1591</NoWarn>
+        <NoWarn>$(NoWarn);1591;IL2026;IL3050</NoWarn>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     </PropertyGroup>
 
@@ -75,7 +76,6 @@
         </PackageReference>
     </ItemGroup>
 
-    <!-- DnsClient for SPF/DKIM/DMARC and RBL lookups -->
     <ItemGroup>
         <PackageReference Include="DnsClient" Version="1.8.0" />
     </ItemGroup>
@@ -97,11 +97,6 @@
 
     <ItemGroup>
         <Folder Include="Properties\" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <InternalsVisibleTo Include="Zetian.AntiSpam.Tests" />
-        <InternalsVisibleTo Include="Zetian.AntiSpam.Benchmarks" />
     </ItemGroup>
 
 </Project>

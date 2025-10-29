@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Zetian.Abstractions;
 using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Builders;
 using Zetian.AntiSpam.Checkers;
@@ -21,8 +23,17 @@ namespace Zetian.AntiSpam.Extensions
     /// </summary>
     public static class SmtpServerExtensions
     {
-        private const string AntiSpamServiceKey = "Zetian.AntiSpam.Service";
-        private const string BayesianCheckerKey = "Zetian.AntiSpam.BayesianChecker";
+        private static readonly Dictionary<SmtpServer, AntiSpamService> _antiSpamServices = new();
+        private static readonly Dictionary<SmtpServer, BayesianChecker> _bayesianCheckers = new();
+        private static readonly Dictionary<object, AntiSpamResult> _messageResults = new();
+
+        /// <summary>
+        /// Gets the spam check result for a message
+        /// </summary>
+        public static AntiSpamResult? GetSpamResult(this ISmtpMessage message)
+        {
+            return _messageResults.TryGetValue(message, out var result) ? result : null;
+        }
 
         /// <summary>
         /// Enables anti-spam protection on the SMTP server
@@ -37,7 +48,16 @@ namespace Zetian.AntiSpam.Extensions
             AntiSpamService antiSpamService = antiSpamBuilder.Build();
 
             // Store the service for later retrieval
-            server.SetData(AntiSpamServiceKey, antiSpamService);
+            _antiSpamServices[server] = antiSpamService;
+
+            // Store Bayesian checker if available
+            BayesianChecker? bayesianChecker = antiSpamService.GetCheckers()
+                .OfType<BayesianChecker>()
+                .FirstOrDefault();
+            if (bayesianChecker != null)
+            {
+                _bayesianCheckers[server] = bayesianChecker;
+            }
 
             // Hook into the message received event
             server.MessageReceived += async (sender, e) =>
@@ -61,7 +81,7 @@ namespace Zetian.AntiSpam.Extensions
         /// </summary>
         public static AntiSpamService? GetAntiSpamService(this SmtpServer server)
         {
-            return server.GetData<AntiSpamService>(AntiSpamServiceKey);
+            return _antiSpamServices.TryGetValue(server, out AntiSpamService? service) ? service : null;
         }
 
         /// <summary>
@@ -72,8 +92,10 @@ namespace Zetian.AntiSpam.Extensions
             string content,
             bool isSpam)
         {
-            var bayesianChecker = server.GetData<BayesianChecker>(BayesianCheckerKey);
-            bayesianChecker?.Train(content, isSpam);
+            if (_bayesianCheckers.TryGetValue(server, out BayesianChecker? checker))
+            {
+                checker.Train(content, isSpam);
+            }
         }
 
         /// <summary>
@@ -83,8 +105,10 @@ namespace Zetian.AntiSpam.Extensions
             this SmtpServer server,
             params (string content, bool isSpam)[] samples)
         {
-            var bayesianChecker = server.GetData<BayesianChecker>(BayesianCheckerKey);
-            bayesianChecker?.TrainBatch(samples);
+            if (_bayesianCheckers.TryGetValue(server, out BayesianChecker? checker))
+            {
+                checker.TrainBatch(samples);
+            }
         }
 
         /// <summary>
@@ -129,10 +153,10 @@ namespace Zetian.AntiSpam.Extensions
         {
             server.MessageReceived += async (sender, e) =>
             {
-                if (e.Context?.ContainsKey("spam_result") == true)
+                // Check if we have a spam result for this message
+                if (_messageResults.TryGetValue(e.Message, out AntiSpamResult? result))
                 {
-                    AntiSpamResult result = e.Context["spam_result"] as AntiSpamResult;
-                    if (result?.IsSpam == true && result.Action == SpamAction.Reject)
+                    if (result.IsSpam && result.Action == SpamAction.Reject)
                     {
                         // Change action to quarantine instead of reject
                         result.Action = SpamAction.Quarantine;
@@ -165,7 +189,7 @@ namespace Zetian.AntiSpam.Extensions
                 SpamCheckContext context = SpamCheckContext.FromSession(e.Session, e.Message);
                 context.Subject = e.Message.Subject;
                 context.MessageBody = e.Message.TextBody ?? e.Message.HtmlBody;
-                context.Recipients = e.Message.Recipients;
+                context.Recipients = e.Message.Recipients.Select(r => r.Address).ToList();
 
                 // Extract headers
                 foreach (KeyValuePair<string, string> header in e.Message.Headers)
@@ -180,8 +204,8 @@ namespace Zetian.AntiSpam.Extensions
                 // Perform spam check
                 AntiSpamResult result = await antiSpamService.CheckAsync(context);
 
-                // Store result in context for other handlers
-                e.Context["spam_result"] = result;
+                // Store result for other handlers
+                _messageResults[e.Message] = result;
 
                 // Add spam headers to the message
                 e.Message.Headers.Add("X-Spam-Check-By", "Zetian.AntiSpam");
@@ -227,8 +251,7 @@ namespace Zetian.AntiSpam.Extensions
             catch (Exception ex)
             {
                 // Log error but don't fail the message
-                var logger = server.GetData<ILogger>("Logger");
-                logger?.LogError(ex, "Anti-spam check failed for message {MessageId}", e.Message.Id);
+                Console.WriteLine($"Anti-spam check failed for message {e.Message.Id}: {ex.Message}");
             }
         }
 

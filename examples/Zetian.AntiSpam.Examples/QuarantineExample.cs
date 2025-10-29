@@ -131,7 +131,7 @@ namespace Zetian.AntiSpam.Examples
             {
                 foreach (string file in files)
                 {
-                    var fileInfo = new FileInfo(file);
+                    FileInfo fileInfo = new(file);
                     Console.WriteLine($"- {fileInfo.Name} ({fileInfo.Length:N0} bytes) - {fileInfo.CreationTime}");
 
                     // Try to read basic info from the file

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using Zetian.AntiSpam.Builders;
 using Zetian.AntiSpam.Checkers;
 using Zetian.AntiSpam.Services;
@@ -12,6 +13,8 @@ namespace Zetian.AntiSpam.Extensions
     /// </summary>
     public static class SmtpServerBuilderExtensions
     {
+        private static readonly Dictionary<SmtpServerBuilder, AntiSpamService> _antiSpamServices = [];
+
         /// <summary>
         /// Adds anti-spam protection to the SMTP server
         /// </summary>
@@ -33,8 +36,8 @@ namespace Zetian.AntiSpam.Extensions
 
             AntiSpamService antiSpamService = antiSpamBuilder.Build();
 
-            // Store the service in the builder's service collection
-            builder.AddService(antiSpamService);
+            // Store the service to be applied when Build() is called
+            _antiSpamServices[builder] = antiSpamService;
 
             return builder;
         }
@@ -45,7 +48,7 @@ namespace Zetian.AntiSpam.Extensions
         public static SmtpServerBuilder WithBasicAntiSpam(this SmtpServerBuilder builder)
         {
             AntiSpamService antiSpamService = AntiSpamBuilder.CreateBasic();
-            builder.AddService(antiSpamService);
+            _antiSpamServices[builder] = antiSpamService;
             return builder;
         }
 
@@ -55,7 +58,7 @@ namespace Zetian.AntiSpam.Extensions
         public static SmtpServerBuilder WithStrictAntiSpam(this SmtpServerBuilder builder)
         {
             AntiSpamService antiSpamService = AntiSpamBuilder.CreateStrict();
-            builder.AddService(antiSpamService);
+            _antiSpamServices[builder] = antiSpamService;
             return builder;
         }
 
@@ -65,8 +68,16 @@ namespace Zetian.AntiSpam.Extensions
         public static SmtpServerBuilder WithLenientAntiSpam(this SmtpServerBuilder builder)
         {
             AntiSpamService antiSpamService = AntiSpamBuilder.CreateLenient();
-            builder.AddService(antiSpamService);
+            _antiSpamServices[builder] = antiSpamService;
             return builder;
+        }
+
+        /// <summary>
+        /// Gets the AntiSpamService associated with a builder
+        /// </summary>
+        internal static AntiSpamService? GetAntiSpamService(this SmtpServerBuilder builder)
+        {
+            return _antiSpamServices.TryGetValue(builder, out AntiSpamService? service) ? service : null;
         }
 
         /// <summary>

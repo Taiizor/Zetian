@@ -167,7 +167,7 @@ namespace Zetian.AntiSpam.Examples
                     Subject = test.Content // Use content as subject for simplicity
                 };
 
-                var result = await checker.CheckAsync(context);
+                SpamCheckResult result = await checker.CheckAsync(context);
                 bool prediction = result.IsSpam;
                 bool correct = prediction == test.ExpectedSpam;
                 correctPredictions += correct ? 1 : 0;
@@ -189,7 +189,7 @@ namespace Zetian.AntiSpam.Examples
             Console.WriteLine("==================================================\n");
 
             // Create SMTP server with the trained Bayesian filter
-            using var server = new SmtpServerBuilder()
+            using SmtpServer server = new SmtpServerBuilder()
                 .Port(2525)
                 .ServerName("Bayesian Training Example Server")
                 .WithAntiSpam(antiSpam => antiSpam
@@ -209,9 +209,10 @@ namespace Zetian.AntiSpam.Examples
                 Console.WriteLine($"\n[RECEIVED] From: {e.Message.From?.Address}");
                 Console.WriteLine($"[RECEIVED] Subject: {e.Message.Subject}");
 
-                if (e.Context.TryGetValue("spam_result", out var result) && result is AntiSpamResult spamResult)
+                AntiSpamResult? spamResult = e.Message.GetSpamResult();
+                if (spamResult != null)
                 {
-                    var bayesianResult = spamResult.CheckResults.FirstOrDefault(r => r.CheckerName == "Bayesian");
+                    SpamCheckResult? bayesianResult = spamResult.CheckResults.FirstOrDefault(r => r.CheckerName == "Bayesian");
                     if (bayesianResult != null)
                     {
                         Console.WriteLine($"[BAYESIAN] Score: {bayesianResult.Score:F1}");
@@ -235,7 +236,7 @@ namespace Zetian.AntiSpam.Examples
             // Handle user commands
             while (true)
             {
-                var key = Console.ReadKey(true);
+                ConsoleKeyInfo key = Console.ReadKey(true);
 
                 if (key.Key == ConsoleKey.Q)
                 {
@@ -273,7 +274,7 @@ namespace Zetian.AntiSpam.Examples
             BayesianChecker checker = new();
             TrainWithDataset(checker); // Quick train for testing
 
-            var result = await checker.CheckAsync(context);
+            SpamCheckResult result = await checker.CheckAsync(context);
 
             Console.WriteLine($"\nBayesian Analysis Result:");
             Console.WriteLine($"- Spam Score: {result.Score:F1}/100");

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using Zetian.Abstractions;
 
 namespace Zetian.AntiSpam.Models
 {
@@ -41,7 +43,7 @@ namespace Zetian.AntiSpam.Models
         /// <summary>
         /// Gets or sets the email message
         /// </summary>
-        public SmtpMessage? Message { get; set; }
+        public ISmtpMessage? Message { get; set; }
 
         /// <summary>
         /// Gets or sets the raw email headers
@@ -76,19 +78,39 @@ namespace Zetian.AntiSpam.Models
         /// <summary>
         /// Creates a SpamCheckContext from an SMTP session
         /// </summary>
-        public static SpamCheckContext FromSession(Abstractions.ISmtpSession session, SmtpMessage? message = null)
+        public static SpamCheckContext FromSession(ISmtpSession session, ISmtpMessage? message = null)
         {
-            return new SpamCheckContext
+            SpamCheckContext context = new()
             {
-                FromAddress = session.From ?? string.Empty,
-                ClientIpAddress = session.RemoteEndPoint?.Address,
+                FromAddress = message?.From?.Address ?? string.Empty,
+                FromDomain = message?.From?.Host ?? string.Empty,
+                ClientIpAddress = (session.RemoteEndPoint as IPEndPoint)?.Address,
                 ClientHostname = session.RemoteEndPoint?.ToString(),
+                HeloDomain = session.ClientDomain,
                 IsAuthenticated = session.IsAuthenticated,
-                AuthenticatedUser = session.AuthenticatedUser,
+                AuthenticatedUser = session.AuthenticatedIdentity,
                 Message = message,
                 Subject = message?.Subject,
                 MessageBody = message?.TextBody ?? message?.HtmlBody
             };
+
+            // Extract domain from sender address if needed
+            if (string.IsNullOrEmpty(context.FromDomain) && !string.IsNullOrEmpty(context.FromAddress))
+            {
+                int atIndex = context.FromAddress.IndexOf('@');
+                if (atIndex > 0 && atIndex < context.FromAddress.Length - 1)
+                {
+                    context.FromDomain = context.FromAddress[(atIndex + 1)..];
+                }
+            }
+
+            // Add recipients if message is available
+            if (message?.Recipients != null)
+            {
+                context.Recipients = message.Recipients.Select(r => r.Address).ToList();
+            }
+
+            return context;
         }
     }
 }

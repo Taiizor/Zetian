@@ -78,7 +78,7 @@ namespace Zetian.AntiSpam.Examples
                         };
 
                         double score = 0.0;
-                        var reasons = new List<string>();
+                        List<string> reasons = [];
 
                         foreach (string? phrase in suspiciousPhrases)
                         {
@@ -139,8 +139,9 @@ namespace Zetian.AntiSpam.Examples
                 Console.WriteLine($"[RECEIVED] From: {e.Message.From}");
                 Console.WriteLine($"[RECEIVED] Subject: {e.Message.Subject}");
 
-                // Get anti-spam results from context
-                if (e.Context.TryGetValue("spam_result", out var result) && result is Services.AntiSpamResult spamResult)
+                // Get anti-spam results from message
+                Services.AntiSpamResult? spamResult = e.Message.GetSpamResult();
+                if (spamResult != null)
                 {
                     Console.WriteLine($"[SPAM CHECK] Overall Score: {spamResult.TotalScore:F1}");
                     Console.WriteLine($"[SPAM CHECK] Is Spam: {spamResult.IsSpam}");
@@ -160,6 +161,10 @@ namespace Zetian.AntiSpam.Examples
                             }
                         }
                     }
+                }
+                else
+                {
+                    Console.WriteLine("[SPAM CHECK] No spam check results available");
                 }
 
                 Console.WriteLine(new string('=', 60));

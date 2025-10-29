@@ -106,7 +106,7 @@ def test_relay_scenarios():
 if __name__ == "__main__":
     # You can customize these settings
     SMTP_HOST = "localhost"
-    SMTP_PORT = 25034  # BasicRelayExample port
+    SMTP_PORT = 25025  # BasicRelayExample port
     
     # Run single test
     print("Sending single test email...")

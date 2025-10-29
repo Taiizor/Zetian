@@ -34,8 +34,6 @@ dotnet add package Zetian.AntiSpam
 ```csharp
 using Zetian.Server;
 using Zetian.AntiSpam.Extensions;
-using Zetian.AntiSpam.Checkers;  // For direct checker usage
-using Zetian.AntiSpam.Builders; // For builder pattern
 
 // Create SMTP server
 var server = new SmtpServerBuilder()

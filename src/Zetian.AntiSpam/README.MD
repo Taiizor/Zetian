@@ -112,6 +112,45 @@ await server.TrainBayesianSpamAsync(spamSamples);
 await server.TrainBayesianHamAsync(legitimateSamples);
 ```
 
+### DKIM Signature Verification
+
+```csharp
+// Add DKIM checking with strict mode
+server.AddDkimCheck(
+    failScore: 40,
+    strictMode: true  // Require all essential headers to be signed
+);
+```
+
+### DMARC Policy Enforcement
+
+```csharp
+// Add DMARC checking with policy enforcement
+server.AddDmarcCheck(
+    failScore: 70,        // Score for reject policy
+    quarantineScore: 50,  // Score for quarantine policy
+    enforcePolicy: true   // Enforce DMARC policies
+);
+```
+
+### Complete Email Authentication (SPF + DKIM + DMARC)
+
+```csharp
+// Add all three authentication methods in one call
+server.AddEmailAuthentication(
+    strictMode: true,      // Strict DKIM validation
+    enforcePolicy: true    // Enforce DMARC policies
+);
+
+// Or use the builder pattern
+server.AddAntiSpam(builder => builder
+    .EnableEmailAuthentication(strictMode: true, enforcePolicy: true)
+    .WithOptions(options => {
+        options.RejectThreshold = 60;
+        options.EnableDetailedLogging = true;
+    }));
+```
+
 ## 🔧 Advanced Configuration
 
 ### Custom Spam Checker
@@ -231,6 +270,25 @@ server.MessageReceived += async (sender, e) =>
 | Neutral | 10 | Neither authorized nor forbidden |
 | SoftFail | 30 | Probably not authorized |
 | Fail | 50 | Not authorized |
+
+## 🔐 DKIM Results
+
+| Result | Score Impact | Meaning |
+|--------|-------------|---------|
+| Pass | 0 | Valid signature |
+| None | 10 | No DKIM signature |
+| Fail | 40 | Invalid signature |
+| Policy | 20 | Policy violation (e.g., expired) |
+| TempError | 0 | Temporary failure |
+
+## 📋 DMARC Results  
+
+| Policy | Score Impact | Action |
+|--------|-------------|---------|
+| None | 0 | Monitoring only |
+| Quarantine | 50 | Mark as suspicious |
+| Reject | 70 | Reject message |
+| No Record | 0 | No DMARC policy |
 
 ## 🌐 Default RBL Providers
 

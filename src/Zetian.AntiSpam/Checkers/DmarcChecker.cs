@@ -1,4 +1,5 @@
 using DnsClient;
+using DnsClient.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ using Zetian.AntiSpam.Models;
 namespace Zetian.AntiSpam.Checkers
 {
     /// <summary>
-    /// Checks DMARC (Domain-based Message Authentication, Reporting & Conformance) policy
+    /// Checks DMARC (Domain-based Message Authentication, Reporting &amp; Conformance) policy
     /// </summary>
     public class DmarcChecker : ISpamChecker
     {
@@ -136,8 +137,7 @@ namespace Zetian.AntiSpam.Checkers
 
                 return SpamCheckResult.Clean(
                     0,
-                    $"DMARC pass for {organizationalDomain}",
-                    $"SPF: {(spfAligned ? "aligned" : "not aligned")}, DKIM: {(dkimAligned ? "aligned" : "not aligned")}");
+                    $"DMARC pass for {organizationalDomain}. SPF: {(spfAligned ? "aligned" : "not aligned")}, DKIM: {(dkimAligned ? "aligned" : "not aligned")}");
             }
             catch (Exception ex)
             {
@@ -155,7 +155,7 @@ namespace Zetian.AntiSpam.Checkers
 
                 // Find DMARC record (starts with v=DMARC1)
                 string? dmarcTxt = result.Answers
-                    .OfType<DnsClient.Protocol.TxtRecord>()
+                    .OfType<TxtRecord>()
                     .SelectMany(r => r.Text)
                     .FirstOrDefault(t => t.StartsWith("v=DMARC1", StringComparison.OrdinalIgnoreCase));
 
@@ -241,7 +241,7 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             // Extract d= domain from DKIM signature
-            Match match = System.Text.RegularExpressions.Regex.Match(dkimHeader, @"d=([^;]+)");
+            Match match = Regex.Match(dkimHeader, @"d=([^;]+)");
             if (!match.Success)
             {
                 return false;
@@ -269,7 +269,7 @@ namespace Zetian.AntiSpam.Checkers
             SpamCheckResult? spfResult,
             SpamCheckResult? dkimResult)
         {
-            var reasons = new List<string>();
+            List<string> reasons = [];
 
             if (spfResult != null)
             {

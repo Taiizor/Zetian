@@ -1,4 +1,5 @@
 using DnsClient;
+using DnsClient.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,21 +84,21 @@ namespace Zetian.AntiSpam.Checkers
                 }
 
                 // Check signature age
-                var age = signature.GetAge();
+                TimeSpan? age = signature.GetAge();
                 if (age.HasValue && age.Value > _maxSignatureAge)
                 {
                     return SpamCheckResult.Spam(_failScore / 2, $"DKIM signature too old: {age.Value.TotalDays:F1} days");
                 }
 
                 // Get public key from DNS
-                var publicKey = await GetPublicKeyAsync(signature.Domain!, signature.Selector!, cancellationToken);
+                DkimPublicKey? publicKey = await GetPublicKeyAsync(signature.Domain!, signature.Selector!, cancellationToken);
                 if (publicKey == null)
                 {
                     return SpamCheckResult.Spam(_failScore, "DKIM public key not found in DNS");
                 }
 
                 // Verify signature
-                var result = await VerifySignatureAsync(message, signature, publicKey, cancellationToken);
+                DkimResult result = await VerifySignatureAsync(message, signature, publicKey, cancellationToken);
 
                 return result switch
                 {
@@ -194,9 +195,9 @@ namespace Zetian.AntiSpam.Checkers
             {
                 // Query DNS for DKIM public key
                 string query = $"{selector}._domainkey.{domain}";
-                var result = await _dnsClient.QueryAsync(query, QueryType.TXT, cancellationToken: cancellationToken);
+                IDnsQueryResponse result = await _dnsClient.QueryAsync(query, QueryType.TXT, cancellationToken: cancellationToken);
 
-                var txtRecord = result.Answers
+                TxtRecord? txtRecord = result.Answers
                     .OfType<DnsClient.Protocol.TxtRecord>()
                     .FirstOrDefault();
 
@@ -253,7 +254,7 @@ namespace Zetian.AntiSpam.Checkers
         private string ComputeBodyHash(ISmtpMessage message, DkimSignature signature)
         {
             // Get canonicalization method
-            var canonicalization = ParseCanonicalization(signature.Canonicalization);
+            (string header, string body) canonicalization = ParseCanonicalization(signature.Canonicalization);
 
             // Canonicalize body
             string body = message.TextBody ?? message.HtmlBody ?? "";
@@ -265,7 +266,7 @@ namespace Zetian.AntiSpam.Checkers
             body = CanonicalizeBody(body, canonicalization.body);
 
             // Compute hash
-            using var hasher = GetHashAlgorithm(signature.Algorithm);
+            using HashAlgorithm hasher = GetHashAlgorithm(signature.Algorithm);
             byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
             byte[] hashBytes = hasher.ComputeHash(bodyBytes);
             return Convert.ToBase64String(hashBytes);
@@ -301,7 +302,7 @@ namespace Zetian.AntiSpam.Checkers
         {
             // This is a simplified implementation
             // In production, you would use proper RSA or Ed25519 verification
-            using var hasher = GetHashAlgorithm(signature.Algorithm);
+            using HashAlgorithm hasher = GetHashAlgorithm(signature.Algorithm);
             byte[] headerBytes = Encoding.UTF8.GetBytes(headers);
             byte[] hashBytes = hasher.ComputeHash(headerBytes);
 
@@ -387,9 +388,9 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             DkimPublicKey key = new();
-            var tags = ParseTags(recordValue);
+            Dictionary<string, string> tags = ParseTags(recordValue);
 
-            foreach (var tag in tags)
+            foreach (KeyValuePair<string, string> tag in tags)
             {
                 switch (tag.Key.ToLowerInvariant())
                 {

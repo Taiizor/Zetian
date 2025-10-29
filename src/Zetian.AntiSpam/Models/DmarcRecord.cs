@@ -141,17 +141,17 @@ namespace Zetian.AntiSpam.Models
             Dictionary<string, string> tags = [];
 
             // Split by semicolon and parse key=value pairs
-            var parts = recordValue.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = recordValue.Split(';', StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (var part in parts)
+            foreach (string part in parts)
             {
-                var trimmed = part.Trim();
-                var equalIndex = trimmed.IndexOf('=');
+                string trimmed = part.Trim();
+                int equalIndex = trimmed.IndexOf('=');
 
                 if (equalIndex > 0)
                 {
-                    var key = trimmed[..equalIndex].Trim();
-                    var value = trimmed[(equalIndex + 1)..].Trim();
+                    string key = trimmed[..equalIndex].Trim();
+                    string value = trimmed[(equalIndex + 1)..].Trim();
                     tags[key] = value;
                 }
             }

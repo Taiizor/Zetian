@@ -179,18 +179,18 @@ namespace Zetian.AntiSpam.Models
             Dictionary<string, string> tags = [];
 
             // Remove whitespace and split by semicolon
-            var parts = headerValue.Replace("\r\n", "")
+            string[] parts = headerValue.Replace("\r\n", "")
                                  .Replace("\n", "")
                                  .Replace("\t", " ")
                                  .Split(';', StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (var part in parts)
+            foreach (string part in parts)
             {
-                var equalIndex = part.IndexOf('=');
+                int equalIndex = part.IndexOf('=');
                 if (equalIndex > 0)
                 {
-                    var key = part[..equalIndex].Trim();
-                    var value = part[(equalIndex + 1)..].Trim();
+                    string key = part[..equalIndex].Trim();
+                    string value = part[(equalIndex + 1)..].Trim();
                     tags[key] = value;
                 }
             }

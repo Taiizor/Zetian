@@ -11,11 +11,11 @@ Comprehensive anti-spam solution for Zetian SMTP Server with multiple detection 
 - 📊 **Statistics** - Detailed metrics and reporting
 - 🚫 **RBL/DNSBL** - Realtime blackhole list checking
 - 🔧 **Extensible** - Easy to add custom spam checkers
+- 📧 **DKIM/DMARC** - Email authentication protocols
 - 🛡️ **SPF Validation** - Sender Policy Framework verification
 - ⏱️ **Greylisting** - Temporary rejection for unknown senders
 - ⚡ **High Performance** - Parallel checking with timeout support
 - 🤖 **Bayesian Filtering** - Machine learning-based spam detection
-- 📧 **DKIM/DMARC** - Email authentication protocols (coming soon)
 
 ## 📦 Installation
 

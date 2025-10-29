@@ -11,12 +11,17 @@ namespace Zetian.AntiSpam.Examples
 
             while (true)
             {
+                Console.WriteLine("╔═══════════════════════════════════════════╗");
+                Console.WriteLine("║     Zetian AntiSpam Examples             ║");
+                Console.WriteLine("╚═══════════════════════════════════════════╝\n");
+
                 Console.WriteLine("Select an example to run:");
                 Console.WriteLine("1. Basic Anti-Spam Setup");
                 Console.WriteLine("2. Custom Anti-Spam Configuration");
                 Console.WriteLine("3. Bayesian Filter Training");
-                Console.WriteLine("4. Individual Feature Examples");
-                Console.WriteLine("5. Exit");
+                Console.WriteLine("4. Email Authentication (SPF/DKIM/DMARC)");
+                Console.WriteLine("5. Individual Feature Examples");
+                Console.WriteLine("6. Exit");
                 Console.Write("\nChoice: ");
 
                 string? choice = Console.ReadLine();
@@ -36,9 +41,12 @@ namespace Zetian.AntiSpam.Examples
                             await BayesianTrainingExample.RunAsync();
                             break;
                         case "4":
-                            await IndividualFeaturesExample.RunAsync();
+                            await EmailAuthenticationExample.RunAsync();
                             break;
                         case "5":
+                            await IndividualFeaturesExample.RunAsync();
+                            break;
+                        case "6":
                             Console.WriteLine("Goodbye!");
                             return;
                         default:
@@ -53,7 +61,7 @@ namespace Zetian.AntiSpam.Examples
                     Console.ResetColor();
                 }
 
-                if (choice != "5")
+                if (choice != "6")
                 {
                     Console.WriteLine("\nPress any key to return to menu...");
                     Console.ReadKey();

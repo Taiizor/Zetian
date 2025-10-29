@@ -40,7 +40,7 @@ namespace Zetian.AntiSpam.Checkers
         }
 
         public string Name => "Greylisting";
-        
+
         public bool IsEnabled { get; set; }
 
         public async Task<SpamCheckResult> CheckAsync(
@@ -55,8 +55,8 @@ namespace Zetian.AntiSpam.Checkers
 
             // Create triplet key
             string triplet = CreateTriplet(session, message);
-            
-            var now = DateTime.UtcNow;
+
+            DateTime now = DateTime.UtcNow;
 
             // Check if already whitelisted
             if (_greylist.TryGetValue(triplet, out GreylistEntry? entry))
@@ -69,8 +69,8 @@ namespace Zetian.AntiSpam.Checkers
                 }
 
                 // Check if initial delay has passed
-                var timeSinceFirst = now - entry.FirstSeen;
-                
+                TimeSpan timeSinceFirst = now - entry.FirstSeen;
+
                 if (timeSinceFirst < _initialDelay)
                 {
                     // Still in delay period
@@ -86,7 +86,7 @@ namespace Zetian.AntiSpam.Checkers
                     entry.FirstSeen = now;
                     entry.LastSeen = now;
                     entry.AttemptCount = 1;
-                    
+
                     return SpamCheckResult.Spam(
                         100,
                         "Greylisting retry too late",
@@ -99,10 +99,10 @@ namespace Zetian.AntiSpam.Checkers
                     entry.IsWhitelisted = true;
                     entry.WhitelistedAt = now;
                 }
-                
+
                 entry.LastSeen = now;
                 entry.AttemptCount++;
-                
+
                 return SpamCheckResult.Clean(0, "Greylisting passed");
             }
 
@@ -126,7 +126,7 @@ namespace Zetian.AntiSpam.Checkers
         /// </summary>
         public void Whitelist(string senderDomain)
         {
-            foreach (var kvp in _greylist)
+            foreach (KeyValuePair<string, GreylistEntry> kvp in _greylist)
             {
                 if (kvp.Key.Contains(senderDomain, StringComparison.OrdinalIgnoreCase))
                 {
@@ -149,12 +149,12 @@ namespace Zetian.AntiSpam.Checkers
         /// </summary>
         public GreylistStatistics GetStatistics()
         {
-            var stats = new GreylistStatistics
+            GreylistStatistics stats = new()
             {
                 TotalEntries = _greylist.Count
             };
 
-            foreach (var entry in _greylist.Values)
+            foreach (GreylistEntry entry in _greylist.Values)
             {
                 if (entry.IsWhitelisted)
                 {
@@ -203,19 +203,19 @@ namespace Zetian.AntiSpam.Checkers
                 }
                 return $"{new IPAddress(bytes)}/64";
             }
-            
+
             return ip.ToString();
         }
 
         private void CleanupExpiredEntries(object? state)
         {
-            var now = DateTime.UtcNow;
-            var keysToRemove = new List<string>();
+            DateTime now = DateTime.UtcNow;
+            List<string> keysToRemove = [];
 
-            foreach (var kvp in _greylist)
+            foreach (KeyValuePair<string, GreylistEntry> kvp in _greylist)
             {
-                var entry = kvp.Value;
-                
+                GreylistEntry entry = kvp.Value;
+
                 if (entry.IsWhitelisted)
                 {
                     // Remove whitelisted entries after whitelist duration

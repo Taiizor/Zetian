@@ -1,4 +1,5 @@
 using DnsClient;
+using DnsClient.Protocol;
 using System;
 using System.Linq;
 using System.Net;
@@ -38,7 +39,7 @@ namespace Zetian.AntiSpam.Checkers
         }
 
         public string Name => "SPF";
-        
+
         public bool IsEnabled { get; set; }
 
         public async Task<SpamCheckResult> CheckAsync(
@@ -55,14 +56,14 @@ namespace Zetian.AntiSpam.Checkers
             {
                 string domain = message.From.Host;
                 IPAddress? clientIp = GetClientIp(session);
-                
+
                 if (clientIp == null)
                 {
                     return SpamCheckResult.Clean(0, "Cannot determine client IP");
                 }
 
                 SpfResult result = await CheckSpfAsync(domain, clientIp, cancellationToken);
-                
+
                 return result switch
                 {
                     SpfResult.Pass => SpamCheckResult.Clean(0, $"SPF Pass for {domain}"),
@@ -84,9 +85,9 @@ namespace Zetian.AntiSpam.Checkers
             try
             {
                 // Query for SPF record (TXT record starting with "v=spf1")
-                var result = await _dnsClient.QueryAsync(domain, QueryType.TXT, cancellationToken: cancellationToken);
-                
-                var spfRecord = result.Answers
+                IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, QueryType.TXT, cancellationToken: cancellationToken);
+
+                string? spfRecord = result.Answers
                     .OfType<DnsClient.Protocol.TxtRecord>()
                     .SelectMany(r => r.Text)
                     .FirstOrDefault(t => t.StartsWith("v=spf1", StringComparison.OrdinalIgnoreCase));
@@ -112,7 +113,7 @@ namespace Zetian.AntiSpam.Checkers
             CancellationToken cancellationToken)
         {
             string[] mechanisms = spfRecord.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            
+
             foreach (string mechanism in mechanisms.Skip(1)) // Skip "v=spf1"
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -133,7 +134,7 @@ namespace Zetian.AntiSpam.Checkers
                 {
                     return SpfResult.Neutral;
                 }
-                if (mechanism == "+all" || mechanism == "all")
+                if (mechanism is "+all" or "all")
                 {
                     return SpfResult.Pass;
                 }
@@ -182,7 +183,7 @@ namespace Zetian.AntiSpam.Checkers
                 if (mechanism.StartsWith("include:", StringComparison.OrdinalIgnoreCase))
                 {
                     string includeDomain = mechanism[8..];
-                    var includeResult = await CheckSpfAsync(includeDomain, clientIp, cancellationToken);
+                    SpfResult includeResult = await CheckSpfAsync(includeDomain, clientIp, cancellationToken);
                     if (includeResult == SpfResult.Pass)
                     {
                         return SpfResult.Pass;
@@ -215,7 +216,7 @@ namespace Zetian.AntiSpam.Checkers
             {
                 // Invalid IP format
             }
-            
+
             return false;
         }
 
@@ -223,7 +224,7 @@ namespace Zetian.AntiSpam.Checkers
         {
             byte[] addressBytes = address.GetAddressBytes();
             byte[] subnetBytes = subnet.GetAddressBytes();
-            
+
             if (addressBytes.Length != subnetBytes.Length)
             {
                 return false;
@@ -256,8 +257,8 @@ namespace Zetian.AntiSpam.Checkers
         {
             try
             {
-                var result = await _dnsClient.QueryAsync(domain, ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? QueryType.AAAA : QueryType.A, cancellationToken: cancellationToken);
-                return result.Answers.Any(a => 
+                IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? QueryType.AAAA : QueryType.A, cancellationToken: cancellationToken);
+                return result.Answers.Any(a =>
                     (a is DnsClient.Protocol.ARecord aRecord && aRecord.Address.Equals(ip)) ||
                     (a is DnsClient.Protocol.AaaaRecord aaaaRecord && aaaaRecord.Address.Equals(ip)));
             }
@@ -271,9 +272,9 @@ namespace Zetian.AntiSpam.Checkers
         {
             try
             {
-                var mxResult = await _dnsClient.QueryAsync(domain, QueryType.MX, cancellationToken: cancellationToken);
-                
-                foreach (var mx in mxResult.Answers.OfType<DnsClient.Protocol.MxRecord>())
+                IDnsQueryResponse mxResult = await _dnsClient.QueryAsync(domain, QueryType.MX, cancellationToken: cancellationToken);
+
+                foreach (MxRecord mx in mxResult.Answers.OfType<DnsClient.Protocol.MxRecord>())
                 {
                     if (await IsIpMatchesARecordAsync(ip, mx.Exchange, cancellationToken))
                     {
@@ -285,7 +286,7 @@ namespace Zetian.AntiSpam.Checkers
             {
                 // Ignore DNS errors
             }
-            
+
             return false;
         }
 

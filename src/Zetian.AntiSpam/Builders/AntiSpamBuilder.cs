@@ -107,7 +107,7 @@ namespace Zetian.AntiSpam.Builders
         /// </summary>
         public AntiSpamBuilder EnableRbl(params string[] zones)
         {
-            var providers = new List<RblProvider>();
+            List<RblProvider> providers = [];
             foreach (string zone in zones)
             {
                 providers.Add(new RblProvider

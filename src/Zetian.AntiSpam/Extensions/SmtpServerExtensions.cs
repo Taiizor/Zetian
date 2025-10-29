@@ -6,6 +6,7 @@ using Zetian.Abstractions;
 using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Builders;
 using Zetian.AntiSpam.Checkers;
+using Zetian.AntiSpam.Models;
 using Zetian.AntiSpam.Services;
 using Zetian.Protocol;
 
@@ -34,22 +35,22 @@ namespace Zetian.AntiSpam.Extensions
             ArgumentNullException.ThrowIfNull(server);
             ArgumentNullException.ThrowIfNull(configure);
 
-            var builder = new AntiSpamBuilder();
+            AntiSpamBuilder builder = new();
             configure(builder);
-            
-            var antiSpamService = builder.Build();
-            
+
+            AntiSpamService antiSpamService = builder.Build();
+
             // Hook into message received event
             server.MessageReceived += async (sender, e) =>
             {
                 try
                 {
-                    var result = await antiSpamService.CheckMessageAsync(e.Message, e.Session);
-                    
+                    SpamCheckResult result = await antiSpamService.CheckMessageAsync(e.Message, e.Session);
+
                     if (result.IsSpam)
                     {
                         e.Cancel = true;
-                        
+
                         // Determine response code based on severity
                         if (result.Score >= 90)
                         {
@@ -80,7 +81,7 @@ namespace Zetian.AntiSpam.Extensions
         /// </summary>
         public static ISmtpServer AddSpfCheck(this ISmtpServer server, double failScore = 50)
         {
-            var spfChecker = new SpfChecker(failScore: failScore);
+            SpfChecker spfChecker = new(failScore: failScore);
             return server.AddSpamChecker(spfChecker);
         }
 
@@ -91,14 +92,14 @@ namespace Zetian.AntiSpam.Extensions
             this ISmtpServer server,
             params string[] rblZones)
         {
-            var providers = rblZones.Select(zone => new RblProvider
+            IEnumerable<RblProvider> providers = rblZones.Select(zone => new RblProvider
             {
                 Name = zone,
                 Zone = zone,
                 IsEnabled = true
             });
 
-            var rblChecker = new RblChecker(providers: providers);
+            RblChecker rblChecker = new(providers: providers);
             return server.AddSpamChecker(rblChecker);
         }
 
@@ -109,7 +110,7 @@ namespace Zetian.AntiSpam.Extensions
             this ISmtpServer server,
             TimeSpan? initialDelay = null)
         {
-            var greylistChecker = new GreylistingChecker(initialDelay: initialDelay);
+            GreylistingChecker greylistChecker = new(initialDelay: initialDelay);
             return server.AddSpamChecker(greylistChecker);
         }
 
@@ -120,7 +121,7 @@ namespace Zetian.AntiSpam.Extensions
             this ISmtpServer server,
             double spamThreshold = 0.9)
         {
-            var bayesianFilter = new BayesianSpamFilter(spamThreshold: spamThreshold);
+            BayesianSpamFilter bayesianFilter = new(spamThreshold: spamThreshold);
             return server.AddSpamChecker(bayesianFilter);
         }
 
@@ -138,8 +139,8 @@ namespace Zetian.AntiSpam.Extensions
             {
                 try
                 {
-                    var result = await checker.CheckAsync(e.Message, e.Session);
-                    
+                    SpamCheckResult result = await checker.CheckAsync(e.Message, e.Session);
+
                     if (result.IsSpam && result.Score >= 50)
                     {
                         e.Cancel = true;
@@ -162,10 +163,10 @@ namespace Zetian.AntiSpam.Extensions
             this ISmtpServer server,
             IEnumerable<string> spamSamples)
         {
-            var service = GetAntiSpamService(server);
+            AntiSpamService? service = GetAntiSpamService(server);
             if (service != null)
             {
-                var bayesian = service.GetChecker<BayesianSpamFilter>();
+                BayesianSpamFilter? bayesian = service.GetChecker<BayesianSpamFilter>();
                 if (bayesian != null)
                 {
                     foreach (var sample in spamSamples)
@@ -184,10 +185,10 @@ namespace Zetian.AntiSpam.Extensions
             this ISmtpServer server,
             IEnumerable<string> hamSamples)
         {
-            var service = GetAntiSpamService(server);
+            AntiSpamService? service = GetAntiSpamService(server);
             if (service != null)
             {
-                var bayesian = service.GetChecker<BayesianSpamFilter>();
+                BayesianSpamFilter? bayesian = service.GetChecker<BayesianSpamFilter>();
                 if (bayesian != null)
                 {
                     foreach (var sample in hamSamples)
@@ -206,10 +207,10 @@ namespace Zetian.AntiSpam.Extensions
             this ISmtpServer server,
             string domain)
         {
-            var service = GetAntiSpamService(server);
+            AntiSpamService? service = GetAntiSpamService(server);
             if (service != null)
             {
-                var greylisting = service.GetChecker<GreylistingChecker>();
+                GreylistingChecker? greylisting = service.GetChecker<GreylistingChecker>();
                 greylisting?.Whitelist(domain);
             }
             return server;
@@ -220,7 +221,7 @@ namespace Zetian.AntiSpam.Extensions
         /// </summary>
         public static AntiSpamStatistics GetAntiSpamStatistics(this ISmtpServer server)
         {
-            var service = GetAntiSpamService(server);
+            AntiSpamService? service = GetAntiSpamService(server);
             return service?.GetStatistics() ?? new AntiSpamStatistics();
         }
 

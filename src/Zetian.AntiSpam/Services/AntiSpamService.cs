@@ -39,19 +39,19 @@ namespace Zetian.AntiSpam.Services
         {
             Interlocked.Increment(ref _messagesChecked);
 
-            var results = new List<SpamCheckResult>();
+            List<SpamCheckResult> results = [];
             double totalScore = 0;
-            var reasons = new List<string>();
-            var details = new List<string>();
+            List<string> reasons = [];
+            List<string> details = [];
 
             if (_options.RunChecksInParallel)
             {
                 // Run checks in parallel
-                var tasks = _checkers
+                IEnumerable<Task<SpamCheckResult>> tasks = _checkers
                     .Where(c => c.IsEnabled)
                     .Select(async checker =>
                     {
-                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                         cts.CancelAfter(_options.CheckerTimeout);
 
                         try
@@ -73,14 +73,14 @@ namespace Zetian.AntiSpam.Services
             else
             {
                 // Run checks sequentially
-                foreach (var checker in _checkers.Where(c => c.IsEnabled))
+                foreach (ISpamChecker? checker in _checkers.Where(c => c.IsEnabled))
                 {
-                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     cts.CancelAfter(_options.CheckerTimeout);
 
                     try
                     {
-                        var result = await checker.CheckAsync(message, session, cts.Token);
+                        SpamCheckResult result = await checker.CheckAsync(message, session, cts.Token);
                         results.Add(result);
 
                         if (result.IsSpam && !_options.ContinueOnSpamDetection)
@@ -100,10 +100,10 @@ namespace Zetian.AntiSpam.Services
             }
 
             // Aggregate results
-            foreach (var result in results)
+            foreach (SpamCheckResult result in results)
             {
                 totalScore += result.Score;
-                
+
                 if (result.IsSpam && !string.IsNullOrWhiteSpace(result.Reason))
                 {
                     reasons.Add(result.Reason);
@@ -126,15 +126,15 @@ namespace Zetian.AntiSpam.Services
                 Interlocked.Increment(ref _messagesBlocked);
             }
 
-            string combinedReason = reasons.Count > 0 
-                ? string.Join("; ", reasons) 
+            string combinedReason = reasons.Count > 0
+                ? string.Join("; ", reasons)
                 : null;
 
-            string combinedDetails = details.Count > 0 
-                ? string.Join("\n", details) 
+            string combinedDetails = details.Count > 0
+                ? string.Join("\n", details)
                 : null;
 
-            return isSpam 
+            return isSpam
                 ? SpamCheckResult.Spam(totalScore, combinedReason ?? "Multiple spam indicators", combinedDetails)
                 : SpamCheckResult.Clean(totalScore, combinedDetails);
         }
@@ -160,9 +160,9 @@ namespace Zetian.AntiSpam.Services
         /// </summary>
         public void SetCheckerEnabled(string name, bool enabled)
         {
-            var checker = _checkers.FirstOrDefault(c => 
+            ISpamChecker? checker = _checkers.FirstOrDefault(c =>
                 c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-            
+
             if (checker != null)
             {
                 checker.IsEnabled = enabled;
@@ -174,7 +174,7 @@ namespace Zetian.AntiSpam.Services
         /// </summary>
         public AntiSpamServiceStatistics GetStatistics()
         {
-            var stats = new AntiSpamServiceStatistics
+            AntiSpamServiceStatistics stats = new()
             {
                 MessagesChecked = _messagesChecked,
                 MessagesBlocked = _messagesBlocked,
@@ -183,10 +183,10 @@ namespace Zetian.AntiSpam.Services
             };
 
             // Get checker-specific stats
-            var bayesian = GetChecker<BayesianSpamFilter>();
+            BayesianSpamFilter? bayesian = GetChecker<BayesianSpamFilter>();
             if (bayesian != null)
             {
-                var bayesianStats = bayesian.GetStatistics();
+                BayesianStatistics bayesianStats = bayesian.GetStatistics();
                 stats.BayesianStats = new Dictionary<string, object>
                 {
                     ["TotalSpam"] = bayesianStats.TotalSpamMessages,
@@ -195,10 +195,10 @@ namespace Zetian.AntiSpam.Services
                 };
             }
 
-            var greylisting = GetChecker<GreylistingChecker>();
+            GreylistingChecker? greylisting = GetChecker<GreylistingChecker>();
             if (greylisting != null)
             {
-                var greylistStats = greylisting.GetStatistics();
+                GreylistStatistics greylistStats = greylisting.GetStatistics();
                 stats.GreylistStats = new Dictionary<string, object>
                 {
                     ["TotalEntries"] = greylistStats.TotalEntries,
@@ -217,7 +217,7 @@ namespace Zetian.AntiSpam.Services
         {
             GetChecker<BayesianSpamFilter>()?.Clear();
             GetChecker<GreylistingChecker>()?.Clear();
-            
+
             _messagesChecked = 0;
             _messagesBlocked = 0;
         }
@@ -235,8 +235,8 @@ namespace Zetian.AntiSpam.Services
         public Dictionary<string, object>? BayesianStats { get; set; }
         public Dictionary<string, object>? GreylistStats { get; set; }
 
-        public double BlockRate => MessagesChecked > 0 
-            ? (double)MessagesBlocked / MessagesChecked * 100 
+        public double BlockRate => MessagesChecked > 0
+            ? (double)MessagesBlocked / MessagesChecked * 100
             : 0;
     }
 }

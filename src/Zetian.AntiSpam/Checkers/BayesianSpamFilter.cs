@@ -41,7 +41,7 @@ namespace Zetian.AntiSpam.Checkers
         }
 
         public string Name => "Bayesian";
-        
+
         public bool IsEnabled { get; set; }
 
         public async Task<SpamCheckResult> CheckAsync(
@@ -62,7 +62,7 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             // Tokenize and analyze
-            var tokens = Tokenize(content);
+            HashSet<string> tokens = Tokenize(content);
             double spamProbability = await CalculateSpamProbabilityAsync(tokens, cancellationToken);
             double score = spamProbability * 100;
 
@@ -98,8 +98,8 @@ namespace Zetian.AntiSpam.Checkers
         /// </summary>
         public async Task TrainAsync(string content, bool isSpam)
         {
-            var tokens = Tokenize(content);
-            
+            HashSet<string> tokens = Tokenize(content);
+
             lock (_statsLock)
             {
                 if (isSpam)
@@ -112,7 +112,7 @@ namespace Zetian.AntiSpam.Checkers
                 }
             }
 
-            foreach (var token in tokens)
+            foreach (string token in tokens)
             {
                 _wordStats.AddOrUpdate(
                     token,
@@ -195,7 +195,7 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             // Add relevant headers
-            foreach (var header in message.Headers)
+            foreach (KeyValuePair<string, string> header in message.Headers)
             {
                 if (IsRelevantHeader(header.Key))
                 {
@@ -208,7 +208,7 @@ namespace Zetian.AntiSpam.Checkers
 
         private static bool IsRelevantHeader(string headerName)
         {
-            string[] relevantHeaders = 
+            string[] relevantHeaders =
             [
                 "X-Mailer", "X-Priority", "X-MSMail-Priority",
                 "List-Unsubscribe", "Return-Path", "Reply-To"
@@ -227,30 +227,30 @@ namespace Zetian.AntiSpam.Checkers
             // Remove script and style elements
             html = Regex.Replace(html, @"<script[^>]*>[\s\S]*?</script>", "", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"<style[^>]*>[\s\S]*?</style>", "", RegexOptions.IgnoreCase);
-            
+
             // Remove HTML tags
             html = Regex.Replace(html, @"<[^>]+>", " ");
-            
+
             // Decode HTML entities
             html = System.Net.WebUtility.HtmlDecode(html);
-            
+
             // Remove extra whitespace
             html = Regex.Replace(html, @"\s+", " ");
-            
+
             return html.Trim();
         }
 
         private HashSet<string> Tokenize(string content)
         {
             var tokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            
+
             // Split by word boundaries
-            var matches = Regex.Matches(content, @"\b[\w']+\b");
-            
+            MatchCollection matches = Regex.Matches(content, @"\b[\w']+\b");
+
             foreach (Match match in matches)
             {
                 string word = match.Value.ToLowerInvariant();
-                
+
                 // Apply length filters
                 if (word.Length >= _minWordLength && word.Length <= _maxWordLength)
                 {
@@ -267,14 +267,14 @@ namespace Zetian.AntiSpam.Checkers
         private static void ExtractSpecialTokens(string content, HashSet<string> tokens)
         {
             // URLs
-            var urlMatches = Regex.Matches(content, @"https?://[^\s]+", RegexOptions.IgnoreCase);
+            MatchCollection urlMatches = Regex.Matches(content, @"https?://[^\s]+", RegexOptions.IgnoreCase);
             foreach (Match match in urlMatches)
             {
                 tokens.Add($"URL:{new Uri(match.Value).Host}");
             }
 
             // Email addresses
-            var emailMatches = Regex.Matches(content, @"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b");
+            MatchCollection emailMatches = Regex.Matches(content, @"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b");
             foreach (Match match in emailMatches)
             {
                 string[] parts = match.Value.Split('@');
@@ -285,21 +285,21 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             // Money amounts
-            var moneyMatches = Regex.Matches(content, @"\$\d+(?:,\d{3})*(?:\.\d{2})?|\d+(?:,\d{3})*(?:\.\d{2})?\s*(?:USD|EUR|GBP)");
+            MatchCollection moneyMatches = Regex.Matches(content, @"\$\d+(?:,\d{3})*(?:\.\d{2})?|\d+(?:,\d{3})*(?:\.\d{2})?\s*(?:USD|EUR|GBP)");
             if (moneyMatches.Count > 0)
             {
                 tokens.Add("HAS_MONEY_AMOUNT");
             }
 
             // Phone numbers
-            var phoneMatches = Regex.Matches(content, @"\+?\d{1,3}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}");
+            MatchCollection phoneMatches = Regex.Matches(content, @"\+?\d{1,3}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}");
             if (phoneMatches.Count > 0)
             {
                 tokens.Add("HAS_PHONE_NUMBER");
             }
 
             // Excessive capitalization
-            var capsWords = Regex.Matches(content, @"\b[A-Z]{2,}\b");
+            MatchCollection capsWords = Regex.Matches(content, @"\b[A-Z]{2,}\b");
             if (capsWords.Count > 5)
             {
                 tokens.Add("EXCESSIVE_CAPS");
@@ -321,7 +321,7 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             var probabilities = new List<double>();
-            
+
             foreach (string token in tokens.Take(15)) // Use most significant tokens
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -355,14 +355,14 @@ namespace Zetian.AntiSpam.Checkers
             double wordInSpamProbability = (stats.SpamCount + 1.0) / (_totalSpamMessages + 2.0);
             double wordInHamProbability = (stats.HamCount + 1.0) / (_totalHamMessages + 2.0);
 
-            double probability = (wordInSpamProbability * spamProbability) /
+            double probability = wordInSpamProbability * spamProbability /
                 ((wordInSpamProbability * spamProbability) + (wordInHamProbability * hamProbability));
 
             // Apply Robinson's technique to reduce impact of rare words
             double s = 0.5; // Assumed probability for unknown words
             double x = 1.0; // Strength of assumption
             double n = stats.SpamCount + stats.HamCount;
-            
+
             return ((x * s) + (n * probability)) / (x + n);
         }
 
@@ -375,7 +375,7 @@ namespace Zetian.AntiSpam.Checkers
             foreach (double p in probabilities)
             {
                 productSpam *= p;
-                productHam *= (1.0 - p);
+                productHam *= 1.0 - p;
             }
 
             // Fisher's method

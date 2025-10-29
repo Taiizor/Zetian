@@ -77,7 +77,7 @@
 
     <!-- DnsClient for SPF/DKIM/DMARC and RBL lookups -->
     <ItemGroup>
-        <PackageReference Include="DnsClient" Version="1.7.0" />
+        <PackageReference Include="DnsClient" Version="1.8.0" />
     </ItemGroup>
 
     <ItemGroup>

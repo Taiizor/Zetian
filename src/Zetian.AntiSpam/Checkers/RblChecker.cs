@@ -1,4 +1,5 @@
 using DnsClient;
+using DnsClient.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,7 @@ namespace Zetian.AntiSpam.Checkers
         }
 
         public string Name => "RBL";
-        
+
         public bool IsEnabled { get; set; }
 
         public async Task<SpamCheckResult> CheckAsync(
@@ -63,20 +64,20 @@ namespace Zetian.AntiSpam.Checkers
                 return SpamCheckResult.Clean(0, "Private IP address");
             }
 
-            var listings = new List<string>();
-            var tasks = new List<Task<RblResult>>();
+            List<string> listings = [];
+            List<Task<RblResult>> tasks = [];
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(_timeout);
 
-            foreach (var provider in _providers.Where(p => p.IsEnabled))
+            foreach (RblProvider? provider in _providers.Where(p => p.IsEnabled))
             {
                 tasks.Add(CheckProviderAsync(clientIp, provider, cts.Token));
             }
 
             try
             {
-                var results = await Task.WhenAll(tasks);
+                RblResult[] results = await Task.WhenAll(tasks);
                 listings.AddRange(results.Where(r => r.IsListed).Select(r => r.Provider));
             }
             catch (OperationCanceledException)
@@ -125,32 +126,32 @@ namespace Zetian.AntiSpam.Checkers
             try
             {
                 string query = BuildRblQuery(ip, provider.Zone);
-                
-                var result = await _dnsClient.QueryAsync(query, QueryType.A, cancellationToken: cancellationToken);
-                
+
+                IDnsQueryResponse result = await _dnsClient.QueryAsync(query, QueryType.A, cancellationToken: cancellationToken);
+
                 if (result.Answers.Count > 0)
                 {
                     // Check if the response matches expected patterns
-                    var aRecords = result.Answers.OfType<DnsClient.Protocol.ARecord>().ToList();
-                    
+                    List<ARecord> aRecords = result.Answers.OfType<DnsClient.Protocol.ARecord>().ToList();
+
                     if (provider.ExpectedResponses != null && provider.ExpectedResponses.Count > 0)
                     {
                         // Check if response matches any expected patterns
-                        foreach (var record in aRecords)
+                        foreach (ARecord record in aRecords)
                         {
                             string responseIp = record.Address.ToString();
-                            if (provider.ExpectedResponses.Any(expected => responseIp.StartsWith(expected)))
+                            if (provider.ExpectedResponses.Any(responseIp.StartsWith))
                             {
                                 return new RblResult { IsListed = true, Provider = provider.Name };
                             }
                         }
                         return new RblResult { IsListed = false, Provider = provider.Name };
                     }
-                    
+
                     // Any A record response means listed
                     return new RblResult { IsListed = true, Provider = provider.Name };
                 }
-                
+
                 return new RblResult { IsListed = false, Provider = provider.Name };
             }
             catch (Exception)
@@ -163,7 +164,7 @@ namespace Zetian.AntiSpam.Checkers
         private static string BuildRblQuery(IPAddress ip, string zone)
         {
             byte[] bytes = ip.GetAddressBytes();
-            
+
             if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
             {
                 // IPv4: reverse octets
@@ -178,7 +179,7 @@ namespace Zetian.AntiSpam.Checkers
                 Array.Reverse(chars);
                 return $"{string.Join(".", chars)}.{zone}";
             }
-            
+
             throw new ArgumentException($"Unsupported IP address family: {ip.AddressFamily}");
         }
 
@@ -187,40 +188,54 @@ namespace Zetian.AntiSpam.Checkers
             if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
             {
                 byte[] bytes = ip.GetAddressBytes();
-                
+
                 // 10.0.0.0/8
                 if (bytes[0] == 10)
+                {
                     return true;
-                
+                }
+
                 // 172.16.0.0/12
                 if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+                {
                     return true;
-                
+                }
+
                 // 192.168.0.0/16
                 if (bytes[0] == 192 && bytes[1] == 168)
+                {
                     return true;
-                
+                }
+
                 // 127.0.0.0/8 (loopback)
                 if (bytes[0] == 127)
+                {
                     return true;
+                }
             }
             else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
             {
                 // Check for IPv6 private addresses
                 if (IPAddress.IsLoopback(ip))
+                {
                     return true;
-                
+                }
+
                 byte[] bytes = ip.GetAddressBytes();
-                
+
                 // fc00::/7 (Unique Local Addresses)
                 if ((bytes[0] & 0xfe) == 0xfc)
+                {
                     return true;
-                
+                }
+
                 // fe80::/10 (Link-Local)
                 if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80)
+                {
                     return true;
+                }
             }
-            
+
             return false;
         }
 

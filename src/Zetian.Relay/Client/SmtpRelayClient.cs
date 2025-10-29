@@ -444,7 +444,7 @@ namespace Zetian.Relay.Client
 
             // Send username
             string usernameBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(Credentials.UserName));
-            await SendCommandAsync(usernameBase64, cancellationToken).ConfigureAwait(false);
+            await SendCommandAsync(usernameBase64, cancellationToken, isSensitive: true).ConfigureAwait(false);
             response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsPositiveIntermediate)
@@ -454,7 +454,7 @@ namespace Zetian.Relay.Client
 
             // Send password
             string passwordBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(Credentials.Password));
-            await SendCommandAsync(passwordBase64, cancellationToken).ConfigureAwait(false);
+            await SendCommandAsync(passwordBase64, cancellationToken, isSensitive: true).ConfigureAwait(false);
             response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccess)
@@ -486,9 +486,16 @@ namespace Zetian.Relay.Client
             await _writer.FlushAsync().ConfigureAwait(false);
         }
 
-        private async Task SendCommandAsync(string command, CancellationToken cancellationToken)
+        private async Task SendCommandAsync(string command, CancellationToken cancellationToken, bool isSensitive = false)
         {
-            _logger.LogDebug("C: {Command}", command.Contains("AUTH") ? "AUTH ***" : command);
+            if (isSensitive)
+            {
+                _logger.LogDebug("C: ***");
+            }
+            else
+            {
+                _logger.LogDebug("C: {Command}", command.Contains("AUTH") ? "AUTH ***" : command);
+            }
 
             await _writer!.WriteLineAsync(command).ConfigureAwait(false);
             await _writer.FlushAsync().ConfigureAwait(false);

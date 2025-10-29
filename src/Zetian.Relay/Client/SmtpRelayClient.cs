@@ -172,8 +172,8 @@ namespace Zetian.Relay.Client
                 throw new ArgumentNullException(nameof(recipients));
             }
 
-            var from = message.From?.Address ?? "<>";
-            var rawData = await message.GetRawDataAsync().ConfigureAwait(false);
+            string from = message.From?.Address ?? "<>";
+            byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);
 
             return await SendRawAsync(from, recipients, rawData, cancellationToken).ConfigureAwait(false);
         }
@@ -217,7 +217,7 @@ namespace Zetian.Relay.Client
                 List<string> acceptedRecipients = [];
                 Dictionary<string, string> rejectedRecipients = [];
 
-                foreach (var recipient in recipientList)
+                foreach (string recipient in recipientList)
                 {
                     await SendCommandAsync($"RCPT TO:<{recipient}>", cts.Token).ConfigureAwait(false);
                     SmtpResponse rcptResponse = await ReadResponseAsync(cts.Token).ConfigureAwait(false);
@@ -264,7 +264,7 @@ namespace Zetian.Relay.Client
                     string? transactionId = null;
                     if (!string.IsNullOrEmpty(finalResponse.Message))
                     {
-                        var parts = finalResponse.Message.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        string[] parts = finalResponse.Message.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length > 1)
                         {
                             transactionId = parts[^1];
@@ -373,7 +373,7 @@ namespace Zetian.Relay.Client
 
         private async Task SendEhloAsync(CancellationToken cancellationToken)
         {
-            var domain = LocalDomain ?? Dns.GetHostName();
+            string domain = LocalDomain ?? Dns.GetHostName();
             await SendCommandAsync($"EHLO {domain}", cancellationToken).ConfigureAwait(false);
 
             SmtpResponse response = await ReadMultilineResponseAsync(cancellationToken).ConfigureAwait(false);
@@ -393,9 +393,9 @@ namespace Zetian.Relay.Client
             {
                 // Parse capabilities from EHLO response
                 _serverCapabilities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var line in response.Lines.Skip(1))
+                foreach (string? line in response.Lines.Skip(1))
                 {
-                    var parts = line.Split(' ', 2);
+                    string[] parts = line.Split(' ', 2);
                     _serverCapabilities[parts[0]] = parts.Length > 1 ? parts[1] : string.Empty;
                 }
             }
@@ -422,9 +422,9 @@ namespace Zetian.Relay.Client
                 throw new InvalidOperationException("Credentials not set");
             }
 
-            var authString = $"\0{Credentials.UserName}\0{Credentials.Password}";
-            var authBytes = Encoding.ASCII.GetBytes(authString);
-            var authBase64 = Convert.ToBase64String(authBytes);
+            string authString = $"\0{Credentials.UserName}\0{Credentials.Password}";
+            byte[] authBytes = Encoding.ASCII.GetBytes(authString);
+            string authBase64 = Convert.ToBase64String(authBytes);
 
             await SendCommandAsync($"AUTH PLAIN {authBase64}", cancellationToken).ConfigureAwait(false);
             SmtpResponse response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
@@ -451,7 +451,7 @@ namespace Zetian.Relay.Client
             }
 
             // Send username
-            var usernameBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(Credentials.UserName));
+            string usernameBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(Credentials.UserName));
             await SendCommandAsync(usernameBase64, cancellationToken).ConfigureAwait(false);
             response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
 
@@ -461,7 +461,7 @@ namespace Zetian.Relay.Client
             }
 
             // Send password
-            var passwordBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(Credentials.Password));
+            string passwordBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(Credentials.Password));
             await SendCommandAsync(passwordBase64, cancellationToken).ConfigureAwait(false);
             response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
 
@@ -504,7 +504,7 @@ namespace Zetian.Relay.Client
 
         private async Task<SmtpResponse> ReadResponseAsync(CancellationToken cancellationToken)
         {
-            var line = await _reader!.ReadLineAsync().ConfigureAwait(false);
+            string? line = await _reader!.ReadLineAsync().ConfigureAwait(false);
 
             if (string.IsNullOrEmpty(line))
             {
@@ -513,12 +513,12 @@ namespace Zetian.Relay.Client
 
             _logger.LogDebug("S: {Response}", line);
 
-            if (line.Length < 3 || !int.TryParse(line[..3], out var code))
+            if (line.Length < 3 || !int.TryParse(line[..3], out int code))
             {
                 throw new InvalidOperationException($"Invalid response format: {line}");
             }
 
-            var message = line.Length > 4 ? line[4..] : string.Empty;
+            string message = line.Length > 4 ? line[4..] : string.Empty;
             return new SmtpResponse(code, message);
         }
 
@@ -529,7 +529,7 @@ namespace Zetian.Relay.Client
 
             while (true)
             {
-                var line = await _reader!.ReadLineAsync().ConfigureAwait(false);
+                string? line = await _reader!.ReadLineAsync().ConfigureAwait(false);
 
                 if (string.IsNullOrEmpty(line))
                 {
@@ -538,7 +538,7 @@ namespace Zetian.Relay.Client
 
                 _logger.LogDebug("S: {Response}", line);
 
-                if (line.Length < 3 || !int.TryParse(line[..3], out var currentCode))
+                if (line.Length < 3 || !int.TryParse(line[..3], out int currentCode))
                 {
                     throw new InvalidOperationException($"Invalid response format: {line}");
                 }
@@ -552,8 +552,8 @@ namespace Zetian.Relay.Client
                     throw new InvalidOperationException($"Inconsistent response code: {line}");
                 }
 
-                var hasMore = line.Length > 3 && line[3] == '-';
-                var message = line.Length > 4 ? line[4..] : string.Empty;
+                bool hasMore = line.Length > 3 && line[3] == '-';
+                string message = line.Length > 4 ? line[4..] : string.Empty;
                 lines.Add(message);
 
                 if (!hasMore)

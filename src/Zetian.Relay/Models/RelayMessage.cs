@@ -140,10 +140,10 @@ namespace Zetian.Relay.Models
         public TimeSpan CalculateRetryDelay()
         {
             // Exponential backoff: 1min, 2min, 4min, 8min, 16min, 32min, 1hr, 2hr, 4hr...
-            var baseDelay = TimeSpan.FromMinutes(1);
-            var maxDelay = TimeSpan.FromHours(4);
+            TimeSpan baseDelay = TimeSpan.FromMinutes(1);
+            TimeSpan maxDelay = TimeSpan.FromHours(4);
 
-            var delay = TimeSpan.FromMilliseconds(
+            TimeSpan delay = TimeSpan.FromMilliseconds(
                 baseDelay.TotalMilliseconds * Math.Pow(2, Math.Min(RetryCount, 10)));
 
             return delay > maxDelay ? maxDelay : delay;

@@ -79,7 +79,7 @@ namespace Zetian.Relay.Queue
                 // Try to get a message from the ready queue
                 if (_readyQueue.Reader.TryRead(out string? queueId))
                 {
-                    if (_messages.TryGetValue(queueId, out var message))
+                    if (_messages.TryGetValue(queueId, out RelayMessage? message))
                     {
                         // Check if message is ready for delivery
                         if (message.Status == RelayStatus.Queued ||
@@ -103,7 +103,7 @@ namespace Zetian.Relay.Queue
 
                     queueId = await _readyQueue.Reader.ReadAsync(cts.Token).ConfigureAwait(false);
 
-                    if (_messages.TryGetValue(queueId, out var message))
+                    if (_messages.TryGetValue(queueId, out RelayMessage? message))
                     {
                         if (message.Status == RelayStatus.Queued ||
                             (message.Status == RelayStatus.Deferred &&
@@ -129,7 +129,7 @@ namespace Zetian.Relay.Queue
 
         public Task<IRelayMessage?> GetMessageAsync(string queueId, CancellationToken cancellationToken = default)
         {
-            _messages.TryGetValue(queueId, out var message);
+            _messages.TryGetValue(queueId, out RelayMessage? message);
             return Task.FromResult<IRelayMessage?>(message);
         }
 
@@ -139,7 +139,7 @@ namespace Zetian.Relay.Queue
             string? error = null,
             CancellationToken cancellationToken = default)
         {
-            if (!_messages.TryGetValue(queueId, out var message))
+            if (!_messages.TryGetValue(queueId, out RelayMessage? message))
             {
                 _logger.LogWarning("Message {QueueId} not found for status update", queueId);
                 return;
@@ -186,7 +186,7 @@ namespace Zetian.Relay.Queue
             IEnumerable<string> recipients,
             CancellationToken cancellationToken = default)
         {
-            if (!_messages.TryGetValue(queueId, out var message))
+            if (!_messages.TryGetValue(queueId, out RelayMessage? message))
             {
                 _logger.LogWarning("Message {QueueId} not found for delivery update", queueId);
                 return;
@@ -217,7 +217,7 @@ namespace Zetian.Relay.Queue
             string error,
             CancellationToken cancellationToken = default)
         {
-            if (!_messages.TryGetValue(queueId, out var message))
+            if (!_messages.TryGetValue(queueId, out RelayMessage? message))
             {
                 _logger.LogWarning("Message {QueueId} not found for failure update", queueId);
                 return;
@@ -247,7 +247,7 @@ namespace Zetian.Relay.Queue
             TimeSpan delay,
             CancellationToken cancellationToken = default)
         {
-            if (!_messages.TryGetValue(queueId, out var message))
+            if (!_messages.TryGetValue(queueId, out RelayMessage? message))
             {
                 _logger.LogWarning("Message {QueueId} not found for rescheduling", queueId);
                 return;
@@ -269,7 +269,7 @@ namespace Zetian.Relay.Queue
 
         public Task<bool> RemoveAsync(string queueId, CancellationToken cancellationToken = default)
         {
-            if (_messages.TryRemove(queueId, out var message))
+            if (_messages.TryRemove(queueId, out RelayMessage? message))
             {
                 if (message.Status == RelayStatus.InProgress)
                 {
@@ -318,7 +318,7 @@ namespace Zetian.Relay.Queue
                     .Where(m => m.IsExpired)
                     .ToList();
 
-                foreach (var message in expired)
+                foreach (RelayMessage message in expired)
                 {
                     if (_messages.TryRemove(message.QueueId, out _))
                     {
@@ -375,13 +375,13 @@ namespace Zetian.Relay.Queue
             }
 
             // Group by priority
-            foreach (var group in messages.GroupBy(m => m.Priority))
+            foreach (IGrouping<RelayPriority, RelayMessage> group in messages.GroupBy(m => m.Priority))
             {
                 stats.MessagesByPriority[group.Key] = group.Count();
             }
 
             // Group by smart host
-            foreach (var group in messages.Where(m => !string.IsNullOrEmpty(m.SmartHost))
+            foreach (IGrouping<string, RelayMessage> group in messages.Where(m => !string.IsNullOrEmpty(m.SmartHost))
                                          .GroupBy(m => m.SmartHost!))
             {
                 stats.MessagesBySmartHost[group.Key] = group.Count();
@@ -392,14 +392,14 @@ namespace Zetian.Relay.Queue
 
         private async Task ProcessDeferredMessagesAsync(CancellationToken cancellationToken)
         {
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
             List<RelayMessage> deferredMessages = _messages.Values
                 .Where(m => m.Status == RelayStatus.Deferred &&
                            m.NextDeliveryTime.HasValue &&
                            m.NextDeliveryTime.Value <= now)
                 .ToList();
 
-            foreach (var message in deferredMessages)
+            foreach (RelayMessage message in deferredMessages)
             {
                 await _readyQueue.Writer.WriteAsync(message.QueueId, cancellationToken).ConfigureAwait(false);
             }

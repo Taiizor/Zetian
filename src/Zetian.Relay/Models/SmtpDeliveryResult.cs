@@ -105,7 +105,7 @@ namespace Zetian.Relay
             {
                 result.DeliveredRecipients.Add(recipient);
             }
-            foreach (var failure in failed)
+            foreach (KeyValuePair<string, string> failure in failed)
             {
                 result.FailedRecipients[failure.Key] = failure.Value;
             }

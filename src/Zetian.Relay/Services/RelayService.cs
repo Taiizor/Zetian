@@ -440,7 +440,7 @@ namespace Zetian.Relay.Services
 
             return _clientPool.GetOrAdd(key, _ =>
             {
-                var client = new SmtpRelayClient(_logger as ILogger<SmtpRelayClient>)
+                SmtpRelayClient client = new(_logger as ILogger<SmtpRelayClient>)
                 {
                     Host = config.Host,
                     Port = config.Port,
@@ -457,10 +457,10 @@ namespace Zetian.Relay.Services
         private TimeSpan CalculateRetryDelay(int retryCount)
         {
             // Exponential backoff with jitter
-            var baseDelay = TimeSpan.FromMinutes(1);
-            var maxDelay = TimeSpan.FromHours(4);
+            TimeSpan baseDelay = TimeSpan.FromMinutes(1);
+            TimeSpan maxDelay = TimeSpan.FromHours(4);
 
-            var delay = TimeSpan.FromMilliseconds(
+            TimeSpan delay = TimeSpan.FromMilliseconds(
                 baseDelay.TotalMilliseconds * Math.Pow(2, Math.Min(retryCount, 10)));
 
             // Add jitter (±10%)

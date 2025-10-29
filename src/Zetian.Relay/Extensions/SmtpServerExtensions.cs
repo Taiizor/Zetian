@@ -124,7 +124,7 @@ namespace Zetian.Relay.Extensions
             if (config != null)
             {
                 config.RelayDomains.Clear();
-                foreach (var domain in domains)
+                foreach (string domain in domains)
                 {
                     config.RelayDomains.Add(domain);
                 }
@@ -150,7 +150,7 @@ namespace Zetian.Relay.Extensions
             if (config != null)
             {
                 config.LocalDomains.Clear();
-                foreach (var domain in domains)
+                foreach (string domain in domains)
                 {
                     config.LocalDomains.Add(domain);
                 }
@@ -215,7 +215,7 @@ namespace Zetian.Relay.Extensions
         /// </summary>
         public static RelayService? GetRelayService(this ISmtpServer server)
         {
-            if (server?.Configuration?.Properties?.TryGetValue(RelayServiceKey, out var service) == true)
+            if (server?.Configuration?.Properties?.TryGetValue(RelayServiceKey, out object? service) == true)
             {
                 return service as RelayService;
             }
@@ -300,7 +300,7 @@ namespace Zetian.Relay.Extensions
             catch (Exception ex)
             {
                 // Log error but don't fail the message reception
-                ILogger? logger = e.Session.Properties.TryGetValue("Logger", out var loggerObj)
+                ILogger? logger = e.Session.Properties.TryGetValue("Logger", out object? loggerObj)
                     ? loggerObj as ILogger
                     : null;
 
@@ -349,7 +349,7 @@ namespace Zetian.Relay.Extensions
             }
 
             // Check headers for priority indicators
-            var priority = message.GetHeader("X-Priority");
+            string? priority = message.GetHeader("X-Priority");
             if (priority != null)
             {
                 if (priority.Contains('1') || priority.Contains("urgent", StringComparison.OrdinalIgnoreCase))

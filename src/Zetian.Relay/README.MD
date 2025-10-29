@@ -8,18 +8,18 @@ SMTP relay and proxy extension for Zetian SMTP Server with smart host support, q
 
 ## ⚡ Features
 
-- 📬 **Smart Host Support** - Route messages through configured relay servers
-- 🔄 **Queue Management** - Persistent queue with retry mechanisms
-- ⚖️ **Load Balancing** - Distribute load across multiple relay servers
-- 🔀 **Failover** - Automatic failover to backup servers
-- 📊 **MX Routing** - DNS MX record-based routing
-- 🎯 **Domain Routing** - Custom routing rules per domain
-- ⏱️ **Retry Logic** - Exponential backoff with configurable limits
-- 📈 **Queue Statistics** - Real-time queue monitoring
-- 🔐 **Authentication** - Support for AUTH PLAIN and LOGIN
-- 🌐 **TLS/SSL** - Secure connections with STARTTLS support
-- 💌 **Bounce Messages** - Automatic NDR generation
 - 🎚️ **Priority Queuing** - Message priority support
+- 📊 **MX Routing** - DNS MX record-based routing
+- 🔀 **Failover** - Automatic failover to backup servers
+- 📈 **Queue Statistics** - Real-time queue monitoring
+- 💌 **Bounce Messages** - Automatic NDR generation
+- 🎯 **Domain Routing** - Custom routing rules per domain
+- 🌐 **TLS/SSL** - Secure connections with STARTTLS support
+- 🔐 **Authentication** - Support for AUTH PLAIN and LOGIN
+- ⏱️ **Retry Logic** - Exponential backoff with configurable limits
+- ⚖️ **Load Balancing** - Distribute load across multiple relay servers
+- 🔄 **Queue Management** - Persistent queue with retry mechanisms
+- 📬 **Smart Host Support** - Route messages through configured relay servers
 
 ## 📦 Installation
 
@@ -429,33 +429,33 @@ foreach (var kvp in stats.MessagesBySmartHost)
 
 ## 🚀 Performance Tips
 
-1. **Connection Pooling** - Reuse SMTP client connections
-2. **Concurrent Deliveries** - Adjust `MaxConcurrentDeliveries` based on resources
+1. **DNS Caching** - Cache MX record lookups
+2. **Connection Pooling** - Reuse SMTP client connections
 3. **Message Batching** - Group messages to same destination
-4. **Smart Host Selection** - Use priority and weight for optimal routing
-5. **DNS Caching** - Cache MX record lookups
-6. **Queue Persistence** - Consider persistent queue for reliability
+4. **Queue Persistence** - Consider persistent queue for reliability
+5. **Smart Host Selection** - Use priority and weight for optimal routing
+6. **Concurrent Deliveries** - Adjust `MaxConcurrentDeliveries` based on resources
 
 ## 📚 Best Practices
 
-1. **Always Configure Timeouts** - Prevent hanging connections
-2. **Use TLS When Possible** - Secure message transmission
+1. **Log Relay Activity** - Audit trail for compliance
+2. **Implement Rate Limiting** - Prevent abuse of relay
 3. **Monitor Queue Size** - Prevent unbounded growth
-4. **Set Message Lifetime** - Clean up undeliverable messages
+4. **Use TLS When Possible** - Secure message transmission
 5. **Configure Bounce Handling** - Inform senders of failures
-6. **Implement Rate Limiting** - Prevent abuse of relay
-7. **Regular Cleanup** - Remove expired messages periodically
-8. **Log Relay Activity** - Audit trail for compliance
+6. **Regular Cleanup** - Remove expired messages periodically
+7. **Set Message Lifetime** - Clean up undeliverable messages
+8. **Always Configure Timeouts** - Prevent hanging connections
 
 ## 🔒 Security Considerations
 
-- Always require authentication for relay access
-- Use TLS/SSL for all outbound connections
-- Validate server certificates
-- Limit relay networks to trusted IPs
+- Regular security audits
 - Monitor for relay abuse
 - Implement rate limiting
-- Regular security audits
+- Validate server certificates
+- Limit relay networks to trusted IPs
+- Use TLS/SSL for all outbound connections
+- Always require authentication for relay access
 
 ## 📋 Requirements
 

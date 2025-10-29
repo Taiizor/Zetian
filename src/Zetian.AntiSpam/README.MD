@@ -8,14 +8,14 @@ Comprehensive anti-spam solution for Zetian SMTP Server with multiple detection 
 
 ## ⚡ Features
 
-- 🛡️ **SPF Validation** - Sender Policy Framework verification
-- 📧 **DKIM/DMARC** - Email authentication protocols (coming soon)
-- 🤖 **Bayesian Filtering** - Machine learning-based spam detection
-- 🚫 **RBL/DNSBL** - Realtime blackhole list checking
-- ⏱️ **Greylisting** - Temporary rejection for unknown senders
-- 🔧 **Extensible** - Easy to add custom spam checkers
-- ⚡ **High Performance** - Parallel checking with timeout support
 - 📊 **Statistics** - Detailed metrics and reporting
+- 🚫 **RBL/DNSBL** - Realtime blackhole list checking
+- 🔧 **Extensible** - Easy to add custom spam checkers
+- 🛡️ **SPF Validation** - Sender Policy Framework verification
+- ⏱️ **Greylisting** - Temporary rejection for unknown senders
+- ⚡ **High Performance** - Parallel checking with timeout support
+- 🤖 **Bayesian Filtering** - Machine learning-based spam detection
+- 📧 **DKIM/DMARC** - Email authentication protocols (coming soon)
 
 ## 📦 Installation
 
@@ -234,9 +234,9 @@ server.MessageReceived += async (sender, e) =>
 
 ## 🌐 Default RBL Providers
 
-- **Spamhaus ZEN** - Comprehensive spam/exploit list
 - **SpamCop** - User-reported spam
 - **Barracuda** - Commercial spam database
+- **Spamhaus ZEN** - Comprehensive spam/exploit list
 - **SORBS** - Multiple spam databases (disabled by default)
 - **UCEPROTECT** - Aggressive blocking (disabled by default)
 
@@ -267,44 +267,46 @@ public class AntiSpamOptions
 
 ## 📚 Best Practices
 
-1. **Start Conservative** - Begin with lenient settings and adjust based on false positives
-2. **Train Bayesian** - Provide adequate training data for better accuracy
-3. **Monitor Statistics** - Regularly review block rates and adjust thresholds
-4. **Whitelist Partners** - Add trusted partners to greylisting whitelist
+1. **Regular Updates** - Keep RBL lists and training data current
+2. **Whitelist Partners** - Add trusted partners to greylisting whitelist
+3. **Train Bayesian** - Provide adequate training data for better accuracy
+4. **Monitor Statistics** - Regularly review block rates and adjust thresholds
 5. **Use Multiple Methods** - Combine different checkers for better detection
-6. **Regular Updates** - Keep RBL lists and training data current
+6. **Start Conservative** - Begin with lenient settings and adjust based on false positives
 
 ## 🔒 Security Considerations
 
-- SPF checks require DNS lookups - ensure reliable DNS
-- RBL queries may expose client IPs to third parties
-- Greylisting may delay legitimate mail initially
 - Bayesian filters need balanced training data
+- Greylisting may delay legitimate mail initially
+- RBL queries may expose client IPs to third parties
+- SPF checks require DNS lookups - ensure reliable DNS
 
 ## 🚀 Performance Tips
 
-- Enable parallel checking for better performance
-- Set appropriate timeouts for DNS queries
-- Use caching DNS client for repeated lookups
 - Limit RBL providers to essential ones
+- Set appropriate timeouts for DNS queries
 - Pre-train Bayesian filter before deployment
+- Use caching DNS client for repeated lookups
+- Enable parallel checking for better performance
 
-## 📦 Requirements
+## 📋 Requirements
 
-- Zetian SMTP Server 1.0.0+
+- Windows, Linux, or macOS
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- Zetian SMTP Server package
 - DnsClient.NET for DNS lookups
+
+## 📚 Documentation & Support
+
+- **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
+- **Examples**: [GitHub Examples](https://github.com/Taiizor/Zetian/tree/develop/examples)
+- **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
+- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
 
 ## 📄 License
 
-MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE) for details
+MIT License - see [LICENSE](https://github.com/Taiizor/Zetian/blob/develop/LICENSE)
 
-## 🤝 Contributing
+---
 
-Contributions are welcome! Please see our [Contributing Guidelines](https://github.com/Taiizor/Zetian/blob/develop/CONTRIBUTING.md).
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/Taiizor/Zetian/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Taiizor/Zetian/discussions)
-- **Documentation**: [Zetian Documentation](https://zetian.soferity.com)
+**Built with ❤️ for the .NET community**

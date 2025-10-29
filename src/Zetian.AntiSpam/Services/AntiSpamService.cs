@@ -126,11 +126,11 @@ namespace Zetian.AntiSpam.Services
                 Interlocked.Increment(ref _messagesBlocked);
             }
 
-            string combinedReason = reasons.Count > 0
+            string? combinedReason = reasons.Count > 0
                 ? string.Join("; ", reasons)
                 : null;
 
-            string combinedDetails = details.Count > 0
+            string? combinedDetails = details.Count > 0
                 ? string.Join("\n", details)
                 : null;
 

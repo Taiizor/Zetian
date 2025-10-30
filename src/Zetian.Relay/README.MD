@@ -42,7 +42,6 @@ using Zetian.Relay.Extensions;
 // Create SMTP server with relay enabled
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay();
 
 // Start server with relay service
@@ -52,11 +51,13 @@ var relayService = await server.StartWithRelayAsync();
 ### With Smart Host
 
 ```csharp
+using System.Net;
+using Zetian.Server;
+using Zetian.Relay.Extensions;
 using Zetian.Relay.Configuration;
 
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
     {
         config.DefaultSmartHost = new SmartHostConfiguration
@@ -76,7 +77,6 @@ await server.StartAsync();
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Primary smart host
@@ -111,7 +111,9 @@ var server = SmtpServerBuilder
 ### Using Relay Builder
 
 ```csharp
+using Zetian.Server;
 using Zetian.Relay.Builder;
+using Zetian.Relay.Extensions;
 
 var relayConfig = new RelayBuilder()
     .WithSmartHost("smtp.office365.com", 587, "user@domain.com", "password")
@@ -129,7 +131,6 @@ var relayConfig = new RelayBuilder()
 
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(relayConfig);
 ```
 
@@ -138,7 +139,6 @@ var server = SmtpServerBuilder
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Route specific domains through different smart hosts
@@ -171,7 +171,6 @@ var server = SmtpServerBuilder
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Use DNS MX records for routing
@@ -195,7 +194,6 @@ var server = SmtpServerBuilder
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Allow relay from specific IP addresses without authentication
@@ -261,7 +259,6 @@ server.MessageReceived += async (sender, e) =>
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Maximum retry attempts
@@ -297,7 +294,6 @@ The relay service uses exponential backoff for retries:
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Enable bounce message generation
@@ -334,7 +330,6 @@ The relay client automatically detects and uses the appropriate authentication m
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Configure multiple smart hosts with weights
@@ -370,7 +365,6 @@ var server = SmtpServerBuilder
 ```csharp
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay(config =>
 {
     // Enable TLS for outbound connections
@@ -393,7 +387,6 @@ var server = SmtpServerBuilder
 // Create server first
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Build()
     .EnableRelay();
 
 // Add smart host

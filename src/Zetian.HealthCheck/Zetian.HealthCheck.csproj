@@ -23,7 +23,7 @@
 
     <PropertyGroup>
         <ApplicationIcon>Resources\Zetian.ico</ApplicationIcon>
-        <Version>1.0.5</Version>
+        <Version>1.0.6</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>Zetian.HealthCheck</Title>

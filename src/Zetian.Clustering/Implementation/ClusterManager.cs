@@ -732,7 +732,7 @@ namespace Zetian.Clustering.Implementation
 
             // Check health of other nodes based on heartbeat timestamps
             DateTime now = DateTime.UtcNow;
-            TimeSpan heartbeatTimeout = _options.HealthCheck.FailureThreshold;
+            TimeSpan heartbeatTimeout = TimeSpan.FromSeconds(_options.HealthCheck.FailureThreshold * 10);
 
             foreach (ClusterNode node in _nodes.Values.Where(n => n.Id != NodeId))
             {
@@ -877,7 +877,7 @@ namespace Zetian.Clustering.Implementation
                 Timestamp = DateTime.UtcNow,
                 Ttl = options.Ttl,
                 ConsistencyLevel = options.ConsistencyLevel,
-                Version = options.Version ?? 1
+                Version = options.Version
             };
 
             ClusterMessage message = new()
@@ -887,7 +887,7 @@ namespace Zetian.Clustering.Implementation
                 TargetNodeId = node.Id,
                 Payload = payload,
                 RequiresAck = true,
-                Ttl = options.Timeout ?? TimeSpan.FromSeconds(5)
+                Ttl = options.Timeout
             };
 
             try
@@ -1411,7 +1411,7 @@ namespace Zetian.Clustering.Implementation
                         ConfigurationType = payload.ConfigurationType,
                         NewValue = payload.Configuration,
                         Success = true,
-                        UpdatedNodes = new[] { NodeId },
+                        UpdatedNodes = [NodeId],
                         SourceNodeId = message.SourceNodeId
                     });
 

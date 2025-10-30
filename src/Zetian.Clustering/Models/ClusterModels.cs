@@ -202,6 +202,11 @@ namespace Zetian.Clustering.Models
         /// Timeout for replication operation
         /// </summary>
         public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
+
+        /// <summary>
+        /// Gets or sets the version number associated with the current instance.
+        /// </summary>
+        public int Version { get; set; } = 1;
     }
 
     /// <summary>

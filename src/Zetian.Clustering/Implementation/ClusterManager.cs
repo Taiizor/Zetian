@@ -11,6 +11,7 @@ using Zetian.Clustering.Abstractions;
 using Zetian.Clustering.Enums;
 using Zetian.Clustering.Models;
 using Zetian.Clustering.Models.EventArgs;
+using Zetian.Clustering.Network;
 using Zetian.Clustering.Options;
 
 namespace Zetian.Clustering.Implementation
@@ -25,7 +26,9 @@ namespace Zetian.Clustering.Implementation
         private readonly ILogger<ClusterManager> _logger;
         private readonly ConcurrentDictionary<string, ClusterNode> _nodes;
         private readonly ConcurrentDictionary<string, SessionInfo> _sessions;
+        private readonly ConcurrentDictionary<string, byte[]> _replicatedState;
         private readonly SemaphoreSlim _stateLock;
+        private IClusterNetworkClient? _networkClient;
         private bool _disposed;
         private CancellationTokenSource? _cancellationTokenSource;
         private Task? _heartbeatTask;
@@ -40,8 +43,16 @@ namespace Zetian.Clustering.Implementation
             NodeId = _options.NodeId;
             _nodes = new ConcurrentDictionary<string, ClusterNode>();
             _sessions = new ConcurrentDictionary<string, SessionInfo>();
+            _replicatedState = new ConcurrentDictionary<string, byte[]>();
             _stateLock = new SemaphoreSlim(1, 1);
             State = ClusterState.Forming;
+
+            // Initialize network client if provided in options
+            if (_options.Properties.TryGetValue("NetworkClient", out object? networkClient) && networkClient is IClusterNetworkClient client)
+            {
+                _networkClient = client;
+                _networkClient.MessageReceived += OnNetworkMessageReceived;
+            }
         }
 
         public string NodeId { get; }
@@ -594,8 +605,60 @@ namespace Zetian.Clustering.Implementation
 
         private async Task DiscoverNodesAsync(CancellationToken cancellationToken)
         {
-            // Implementation would depend on discovery method
-            await Task.CompletedTask;
+            // Check if seed nodes are configured
+            if (_options.Properties.TryGetValue("SeedNodes", out object? seedNodes) && seedNodes is List<string> seeds)
+            {
+                foreach (string seed in seeds)
+                {
+                    try
+                    {
+                        // Parse seed node endpoint
+                        string[] parts = seed.Split(':');
+                        if (parts.Length == 2 && IPAddress.TryParse(parts[0], out IPAddress? ip) && int.TryParse(parts[1], out int port))
+                        {
+                            IPEndPoint endpoint = new(ip, port);
+
+                            // Send join request to seed node
+                            if (_networkClient != null)
+                            {
+                                ClusterMessage joinMessage = new()
+                                {
+                                    Type = MessageType.Join,
+                                    SourceNodeId = NodeId,
+                                    RequiresAck = true,
+                                    Payload = new
+                                    {
+                                        NodeId = NodeId,
+                                        Endpoint = new IPEndPoint(IPAddress.Any, _options.ClusterPort).ToString(),
+                                        Version = GetType().Assembly.GetName().Version?.ToString() ?? "1.0.0",
+                                        Capabilities = new[] { "replication", "migration", "monitoring" }
+                                    }
+                                };
+
+                                AcknowledgmentMessage? ack = await _networkClient.SendMessageAsync(endpoint, joinMessage, cancellationToken);
+
+                                if (ack?.Success == true && ack.Result != null)
+                                {
+                                    // Process cluster topology from seed node
+                                    _logger.LogInformation("Successfully joined cluster via seed node {Seed}", seed);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to connect to seed node {Seed}", seed);
+                    }
+                }
+            }
+
+            // Start network listener if configured
+            if (_networkClient != null && _options.ClusterPort > 0)
+            {
+                await _networkClient.StartListeningAsync(_options.ClusterPort, cancellationToken);
+                _logger.LogInformation("Started listening on cluster port {Port}", _options.ClusterPort);
+            }
         }
 
         private async Task SendHeartbeatsAsync(CancellationToken cancellationToken)
@@ -609,8 +672,43 @@ namespace Zetian.Clustering.Implementation
                 }
             }
 
-            // Send heartbeats to other nodes
-            await Task.CompletedTask;
+            if (_networkClient == null)
+            {
+                return;
+            }
+
+            HeartbeatPayload payload = new()
+            {
+                State = _nodes.TryGetValue(NodeId, out ClusterNode? self) ? self.State : NodeState.Active,
+                CpuUsage = self?.CpuUsage ?? 0,
+                MemoryUsage = self?.MemoryUsage ?? 0,
+                ActiveSessions = _sessions.Count,
+                NetworkBandwidth = self?.NetworkBandwidth ?? 0,
+                LastUpdate = DateTime.UtcNow,
+                Metrics = new Dictionary<string, object>
+                {
+                    ["MessageCount"] = _sessions.Values.Sum(s => s.MessageCount),
+                    ["BytesTransferred"] = _sessions.Values.Sum(s => s.BytesTransferred),
+                    ["IsLeader"] = IsLeader
+                }
+            };
+
+            ClusterMessage heartbeat = new()
+            {
+                Type = MessageType.Heartbeat,
+                SourceNodeId = NodeId,
+                Payload = payload,
+                RequiresAck = false
+            };
+
+            // Send heartbeat to all other nodes
+            List<Task> tasks = [];
+            foreach (ClusterNode node in _nodes.Values.Where(n => n.Id != NodeId))
+            {
+                tasks.Add(_networkClient.SendMessageAsync(node.Endpoint, heartbeat, cancellationToken));
+            }
+
+            await Task.WhenAll(tasks);
         }
 
         private async Task CheckNodesHealthAsync(CancellationToken cancellationToken)
@@ -632,52 +730,308 @@ namespace Zetian.Clustering.Implementation
                 }
             }
 
-            // Check health of other nodes
+            // Check health of other nodes based on heartbeat timestamps
+            DateTime now = DateTime.UtcNow;
+            TimeSpan heartbeatTimeout = _options.HealthCheck.FailureThreshold;
+
+            foreach (ClusterNode node in _nodes.Values.Where(n => n.Id != NodeId))
+            {
+                TimeSpan timeSinceLastHeartbeat = now - node.LastHeartbeat;
+
+                if (timeSinceLastHeartbeat > heartbeatTimeout)
+                {
+                    if (node.State == NodeState.Active)
+                    {
+                        node.State = NodeState.Suspected;
+                        _logger.LogWarning("Node {NodeId} is suspected (no heartbeat for {Duration})", node.Id, timeSinceLastHeartbeat);
+
+                        OnNodeFailed(new NodeEventArgs
+                        {
+                            NodeId = node.Id,
+                            State = NodeState.Suspected,
+                            Reason = "Heartbeat timeout",
+                            SourceNodeId = NodeId
+                        });
+                    }
+                    else if (node.State == NodeState.Suspected && timeSinceLastHeartbeat > TimeSpan.FromSeconds(heartbeatTimeout.TotalSeconds * 2))
+                    {
+                        node.State = NodeState.Failed;
+                        _logger.LogError("Node {NodeId} has failed (no heartbeat for {Duration})", node.Id, timeSinceLastHeartbeat);
+
+                        OnNodeFailed(new NodeEventArgs
+                        {
+                            NodeId = node.Id,
+                            State = NodeState.Failed,
+                            Reason = "Node unresponsive",
+                            SourceNodeId = NodeId
+                        });
+
+                        // Trigger session migration from failed node
+                        _ = Task.Run(() => MigrateSessionsAsync(node.Id, cancellationToken), cancellationToken);
+                    }
+                }
+            }
+
             await Task.CompletedTask;
         }
 
         private async Task NotifyLeavingAsync(CancellationToken cancellationToken)
         {
-            // Notify other nodes that this node is leaving
-            await Task.CompletedTask;
+            if (_networkClient == null)
+            {
+                return;
+            }
+
+            ClusterMessage leaveMessage = new()
+            {
+                Type = MessageType.Leave,
+                SourceNodeId = NodeId,
+                RequiresAck = false,
+                Payload = new
+                {
+                    Reason = "Graceful shutdown",
+                    Timestamp = DateTime.UtcNow
+                }
+            };
+
+            // Notify all other nodes
+            await _networkClient.BroadcastMessageAsync(leaveMessage, cancellationToken);
+
+            _logger.LogInformation("Notified cluster nodes about leaving");
         }
 
         private async Task ReplicateSessionInfoAsync(SessionInfo session, CancellationToken cancellationToken)
         {
-            // Replicate session information to other nodes
-            await Task.CompletedTask;
+            if (_networkClient == null || _nodes.Count <= 1)
+            {
+                return;
+            }
+
+            SessionReplicationPayload payload = new()
+            {
+                SessionId = session.SessionId,
+                NodeId = session.NodeId,
+                ClientIp = session.ClientIp.ToString(),
+                ClientPort = session.ClientPort,
+                StartTime = session.StartTime,
+                Metadata = session.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+                BytesTransferred = session.BytesTransferred,
+                MessageCount = session.MessageCount
+            };
+
+            ClusterMessage message = new()
+            {
+                Type = MessageType.SessionReplicate,
+                SourceNodeId = NodeId,
+                Payload = payload,
+                RequiresAck = true
+            };
+
+            // Select replication targets
+            List<ClusterNode> targets = SelectReplicationTargets(ConsistencyLevel.Quorum);
+
+            List<Task<AcknowledgmentMessage?>> tasks = [];
+            foreach (ClusterNode target in targets)
+            {
+                tasks.Add(_networkClient.SendMessageAsync(target.Endpoint, message, cancellationToken));
+            }
+
+            AcknowledgmentMessage?[] results = await Task.WhenAll(tasks);
+            int successCount = results.Count(r => r?.Success == true);
+
+            _logger.LogDebug("Replicated session {SessionId} to {Count}/{Total} nodes",
+                session.SessionId, successCount, targets.Count);
         }
 
         private async Task RemoveReplicatedSessionAsync(string sessionId, CancellationToken cancellationToken)
         {
-            // Remove replicated session from other nodes
-            await Task.CompletedTask;
+            if (_networkClient == null || _nodes.Count <= 1)
+            {
+                return;
+            }
+
+            ClusterMessage message = new()
+            {
+                Type = MessageType.SessionRemove,
+                SourceNodeId = NodeId,
+                Payload = new { SessionId = sessionId },
+                RequiresAck = false
+            };
+
+            await _networkClient.BroadcastMessageAsync(message, cancellationToken);
+
+            _logger.LogDebug("Removed replicated session {SessionId} from cluster", sessionId);
         }
 
         private async Task<bool> ReplicateToNodeAsync(ClusterNode node, string key, byte[] data, ReplicationOptions options, CancellationToken cancellationToken)
         {
-            // Replicate data to specific node
-            await Task.Delay(1, cancellationToken); // Placeholder
-            return true;
+            if (_networkClient == null)
+            {
+                return false;
+            }
+
+            StateReplicationPayload payload = new()
+            {
+                Key = key,
+                Data = data,
+                Timestamp = DateTime.UtcNow,
+                Ttl = options.Ttl,
+                ConsistencyLevel = options.ConsistencyLevel,
+                Version = options.Version ?? 1
+            };
+
+            ClusterMessage message = new()
+            {
+                Type = MessageType.StateReplicate,
+                SourceNodeId = NodeId,
+                TargetNodeId = node.Id,
+                Payload = payload,
+                RequiresAck = true,
+                Ttl = options.Timeout ?? TimeSpan.FromSeconds(5)
+            };
+
+            try
+            {
+                AcknowledgmentMessage? ack = await _networkClient.SendMessageAsync(node.Endpoint, message, cancellationToken);
+                return ack?.Success ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to replicate state to node {NodeId}", node.Id);
+                return false;
+            }
         }
 
         private async Task<bool> MigrateSessionToNodeAsync(SessionInfo session, ClusterNode targetNode, CancellationToken cancellationToken)
         {
-            // Migrate session to target node
-            await Task.Delay(1, cancellationToken); // Placeholder
-            return true;
+            if (_networkClient == null)
+            {
+                return false;
+            }
+
+            ClusterMessage message = new()
+            {
+                Type = MessageType.SessionMigrate,
+                SourceNodeId = NodeId,
+                TargetNodeId = targetNode.Id,
+                Payload = new SessionReplicationPayload
+                {
+                    SessionId = session.SessionId,
+                    NodeId = targetNode.Id, // New owner node
+                    ClientIp = session.ClientIp.ToString(),
+                    ClientPort = session.ClientPort,
+                    StartTime = session.StartTime,
+                    Metadata = session.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+                    BytesTransferred = session.BytesTransferred,
+                    MessageCount = session.MessageCount
+                },
+                RequiresAck = true,
+                Ttl = TimeSpan.FromSeconds(10)
+            };
+
+            try
+            {
+                AcknowledgmentMessage? ack = await _networkClient.SendMessageAsync(targetNode.Endpoint, message, cancellationToken);
+
+                if (ack?.Success == true)
+                {
+                    // Remove session from local storage
+                    _sessions.TryRemove(session.SessionId, out _);
+
+                    _logger.LogInformation("Migrated session {SessionId} to node {TargetNode}",
+                        session.SessionId, targetNode.Id);
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to migrate session {SessionId} to node {TargetNode}",
+                    session.SessionId, targetNode.Id);
+                return false;
+            }
         }
 
         private async Task SendConfigurationToNodeAsync<T>(ClusterNode node, T config, CancellationToken cancellationToken) where T : class
         {
-            // Send configuration to specific node
-            await Task.Delay(1, cancellationToken); // Placeholder
+            if (_networkClient == null)
+            {
+                return;
+            }
+
+            ConfigurationPayload payload = new()
+            {
+                ConfigurationType = typeof(T).Name,
+                Configuration = config,
+                EffectiveTime = DateTime.UtcNow,
+                RequiresRestart = false
+            };
+
+            ClusterMessage message = new()
+            {
+                Type = MessageType.ConfigurationUpdate,
+                SourceNodeId = NodeId,
+                TargetNodeId = node.Id,
+                Payload = payload,
+                RequiresAck = true
+            };
+
+            try
+            {
+                AcknowledgmentMessage? ack = await _networkClient.SendMessageAsync(node.Endpoint, message, cancellationToken);
+
+                if (ack?.Success == true)
+                {
+                    _logger.LogDebug("Sent configuration {Type} to node {NodeId}", typeof(T).Name, node.Id);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to send configuration {Type} to node {NodeId}", typeof(T).Name, node.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending configuration to node {NodeId}", node.Id);
+            }
         }
 
         private async Task MigrateLocalSessionsAsync(CancellationToken cancellationToken)
         {
-            // Migrate all local sessions to other nodes
-            await Task.CompletedTask;
+            List<SessionInfo> localSessions = _sessions.Values.Where(s => s.NodeId == NodeId).ToList();
+
+            if (localSessions.Count == 0)
+            {
+                _logger.LogDebug("No local sessions to migrate");
+                return;
+            }
+
+            List<ClusterNode> targetNodes = SelectMigrationTargets(localSessions.Count);
+
+            if (targetNodes.Count == 0)
+            {
+                _logger.LogWarning("No available nodes for session migration");
+                return;
+            }
+
+            _logger.LogInformation("Migrating {Count} local sessions", localSessions.Count);
+
+            int migratedCount = 0;
+            List<Task<bool>> migrationTasks = [];
+
+            for (int i = 0; i < localSessions.Count; i++)
+            {
+                SessionInfo session = localSessions[i];
+                ClusterNode targetNode = targetNodes[i % targetNodes.Count];
+                migrationTasks.Add(MigrateSessionToNodeAsync(session, targetNode, cancellationToken));
+            }
+
+            bool[] results = await Task.WhenAll(migrationTasks);
+            migratedCount = results.Count(r => r);
+
+            _logger.LogInformation("Successfully migrated {Migrated}/{Total} sessions",
+                migratedCount, localSessions.Count);
         }
 
         private List<ClusterNode> SelectReplicationTargets(ConsistencyLevel consistency)
@@ -794,7 +1148,312 @@ namespace Zetian.Clustering.Implementation
         private long GetTotalMessagesProcessed()
         {
             // Get total messages processed
-            return 0; // Placeholder
+            return _sessions.Values.Sum(s => s.MessageCount);
+        }
+
+        private void OnNetworkMessageReceived(object? sender, MessageReceivedEventArgs e)
+        {
+            try
+            {
+                switch (e.Message.Type)
+                {
+                    case MessageType.Heartbeat:
+                        HandleHeartbeatMessage(e.Message, e.RemoteEndPoint);
+                        break;
+
+                    case MessageType.Join:
+                        HandleJoinMessage(e.Message, e.RemoteEndPoint);
+                        break;
+
+                    case MessageType.Leave:
+                        HandleLeaveMessage(e.Message);
+                        break;
+
+                    case MessageType.SessionReplicate:
+                        e.Response = HandleSessionReplicationMessage(e.Message);
+                        break;
+
+                    case MessageType.SessionRemove:
+                        HandleSessionRemoveMessage(e.Message);
+                        break;
+
+                    case MessageType.SessionMigrate:
+                        e.Response = HandleSessionMigrationMessage(e.Message);
+                        break;
+
+                    case MessageType.StateReplicate:
+                        e.Response = HandleStateReplicationMessage(e.Message);
+                        break;
+
+                    case MessageType.ConfigurationUpdate:
+                        e.Response = HandleConfigurationUpdateMessage(e.Message);
+                        break;
+
+                    case MessageType.HealthCheck:
+                        e.Response = HandleHealthCheckMessage(e.Message);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling message of type {Type} from {Source}",
+                    e.Message.Type, e.Message.SourceNodeId);
+            }
+        }
+
+        private void HandleHeartbeatMessage(ClusterMessage message, IPEndPoint remoteEndPoint)
+        {
+            if (message.Payload is HeartbeatPayload payload && _nodes.TryGetValue(message.SourceNodeId, out ClusterNode? node))
+            {
+                node.LastHeartbeat = DateTime.UtcNow;
+                node.State = payload.State;
+                node.CpuUsage = payload.CpuUsage;
+                node.MemoryUsage = payload.MemoryUsage;
+                node.ActiveSessions = payload.ActiveSessions;
+                node.NetworkBandwidth = payload.NetworkBandwidth;
+
+                _logger.LogTrace("Received heartbeat from {NodeId}", message.SourceNodeId);
+            }
+            else if (!_nodes.ContainsKey(message.SourceNodeId))
+            {
+                // New node discovered
+                ClusterNode newNode = new()
+                {
+                    Id = message.SourceNodeId,
+                    Endpoint = remoteEndPoint,
+                    State = NodeState.Active,
+                    LastHeartbeat = DateTime.UtcNow,
+                    JoinTime = DateTime.UtcNow
+                };
+
+                if (_nodes.TryAdd(message.SourceNodeId, newNode))
+                {
+                    _logger.LogInformation("Discovered new node {NodeId}", message.SourceNodeId);
+                    OnNodeJoined(new NodeEventArgs
+                    {
+                        NodeId = message.SourceNodeId,
+                        State = NodeState.Active,
+                        SourceNodeId = NodeId
+                    });
+                }
+            }
+        }
+
+        private void HandleJoinMessage(ClusterMessage message, IPEndPoint remoteEndPoint)
+        {
+            // Handle node join request
+            ClusterNode newNode = new()
+            {
+                Id = message.SourceNodeId,
+                Endpoint = remoteEndPoint,
+                State = NodeState.Active,
+                LastHeartbeat = DateTime.UtcNow,
+                JoinTime = DateTime.UtcNow
+            };
+
+            if (_nodes.TryAdd(message.SourceNodeId, newNode))
+            {
+                _logger.LogInformation("Node {NodeId} joined the cluster", message.SourceNodeId);
+                OnNodeJoined(new NodeEventArgs
+                {
+                    NodeId = message.SourceNodeId,
+                    State = NodeState.Active,
+                    SourceNodeId = NodeId
+                });
+            }
+        }
+
+        private void HandleLeaveMessage(ClusterMessage message)
+        {
+            if (_nodes.TryRemove(message.SourceNodeId, out _))
+            {
+                _logger.LogInformation("Node {NodeId} left the cluster", message.SourceNodeId);
+                OnNodeLeft(new NodeEventArgs
+                {
+                    NodeId = message.SourceNodeId,
+                    State = NodeState.Leaving,
+                    Reason = "Graceful leave",
+                    SourceNodeId = message.SourceNodeId
+                });
+            }
+        }
+
+        private AcknowledgmentMessage HandleSessionReplicationMessage(ClusterMessage message)
+        {
+            try
+            {
+                if (message.Payload is SessionReplicationPayload payload)
+                {
+                    SessionInfo sessionInfo = new()
+                    {
+                        SessionId = payload.SessionId,
+                        NodeId = payload.NodeId,
+                        ClientIp = IPAddress.Parse(payload.ClientIp),
+                        ClientPort = payload.ClientPort,
+                        StartTime = payload.StartTime,
+                        BytesTransferred = payload.BytesTransferred,
+                        MessageCount = payload.MessageCount
+                    };
+
+                    _sessions.TryAdd(payload.SessionId, sessionInfo);
+
+                    return new AcknowledgmentMessage
+                    {
+                        OriginalMessageId = message.MessageId,
+                        Success = true
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to handle session replication");
+            }
+
+            return new AcknowledgmentMessage
+            {
+                OriginalMessageId = message.MessageId,
+                Success = false,
+                ErrorMessage = "Failed to replicate session"
+            };
+        }
+
+        private void HandleSessionRemoveMessage(ClusterMessage message)
+        {
+            if (message.Payload is { } payload)
+            {
+                string? sessionId = payload.GetType().GetProperty("SessionId")?.GetValue(payload)?.ToString();
+                if (sessionId != null && _sessions.TryRemove(sessionId, out _))
+                {
+                    _logger.LogDebug("Removed replicated session {SessionId}", sessionId);
+                }
+            }
+        }
+
+        private AcknowledgmentMessage HandleSessionMigrationMessage(ClusterMessage message)
+        {
+            try
+            {
+                if (message.Payload is SessionReplicationPayload payload)
+                {
+                    SessionInfo sessionInfo = new()
+                    {
+                        SessionId = payload.SessionId,
+                        NodeId = NodeId, // This node is the new owner
+                        ClientIp = IPAddress.Parse(payload.ClientIp),
+                        ClientPort = payload.ClientPort,
+                        StartTime = payload.StartTime,
+                        BytesTransferred = payload.BytesTransferred,
+                        MessageCount = payload.MessageCount
+                    };
+
+                    _sessions[payload.SessionId] = sessionInfo;
+
+                    _logger.LogInformation("Accepted migrated session {SessionId}", payload.SessionId);
+
+                    return new AcknowledgmentMessage
+                    {
+                        OriginalMessageId = message.MessageId,
+                        Success = true
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to handle session migration");
+            }
+
+            return new AcknowledgmentMessage
+            {
+                OriginalMessageId = message.MessageId,
+                Success = false,
+                ErrorMessage = "Failed to accept session migration"
+            };
+        }
+
+        private AcknowledgmentMessage HandleStateReplicationMessage(ClusterMessage message)
+        {
+            try
+            {
+                if (message.Payload is StateReplicationPayload payload)
+                {
+                    _replicatedState[payload.Key] = payload.Data;
+
+                    return new AcknowledgmentMessage
+                    {
+                        OriginalMessageId = message.MessageId,
+                        Success = true
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to handle state replication");
+            }
+
+            return new AcknowledgmentMessage
+            {
+                OriginalMessageId = message.MessageId,
+                Success = false,
+                ErrorMessage = "Failed to replicate state"
+            };
+        }
+
+        private AcknowledgmentMessage HandleConfigurationUpdateMessage(ClusterMessage message)
+        {
+            try
+            {
+                if (message.Payload is ConfigurationPayload payload)
+                {
+                    _logger.LogInformation("Received configuration update: {Type}", payload.ConfigurationType);
+
+                    OnConfigurationUpdated(new ConfigurationEventArgs
+                    {
+                        ConfigurationType = payload.ConfigurationType,
+                        NewValue = payload.Configuration,
+                        Success = true,
+                        UpdatedNodes = new[] { NodeId },
+                        SourceNodeId = message.SourceNodeId
+                    });
+
+                    return new AcknowledgmentMessage
+                    {
+                        OriginalMessageId = message.MessageId,
+                        Success = true
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to handle configuration update");
+            }
+
+            return new AcknowledgmentMessage
+            {
+                OriginalMessageId = message.MessageId,
+                Success = false,
+                ErrorMessage = "Failed to apply configuration"
+            };
+        }
+
+        private AcknowledgmentMessage HandleHealthCheckMessage(ClusterMessage message)
+        {
+            ClusterHealth health = new()
+            {
+                Status = State,
+                TotalNodes = _nodes.Count,
+                HealthyNodes = _nodes.Values.Count(n => n.State == NodeState.Active),
+                UnhealthyNodes = _nodes.Values.Count(n => n.State is NodeState.Failed or NodeState.Suspected),
+                HasQuorum = HasQuorum(),
+                LeaderNodeId = LeaderNodeId,
+                LastCheckTime = DateTime.UtcNow
+            };
+
+            return new AcknowledgmentMessage
+            {
+                OriginalMessageId = message.MessageId,
+                Success = true,
+                Result = health
+            };
         }
 
         #endregion

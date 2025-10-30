@@ -57,10 +57,14 @@ namespace Zetian.Clustering.Implementation
             await _stateLock.WaitAsync(cancellationToken);
             try
             {
+#if NET6_0
                 if (_disposed)
                 {
                     throw new ObjectDisposedException(nameof(ClusterManager));
                 }
+#else
+                ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
 
                 _logger.LogInformation("Starting cluster manager for node {NodeId}", NodeId);
 
@@ -77,8 +81,8 @@ namespace Zetian.Clustering.Implementation
                 _nodes.TryAdd(NodeId, selfNode);
 
                 // Start background tasks
-                _heartbeatTask = Task.Run(() => HeartbeatLoopAsync(_cancellationTokenSource.Token));
-                _healthCheckTask = Task.Run(() => HealthCheckLoopAsync(_cancellationTokenSource.Token));
+                _heartbeatTask = Task.Run(() => HeartbeatLoopAsync(_cancellationTokenSource.Token), cancellationToken);
+                _healthCheckTask = Task.Run(() => HealthCheckLoopAsync(_cancellationTokenSource.Token), cancellationToken);
 
                 // Perform initial discovery
                 await DiscoverNodesAsync(cancellationToken);
@@ -726,7 +730,7 @@ namespace Zetian.Clustering.Implementation
         {
             ClusterState oldState = State;
 
-            if (_nodes.Count == 0)
+            if (_nodes.IsEmpty)
             {
                 State = ClusterState.Forming;
             }
@@ -773,7 +777,7 @@ namespace Zetian.Clustering.Implementation
         private double CalculateAverageLoad()
         {
             // Calculate average load across nodes
-            if (_nodes.Count == 0)
+            if (_nodes.IsEmpty)
             {
                 return 0;
             }

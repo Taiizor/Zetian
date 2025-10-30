@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Clustering.Abstractions;
 using Zetian.Clustering.Implementation;
+using Zetian.Clustering.Models;
 using Zetian.Clustering.Options;
 
 namespace Zetian.Clustering.Extensions
@@ -31,7 +33,7 @@ namespace Zetian.Clustering.Extensions
 
             // Create logger
             ILoggerFactory loggerFactory = server.Configuration.LoggerFactory ??
-                                Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
+                                NullLoggerFactory.Instance;
             ILogger<ClusterManager> logger = loggerFactory.CreateLogger<ClusterManager>();
 
             // Create cluster manager
@@ -83,7 +85,7 @@ namespace Zetian.Clustering.Extensions
         /// <summary>
         /// Gets cluster metrics if clustering is enabled
         /// </summary>
-        public static Models.ClusterMetrics? GetClusterMetrics(this ISmtpServer server)
+        public static ClusterMetrics? GetClusterMetrics(this ISmtpServer server)
         {
             return server.GetClusterManager()?.GetMetrics();
         }
@@ -91,7 +93,7 @@ namespace Zetian.Clustering.Extensions
         /// <summary>
         /// Gets cluster health if clustering is enabled
         /// </summary>
-        public static async Task<Models.ClusterHealth?> GetClusterHealthAsync(
+        public static async Task<ClusterHealth?> GetClusterHealthAsync(
             this ISmtpServer server,
             CancellationToken cancellationToken = default)
         {
@@ -125,7 +127,7 @@ namespace Zetian.Clustering.Extensions
         /// </summary>
         public static async Task EnterClusterMaintenanceModeAsync(
             this ISmtpServer server,
-            Models.MaintenanceOptions? options = null,
+            MaintenanceOptions? options = null,
             CancellationToken cancellationToken = default)
         {
             IClusterManager? manager = server.GetClusterManager();

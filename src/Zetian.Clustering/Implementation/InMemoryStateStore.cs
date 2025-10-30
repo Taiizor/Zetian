@@ -176,7 +176,7 @@ namespace Zetian.Clustering.Implementation
             if (_locks.TryAdd(resource, @lock))
             {
                 // Schedule automatic release
-                _ = Task.Delay(ttl, cancellationToken).ContinueWith(_ => ReleaseLockInternal(resource, lockId));
+                _ = Task.Delay(ttl, cancellationToken).ContinueWith(_ => ReleaseLockInternal(resource, lockId), cancellationToken);
                 return @lock;
             }
 
@@ -185,7 +185,7 @@ namespace Zetian.Clustering.Implementation
             {
                 if (_locks.TryUpdate(resource, @lock, existingLock))
                 {
-                    _ = Task.Delay(ttl, cancellationToken).ContinueWith(_ => ReleaseLockInternal(resource, lockId));
+                    _ = Task.Delay(ttl, cancellationToken).ContinueWith(_ => ReleaseLockInternal(resource, lockId), cancellationToken);
                     return @lock;
                 }
             }
@@ -286,7 +286,7 @@ namespace Zetian.Clustering.Implementation
 
         private class StateEntry
         {
-            public byte[] Value { get; set; } = Array.Empty<byte>();
+            public byte[] Value { get; set; } = [];
             public DateTime? ExpiresAt { get; set; }
 
             public bool IsExpired()
@@ -295,22 +295,13 @@ namespace Zetian.Clustering.Implementation
             }
         }
 
-        private class DistributedLock : IDistributedLock
+        private class DistributedLock(InMemoryStateStore store, string resource, string lockId, TimeSpan ttl) : IDistributedLock
         {
-            private readonly InMemoryStateStore _store;
-            private readonly DateTime _expiresAt;
+            private readonly DateTime _expiresAt = DateTime.UtcNow.Add(ttl);
             private bool _isReleased;
 
-            public DistributedLock(InMemoryStateStore store, string resource, string lockId, TimeSpan ttl)
-            {
-                _store = store;
-                Resource = resource;
-                LockId = lockId;
-                _expiresAt = DateTime.UtcNow.Add(ttl);
-            }
-
-            public string LockId { get; }
-            public string Resource { get; }
+            public string LockId { get; } = lockId;
+            public string Resource { get; } = resource;
             public bool IsHeld => !_isReleased && !IsExpired();
 
             public bool IsExpired()
@@ -335,7 +326,7 @@ namespace Zetian.Clustering.Implementation
                 if (!_isReleased)
                 {
                     _isReleased = true;
-                    _store.ReleaseLockInternal(Resource, LockId);
+                    store.ReleaseLockInternal(Resource, LockId);
                 }
 
                 return Task.CompletedTask;

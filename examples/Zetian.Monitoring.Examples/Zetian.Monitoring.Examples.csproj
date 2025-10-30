@@ -14,4 +14,8 @@
         <ProjectReference Include="..\..\src\Zetian.Monitoring\Zetian.Monitoring.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0-rtm.25513.102" />
+    </ItemGroup>
+
 </Project>

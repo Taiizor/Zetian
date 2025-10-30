@@ -77,10 +77,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Threading.Channels" Version="10.0.0-rtm.25513.102" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="README.MD">
             <Pack>True</Pack>
             <PackagePath></PackagePath>

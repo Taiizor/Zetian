@@ -75,6 +75,15 @@ const searchData: SearchItem[] = [
     tags: ['extensions', 'plugins', 'rate-limit', 'spam-filter']
   },
   { 
+    title: 'Monitoring Extension', 
+    description: 'Real-time metrics - Prometheus exporter, OpenTelemetry, server statistics, Grafana dashboards', 
+    path: '/docs/monitoring', 
+    category: 'Documentation',
+    tags: ['monitoring', 'metrics', 'prometheus', 'opentelemetry', 'grafana', 'observability', 'statistics'],
+    popular: true,
+    code: 'server.EnableMonitoring().EnablePrometheus(9090)'
+  },
+  { 
     title: 'Relay Extension', 
     description: 'SMTP relay and proxy - Smart host support, queue management, load balancing, failover, MX routing', 
     path: '/docs/relay', 

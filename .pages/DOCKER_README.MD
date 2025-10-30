@@ -310,5 +310,5 @@ docker run -d -p 6745:6745 zetian-docs:restored
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/Taiizor/Zetian/issues
 - Documentation: https://zetian.soferity.com
+- GitHub Issues: https://github.com/Taiizor/Zetian/issues

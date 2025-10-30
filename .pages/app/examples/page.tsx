@@ -2,18 +2,25 @@
 
 import { 
   Shield, 
-  Gauge, 
-  Filter, 
+  Lock, 
+  Zap, 
+  Server,
   Database,
-  Lock,
-  Zap,
-  FileCode,
-  ExternalLink,
   Check,
-  Heart,
-  Layers,
+  ChevronRight,
+  Copy,
+  CheckCircle,
+  Cloud,
+  Filter,
+  Package,
   Send,
-  Brain
+  Brain,
+  Heart,
+  Activity,
+  Layers,
+  Gauge,
+  ExternalLink,
+  FileCode
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
@@ -659,8 +666,6 @@ using System.Net;
 // SMTP server with relay support
 var server = SmtpServerBuilder
     .CreateBasic()
-    .Port(25)
-    .ServerName("Relay SMTP Server")
     .EnableRelay(config =>
     {
         // Primary smart host
@@ -914,6 +919,96 @@ Console.WriteLine("Health endpoints:");
 Console.WriteLine("  http://localhost:8080/health - Overall status");
 Console.WriteLine("  http://localhost:8080/health/livez  - Liveness check");
 Console.WriteLine("  http://localhost:8080/health/readyz - Readiness check");`
+  },
+  {
+    id: 'monitoring',
+    title: 'Monitoring',
+    description: 'Server with Prometheus and OpenTelemetry metrics',
+    icon: Activity,
+    color: 'from-purple-500 to-pink-600',
+    difficulty: 'Advanced',
+    code: `using Zetian.Server;
+using Zetian.Monitoring.Extensions;
+
+// Create SMTP server
+var server = SmtpServerBuilder
+    .CreateBasic();
+
+// Enable comprehensive monitoring
+server.EnableMonitoring(builder => builder
+    // Prometheus exporter on port 9090
+    .EnablePrometheus(9090)
+    
+    // OpenTelemetry integration
+    .EnableOpenTelemetry("http://localhost:4317")
+    
+    // Service identification
+    .WithServiceName("smtp-production")
+    .WithServiceVersion("1.0.0")
+    
+    // Detailed metrics
+    .EnableDetailedMetrics()
+    .EnableCommandMetrics()
+    .EnableThroughputMetrics()
+    .EnableHistograms()
+    
+    // Update interval
+    .WithUpdateInterval(TimeSpan.FromSeconds(10))
+    
+    // Custom labels for all metrics
+    .WithLabels(
+        ("environment", "production"),
+        ("region", "us-east-1"),
+        ("instance", "smtp-01"))
+    
+    // Histogram buckets for command duration (milliseconds)
+    .WithCommandDurationBuckets(1, 5, 10, 25, 50, 100, 250, 500, 1000)
+    
+    // Histogram buckets for message size (bytes)
+    .WithMessageSizeBuckets(1024, 10240, 102400, 1048576, 10485760));
+
+// Monitor server events
+server.SessionCompleted += (sender, e) =>
+{
+    var stats = server.GetStatistics();
+    Console.WriteLine($"Active Sessions: {stats?.ActiveSessions}");
+    Console.WriteLine($"Messages/sec: {stats?.CurrentThroughput?.MessagesPerSecond}");
+    Console.WriteLine($"Delivery Rate: {stats?.DeliveryRate}%");
+};
+
+// Custom metrics recording
+server.MessageReceived += (sender, e) =>
+{
+    // Record custom metrics
+    server.RecordMetric("CUSTOM_PROCESSING", success: true, durationMs: 42.5);
+    
+    // Access metrics collector
+    var collector = server.GetMetricsCollector();
+    if (e.Message.Size > 10_000_000)
+    {
+        collector.RecordRejection("Message too large");
+    }
+};
+
+// Start server
+await server.StartAsync();
+Console.WriteLine("SMTP Server with monitoring on port 25");
+Console.WriteLine("Prometheus metrics available at http://localhost:9090/metrics");
+
+// Get real-time statistics
+while (!Console.KeyAvailable)
+{
+    var stats = server.GetStatistics();
+    Console.Clear();
+    Console.WriteLine("=== Server Statistics ===");
+    Console.WriteLine($"Uptime: {stats.Uptime}");
+    Console.WriteLine($"Total Sessions: {stats.TotalSessions}");
+    Console.WriteLine($"Active Sessions: {stats.ActiveSessions}");
+    Console.WriteLine($"Messages/sec: {stats.CurrentThroughput?.MessagesPerSecond}");
+    Console.WriteLine($"Bytes/sec: {stats.CurrentThroughput?.BytesPerSecond}");
+    Console.WriteLine($"TLS Usage: {stats.ConnectionMetrics?.TlsUsageRate}%");
+    await Task.Delay(5000);
+}`
   }
 ];
 

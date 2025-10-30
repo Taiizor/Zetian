@@ -1203,6 +1203,199 @@ const apiCategories = [
         values: ['None', 'Quarantine', 'Reject']
       }
     ]
+  },
+  {
+    title: 'Monitoring Extension',
+    icon: Activity,
+    namespace: 'Zetian.Monitoring',
+    items: [
+      {
+        name: 'MonitoringConfiguration',
+        description: 'Configuration for monitoring service',
+        properties: [
+          'EnablePrometheus',
+          'PrometheusPort',
+          'PrometheusHost',
+          'EnableOpenTelemetry',
+          'OpenTelemetryEndpoint',
+          'UpdateInterval',
+          'EnableDetailedMetrics',
+          'EnableCommandMetrics',
+          'EnableThroughputMetrics',
+          'EnableHistograms',
+          'ServiceName',
+          'ServiceVersion',
+          'CustomLabels',
+          'CommandDurationBuckets',
+          'MessageSizeBuckets'
+        ],
+        methods: ['Validate()'],
+        events: []
+      },
+      {
+        name: 'MonitoringBuilder',
+        description: 'Fluent builder for monitoring configuration',
+        properties: [],
+        methods: [
+          'EnablePrometheus(port)',
+          'EnablePrometheus(host, port)',
+          'EnableOpenTelemetry(endpoint)',
+          'WithServiceName(name)',
+          'WithServiceVersion(version)',
+          'EnableDetailedMetrics()',
+          'EnableCommandMetrics()',
+          'EnableThroughputMetrics()',
+          'EnableHistograms()',
+          'WithUpdateInterval(TimeSpan)',
+          'WithLabels(params (string, string)[])',
+          'WithCommandDurationBuckets(params double[])',
+          'WithMessageSizeBuckets(params double[])',
+          'Build()'
+        ],
+        events: []
+      },
+      {
+        name: 'MetricsCollector',
+        description: 'Metrics collection service',
+        properties: ['Configuration', 'Statistics'],
+        methods: [
+          'RecordSession(ISmtpSession)',
+          'RecordMessage(ISmtpMessage, bool)',
+          'RecordCommand(command, success, durationMs)',
+          'RecordAuthentication(success, mechanism)',
+          'RecordConnection(accepted)',
+          'RecordTlsUpgrade(success)',
+          'RecordRejection(reason)',
+          'RecordError(type)',
+          'RecordBytes(direction, count)',
+          'GetStatistics()',
+          'ResetStatistics()'
+        ],
+        events: []
+      },
+      {
+        name: 'ServerStatistics',
+        description: 'Comprehensive server statistics',
+        properties: [
+          'Uptime',
+          'TotalSessions',
+          'ActiveSessions',
+          'TotalMessagesReceived',
+          'TotalMessagesDelivered',
+          'TotalMessagesRejected',
+          'DeliveryRate',
+          'RejectionRate',
+          'TotalBytesReceived',
+          'TotalBytesSent',
+          'TotalErrors',
+          'ConnectionMetrics',
+          'AuthenticationMetrics',
+          'CommandMetrics',
+          'CurrentThroughput',
+          'MemoryUsage',
+          'PeakMemoryUsage',
+          'LastReset'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'PrometheusExporter',
+        description: 'Prometheus metrics exporter',
+        properties: ['Port', 'Host', 'MetricsUrl', 'IsRunning'],
+        methods: [
+          'StartAsync(CancellationToken)',
+          'StopAsync(CancellationToken)',
+          'UpdateMetrics(ServerStatistics)',
+          'RegisterCustomMetric(name, help, type)'
+        ],
+        events: []
+      },
+      {
+        name: 'OpenTelemetryExporter',
+        description: 'OpenTelemetry tracing and metrics exporter',
+        properties: ['Endpoint', 'ServiceName', 'ServiceVersion'],
+        methods: [
+          'StartAsync(CancellationToken)',
+          'StopAsync(CancellationToken)',
+          'ExportMetrics(ServerStatistics)',
+          'CreateSpan(operationName)',
+          'RecordEvent(name, attributes)'
+        ],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Monitoring Models',
+    icon: Activity,
+    namespace: 'Zetian.Monitoring.Models',
+    items: [
+      {
+        name: 'ConnectionMetrics',
+        description: 'Connection-related metrics',
+        properties: [
+          'TotalConnectionsReceived',
+          'AcceptedCount',
+          'RejectedCount',
+          'TlsUpgrades',
+          'TlsUsageRate',
+          'CurrentConnections',
+          'PeakConcurrentConnections',
+          'AverageConnectionDuration'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'AuthenticationMetrics',
+        description: 'Authentication-related metrics',
+        properties: [
+          'TotalAttempts',
+          'SuccessCount',
+          'FailureCount',
+          'SuccessRate',
+          'MechanismBreakdown',
+          'UniqueUsers',
+          'FailureReasons'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'CommandMetrics',
+        description: 'SMTP command metrics',
+        properties: [
+          'Command',
+          'TotalCount',
+          'SuccessCount',
+          'FailureCount',
+          'SuccessRate',
+          'AverageDurationMs',
+          'MinDurationMs',
+          'MaxDurationMs',
+          'P95DurationMs',
+          'P99DurationMs'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'ThroughputMetrics',
+        description: 'Real-time throughput metrics',
+        properties: [
+          'MessagesPerSecond',
+          'BytesPerSecond',
+          'CommandsPerSecond',
+          'SessionsPerSecond',
+          'AverageMessageSize',
+          'PeakMessagesPerSecond',
+          'PeakBytesPerSecond'
+        ],
+        methods: [],
+        events: []
+      }
+    ]
   }
 ];
 

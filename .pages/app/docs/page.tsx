@@ -14,7 +14,8 @@ import {
   Heart,
   Database,
   Send,
-  Filter
+  Filter,
+  Activity
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -125,6 +126,19 @@ const docCategories = [
       'Storage Providers',
       'Event Extensions',
       'Middleware'
+    ]
+  },
+  {
+    title: 'Monitoring',
+    description: 'Real-time metrics and observability',
+    icon: Activity,
+    href: '/docs/monitoring',
+    color: 'from-purple-500 to-pink-600',
+    items: [
+      'Prometheus Exporter',
+      'OpenTelemetry',
+      'Server Statistics',
+      'Grafana Dashboard'
     ]
   },
   {

@@ -28,7 +28,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Zetian\Zetian.csproj" />
         <ProjectReference Include="..\..\src\Zetian.HealthCheck\Zetian.HealthCheck.csproj" />
     </ItemGroup>
 

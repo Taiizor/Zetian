@@ -1,0 +1,97 @@
+# Prometheus Configuration for Zetian SMTP Cluster
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'zetian-smtp'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'prometheus'
+
+  # Zetian SMTP Node 1
+  - job_name: 'smtp-node-1'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['smtp-node-1:8080']
+        labels:
+          node_id: 'node-1'
+          service: 'smtp'
+          cluster: 'zetian'
+
+  # Zetian SMTP Node 2
+  - job_name: 'smtp-node-2'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['smtp-node-2:8080']
+        labels:
+          node_id: 'node-2'
+          service: 'smtp'
+          cluster: 'zetian'
+
+  # Zetian SMTP Node 3
+  - job_name: 'smtp-node-3'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['smtp-node-3:8080']
+        labels:
+          node_id: 'node-3'
+          service: 'smtp'
+          cluster: 'zetian'
+
+  # HAProxy metrics
+  - job_name: 'haproxy'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['haproxy:8404']
+        labels:
+          service: 'haproxy'
+          role: 'loadbalancer'
+
+  # Redis metrics (if using redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          role: 'state-store'
+
+  # Cluster health endpoints
+  - job_name: 'cluster-health'
+    metrics_path: '/health'
+    scheme: 'http'
+    params:
+      format: ['prometheus']
+    static_configs:
+      - targets:
+          - 'smtp-node-1:8080'
+          - 'smtp-node-2:8080'
+          - 'smtp-node-3:8080'
+        labels:
+          check_type: 'health'
+
+# Service discovery for dynamic clusters (optional)
+# - job_name: 'smtp-cluster-dynamic'
+#   dns_sd_configs:
+#     - names:
+#         - 'smtp-cluster.local'
+#       type: 'A'
+#       port: 8080
+#       refresh_interval: 30s

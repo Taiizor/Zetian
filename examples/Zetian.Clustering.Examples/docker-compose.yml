@@ -1,0 +1,189 @@
+# Docker Compose configuration for Zetian SMTP Cluster
+version: '3.8'
+
+services:
+  # Node 1 - Initial seed node
+  smtp-node-1:
+    image: zetian/smtp-cluster:latest
+    container_name: smtp-node-1
+    hostname: node-1
+    ports:
+      - "2501:25"      # SMTP port
+      - "7946:7946"    # Cluster port
+      - "8081:8080"    # Health check port
+    environment:
+      - NODE_ID=node-1
+      - SMTP_PORT=25
+      - CLUSTER_PORT=7946
+      - HEALTH_PORT=8080
+      - CLUSTER_SECRET=secure-cluster-secret-key
+      - DISCOVERY_METHOD=Static
+      - SEED_NODES=
+      - LOG_LEVEL=Information
+      - ENABLE_METRICS=true
+    networks:
+      - smtp-cluster
+    volumes:
+      - node1-data:/app/cluster-data
+      - node1-messages:/app/messages
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # Node 2
+  smtp-node-2:
+    image: zetian/smtp-cluster:latest
+    container_name: smtp-node-2
+    hostname: node-2
+    ports:
+      - "2502:25"
+      - "7947:7946"
+      - "8082:8080"
+    environment:
+      - NODE_ID=node-2
+      - SMTP_PORT=25
+      - CLUSTER_PORT=7946
+      - HEALTH_PORT=8080
+      - CLUSTER_SECRET=secure-cluster-secret-key
+      - DISCOVERY_METHOD=Static
+      - SEED_NODES=smtp-node-1:7946
+      - LOG_LEVEL=Information
+      - ENABLE_METRICS=true
+    networks:
+      - smtp-cluster
+    volumes:
+      - node2-data:/app/cluster-data
+      - node2-messages:/app/messages
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - smtp-node-1
+    restart: unless-stopped
+
+  # Node 3
+  smtp-node-3:
+    image: zetian/smtp-cluster:latest
+    container_name: smtp-node-3
+    hostname: node-3
+    ports:
+      - "2503:25"
+      - "7948:7946"
+      - "8083:8080"
+    environment:
+      - NODE_ID=node-3
+      - SMTP_PORT=25
+      - CLUSTER_PORT=7946
+      - HEALTH_PORT=8080
+      - CLUSTER_SECRET=secure-cluster-secret-key
+      - DISCOVERY_METHOD=Static
+      - SEED_NODES=smtp-node-1:7946,smtp-node-2:7946
+      - LOG_LEVEL=Information
+      - ENABLE_METRICS=true
+    networks:
+      - smtp-cluster
+    volumes:
+      - node3-data:/app/cluster-data
+      - node3-messages:/app/messages
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - smtp-node-1
+      - smtp-node-2
+    restart: unless-stopped
+
+  # HAProxy Load Balancer
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: smtp-lb
+    ports:
+      - "25:25"        # Main SMTP port
+      - "8404:8404"    # HAProxy stats
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - smtp-cluster
+    depends_on:
+      - smtp-node-1
+      - smtp-node-2
+      - smtp-node-3
+    restart: unless-stopped
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smtp-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - smtp-cluster
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: smtp-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    networks:
+      - smtp-cluster
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Redis for distributed state (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: smtp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - smtp-cluster
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+networks:
+  smtp-cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  node1-data:
+  node1-messages:
+  node2-data:
+  node2-messages:
+  node3-data:
+  node3-messages:
+  prometheus-data:
+  grafana-data:
+  redis-data:

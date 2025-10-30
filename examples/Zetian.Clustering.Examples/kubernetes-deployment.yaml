@@ -1,0 +1,347 @@
+# Kubernetes deployment for Zetian SMTP Cluster
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zetian-smtp
+
+---
+# ConfigMap for cluster configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zetian-config
+  namespace: zetian-smtp
+data:
+  DISCOVERY_METHOD: "Kubernetes"
+  LOG_LEVEL: "Information"
+  ENABLE_METRICS: "true"
+  CLUSTER_PORT: "7946"
+  HEALTH_PORT: "8080"
+  SMTP_PORT: "25"
+
+---
+# Secret for cluster authentication
+apiVersion: v1
+kind: Secret
+metadata:
+  name: zetian-secrets
+  namespace: zetian-smtp
+type: Opaque
+stringData:
+  CLUSTER_SECRET: "your-secure-cluster-secret-key"
+  SMTP_USERNAME: "smtp-user"
+  SMTP_PASSWORD: "smtp-password"
+
+---
+# Service for internal cluster communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: zetian-cluster
+  namespace: zetian-smtp
+  labels:
+    app: zetian-smtp
+spec:
+  clusterIP: None
+  ports:
+    - port: 7946
+      targetPort: 7946
+      name: cluster
+    - port: 8080
+      targetPort: 8080
+      name: health
+  selector:
+    app: zetian-smtp
+
+---
+# Service for SMTP traffic
+apiVersion: v1
+kind: Service
+metadata:
+  name: zetian-smtp-service
+  namespace: zetian-smtp
+  labels:
+    app: zetian-smtp
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 25
+      targetPort: 25
+      protocol: TCP
+      name: smtp
+  selector:
+    app: zetian-smtp
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 1800
+
+---
+# StatefulSet for SMTP cluster nodes
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zetian-smtp
+  namespace: zetian-smtp
+spec:
+  serviceName: zetian-cluster
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zetian-smtp
+  template:
+    metadata:
+      labels:
+        app: zetian-smtp
+        version: v1
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - zetian-smtp
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: smtp-server
+          image: zetian/smtp-cluster:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 25
+              name: smtp
+              protocol: TCP
+            - containerPort: 7946
+              name: cluster
+              protocol: TCP
+            - containerPort: 8080
+              name: health
+              protocol: TCP
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: DISCOVERY_METHOD
+              valueFrom:
+                configMapKeyRef:
+                  name: zetian-config
+                  key: DISCOVERY_METHOD
+            - name: CLUSTER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: zetian-secrets
+                  key: CLUSTER_SECRET
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: zetian-config
+                  key: LOG_LEVEL
+            - name: ENABLE_METRICS
+              valueFrom:
+                configMapKeyRef:
+                  name: zetian-config
+                  key: ENABLE_METRICS
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health/livez
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/readyz
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: cluster-data
+              mountPath: /app/cluster-data
+            - name: messages
+              mountPath: /app/messages
+            - name: logs
+              mountPath: /app/logs
+      volumes:
+        - name: logs
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: cluster-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 5Gi
+    - metadata:
+        name: messages
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: zetian-smtp-hpa
+  namespace: zetian-smtp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: zetian-smtp
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+
+---
+# PodDisruptionBudget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zetian-smtp-pdb
+  namespace: zetian-smtp
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: zetian-smtp
+
+---
+# NetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: zetian-smtp-network-policy
+  namespace: zetian-smtp
+spec:
+  podSelector:
+    matchLabels:
+      app: zetian-smtp
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow SMTP traffic from anywhere
+    - ports:
+        - protocol: TCP
+          port: 25
+      from: []
+    # Allow cluster communication between pods
+    - ports:
+        - protocol: TCP
+          port: 7946
+      from:
+        - podSelector:
+            matchLabels:
+              app: zetian-smtp
+    # Allow health checks from within cluster
+    - ports:
+        - protocol: TCP
+          port: 8080
+      from:
+        - namespaceSelector: {}
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow cluster communication
+    - to:
+        - podSelector:
+            matchLabels:
+              app: zetian-smtp
+      ports:
+        - protocol: TCP
+          port: 7946
+    # Allow external SMTP connections (for relay)
+    - ports:
+        - protocol: TCP
+          port: 25
+        - protocol: TCP
+          port: 587
+        - protocol: TCP
+          port: 465
+      to: []
+
+---
+# ServiceMonitor for Prometheus Operator (optional)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: zetian-smtp-monitor
+  namespace: zetian-smtp
+  labels:
+    app: zetian-smtp
+spec:
+  selector:
+    matchLabels:
+      app: zetian-smtp
+  endpoints:
+    - port: health
+      path: /metrics
+      interval: 30s
+      scheme: http

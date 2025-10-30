@@ -157,6 +157,11 @@ namespace Zetian.Clustering.Options
         public HealthCheckOptions HealthCheck { get; set; } = new();
 
         /// <summary>
+        /// Additional properties for extensibility
+        /// </summary>
+        public Dictionary<string, object> Properties { get; set; } = [];
+
+        /// <summary>
         /// Validates the configuration
         /// </summary>
         public void Validate()

@@ -45,8 +45,8 @@ namespace Zetian.Clustering.Implementation
         }
 
         public string NodeId { get; }
-        public bool IsLeader { get; }
-        public string? LeaderNodeId { get; }
+        public bool IsLeader { get; private set; }
+        public string? LeaderNodeId { get; private set; }
         public ClusterState State { get; private set; }
         public IReadOnlyCollection<IClusterNode> Nodes => (IReadOnlyCollection<IClusterNode>)_nodes.Values;
         public int NodeCount => _nodes.Count;

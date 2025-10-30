@@ -1,20 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Net;
 using Xunit;
 using Zetian.Abstractions;
-using Zetian.Clustering;
 using Zetian.Clustering.Abstractions;
 using Zetian.Clustering.Enums;
-using Zetian.Clustering.Extensions;
 using Zetian.Clustering.Implementation;
 using Zetian.Clustering.Models;
 using Zetian.Clustering.Models.EventArgs;
+using Zetian.Clustering.Options;
 using Zetian.Configuration;
 
 namespace Zetian.Clustering.Tests
@@ -38,7 +32,7 @@ namespace Zetian.Clustering.Tests
             };
 
             // Setup mock server configuration
-            var config = new SmtpServerConfiguration();
+            SmtpServerConfiguration config = new();
             _mockServer.Setup(s => s.Configuration).Returns(config);
         }
 
@@ -46,7 +40,7 @@ namespace Zetian.Clustering.Tests
         public async Task StartAsync_InitializesClusterManager_Successfully()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
 
             // Act
             await manager.StartAsync();
@@ -61,7 +55,7 @@ namespace Zetian.Clustering.Tests
         public async Task JoinAsync_ValidSeedNode_ReturnsTrue()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
 
             bool nodeJoinedEventRaised = false;
@@ -83,7 +77,7 @@ namespace Zetian.Clustering.Tests
         public async Task LeaveAsync_RemovesNodeFromCluster_Successfully()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
 
             bool nodeLeftEventRaised = false;
@@ -106,11 +100,11 @@ namespace Zetian.Clustering.Tests
         public async Task GetHealthAsync_ReturnsCorrectHealthStatus()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
 
             // Act
-            var health = await manager.GetHealthAsync();
+            ClusterHealth health = await manager.GetHealthAsync();
 
             // Assert
             Assert.NotNull(health);
@@ -125,10 +119,10 @@ namespace Zetian.Clustering.Tests
         public void GetMetrics_ReturnsValidMetrics()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
 
             // Act
-            var metrics = manager.GetMetrics();
+            ClusterMetrics metrics = manager.GetMetrics();
 
             // Assert
             Assert.NotNull(metrics);
@@ -141,7 +135,7 @@ namespace Zetian.Clustering.Tests
         public async Task EnterMaintenanceMode_SetsMaintenanceFlag()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
 
             // Act
@@ -159,7 +153,7 @@ namespace Zetian.Clustering.Tests
         public async Task ExitMaintenanceMode_ClearsMaintenanceFlag()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
             await manager.EnterMaintenanceModeAsync();
 
@@ -174,7 +168,7 @@ namespace Zetian.Clustering.Tests
         public async Task ReplicateStateAsync_WithQuorum_ReturnsTrue()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
 
             var key = "test-key";
@@ -191,7 +185,7 @@ namespace Zetian.Clustering.Tests
         public void SetLoadBalancingStrategy_UpdatesConfiguration()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
 
             // Act
             manager.SetLoadBalancingStrategy(LoadBalancingStrategy.LeastConnections);
@@ -205,7 +199,7 @@ namespace Zetian.Clustering.Tests
         public void ConfigureLeaderElection_UpdatesElectionOptions()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             TimeSpan? configuredTimeout = null;
 
             // Act
@@ -224,7 +218,7 @@ namespace Zetian.Clustering.Tests
         public async Task StateChanged_EventRaisedOnStateChange()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             ClusterStateEventArgs? eventArgs = null;
 
             manager.StateChanged += (sender, e) =>
@@ -244,7 +238,7 @@ namespace Zetian.Clustering.Tests
         public async Task Dispose_ReleasesResources()
         {
             // Arrange
-            var manager = new ClusterManager(_mockServer.Object, _defaultOptions, _mockLogger.Object);
+            ClusterManager manager = new(_mockServer.Object, _defaultOptions, _mockLogger.Object);
             await manager.StartAsync();
 
             // Act
@@ -262,16 +256,16 @@ namespace Zetian.Clustering.Tests
         public async Task RoundRobinLoadBalancer_DistributesEvenly()
         {
             // Arrange
-            var loadBalancer = new RoundRobinLoadBalancer();
-            var nodes = CreateTestNodes(3);
-            var sessionInfo = CreateTestSessionInfo();
+            RoundRobinLoadBalancer loadBalancer = new();
+            List<TestClusterNode> nodes = CreateTestNodes(3);
+            TestSessionInfo sessionInfo = CreateTestSessionInfo();
 
-            var selectedNodes = new List<string>();
+            List<string> selectedNodes = [];
 
             // Act
             for (int i = 0; i < 9; i++)
             {
-                var node = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
+                IClusterNode? node = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
                 if (node != null)
                 {
                     selectedNodes.Add(node.Id);
@@ -289,17 +283,17 @@ namespace Zetian.Clustering.Tests
         public async Task LeastConnectionsLoadBalancer_SelectsLeastLoaded()
         {
             // Arrange
-            var loadBalancer = new LeastConnectionsLoadBalancer();
-            var nodes = new List<TestClusterNode>
-            {
+            LeastConnectionsLoadBalancer loadBalancer = new();
+            List<TestClusterNode> nodes =
+            [
                 new TestClusterNode { Id = "node-1", ActiveSessions = 10 },
                 new TestClusterNode { Id = "node-2", ActiveSessions = 5 },
                 new TestClusterNode { Id = "node-3", ActiveSessions = 15 }
-            };
-            var sessionInfo = CreateTestSessionInfo();
+            ];
+            TestSessionInfo sessionInfo = CreateTestSessionInfo();
 
             // Act
-            var selectedNode = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
+            IClusterNode? selectedNode = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
 
             // Assert
             Assert.NotNull(selectedNode);
@@ -310,14 +304,14 @@ namespace Zetian.Clustering.Tests
         public async Task IpHashLoadBalancer_ConsistentSelection()
         {
             // Arrange
-            var loadBalancer = new IpHashLoadBalancer();
-            var nodes = CreateTestNodes(3);
-            var sessionInfo = CreateTestSessionInfo();
+            IpHashLoadBalancer loadBalancer = new();
+            List<TestClusterNode> nodes = CreateTestNodes(3);
+            TestSessionInfo sessionInfo = CreateTestSessionInfo();
 
             // Act
-            var firstSelection = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
-            var secondSelection = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
-            var thirdSelection = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
+            IClusterNode? firstSelection = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
+            IClusterNode? secondSelection = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
+            IClusterNode? thirdSelection = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
 
             // Assert
             Assert.NotNull(firstSelection);
@@ -331,16 +325,16 @@ namespace Zetian.Clustering.Tests
         public async Task LoadBalancer_NoHealthyNodes_ReturnsNull()
         {
             // Arrange
-            var loadBalancer = new RoundRobinLoadBalancer();
-            var nodes = new List<TestClusterNode>
-            {
+            RoundRobinLoadBalancer loadBalancer = new();
+            List<TestClusterNode> nodes =
+            [
                 new TestClusterNode { Id = "node-1", State = NodeState.Failed },
                 new TestClusterNode { Id = "node-2", State = NodeState.Maintenance }
-            };
-            var sessionInfo = CreateTestSessionInfo();
+            ];
+            TestSessionInfo sessionInfo = CreateTestSessionInfo();
 
             // Act
-            var selectedNode = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
+            IClusterNode? selectedNode = await loadBalancer.SelectNodeAsync(sessionInfo, nodes);
 
             // Assert
             Assert.Null(selectedNode);
@@ -348,7 +342,7 @@ namespace Zetian.Clustering.Tests
 
         private List<TestClusterNode> CreateTestNodes(int count)
         {
-            var nodes = new List<TestClusterNode>();
+            List<TestClusterNode> nodes = [];
             for (int i = 1; i <= count; i++)
             {
                 nodes.Add(new TestClusterNode
@@ -378,7 +372,7 @@ namespace Zetian.Clustering.Tests
         public async Task InMemoryStateStore_SetAndGet_ReturnsCorrectValue()
         {
             // Arrange
-            var store = new InMemoryStateStore();
+            InMemoryStateStore store = new();
             var key = "test-key";
             var value = new byte[] { 1, 2, 3, 4, 5 };
 
@@ -395,7 +389,7 @@ namespace Zetian.Clustering.Tests
         public async Task InMemoryStateStore_Delete_RemovesValue()
         {
             // Arrange
-            var store = new InMemoryStateStore();
+            InMemoryStateStore store = new();
             var key = "test-key";
             var value = new byte[] { 1, 2, 3 };
 
@@ -414,7 +408,7 @@ namespace Zetian.Clustering.Tests
         public async Task InMemoryStateStore_Exists_ReturnsCorrectStatus()
         {
             // Arrange
-            var store = new InMemoryStateStore();
+            InMemoryStateStore store = new();
             var key = "test-key";
             var value = new byte[] { 1, 2, 3 };
 
@@ -432,15 +426,15 @@ namespace Zetian.Clustering.Tests
         public async Task InMemoryStateStore_TTL_ExpiresValue()
         {
             // Arrange
-            var store = new InMemoryStateStore();
+            InMemoryStateStore store = new();
             var key = "test-key";
             var value = new byte[] { 1, 2, 3 };
-            var ttl = TimeSpan.FromMilliseconds(100);
+            TimeSpan ttl = TimeSpan.FromMilliseconds(100);
 
             // Act
             await store.SetAsync(key, value, ttl);
             var immediateValue = await store.GetAsync(key);
-            
+
             await Task.Delay(150);
             var expiredValue = await store.GetAsync(key);
 
@@ -453,7 +447,7 @@ namespace Zetian.Clustering.Tests
         public async Task InMemoryStateStore_IncrementAsync_WorksCorrectly()
         {
             // Arrange
-            var store = new InMemoryStateStore();
+            InMemoryStateStore store = new();
             var key = "counter";
 
             // Act
@@ -471,13 +465,13 @@ namespace Zetian.Clustering.Tests
         public async Task InMemoryStateStore_AcquireLock_PreventsDoubleAcquisition()
         {
             // Arrange
-            var store = new InMemoryStateStore();
+            InMemoryStateStore store = new();
             var resource = "test-resource";
-            var ttl = TimeSpan.FromSeconds(5);
+            TimeSpan ttl = TimeSpan.FromSeconds(5);
 
             // Act
-            var lock1 = await store.AcquireLockAsync(resource, ttl);
-            var lock2 = await store.AcquireLockAsync(resource, ttl);
+            IDistributedLock? lock1 = await store.AcquireLockAsync(resource, ttl);
+            IDistributedLock? lock2 = await store.AcquireLockAsync(resource, ttl);
 
             // Assert
             Assert.NotNull(lock1);

@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { 
   ArrowLeft,
-  Calendar,
-  Tag,
   GitBranch,
   CheckCircle2,
   Star,
@@ -13,7 +11,6 @@ import {
   Package,
   Code,
   Sparkles,
-  Bug,
   BookOpen,
   AlertCircle
 } from 'lucide-react';

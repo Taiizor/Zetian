@@ -1106,17 +1106,17 @@ export default function ExamplesPage() {
                 </div>
 
                 {/* Features */}
-                <div className="p-6 border-t border-gray-800">
+                <div className="p-6 border-t border-gray-200 dark:border-gray-800">
                   <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300">
                       <Check className="h-3 w-3" />
                       Async/Await
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300">
                       <Check className="h-3 w-3" />
                       Event-Driven
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300">
                       <Check className="h-3 w-3" />
                       Production Ready
                     </span>

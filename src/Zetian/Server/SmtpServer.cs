@@ -350,12 +350,15 @@ namespace Zetian.Server
                     connectionArgs.RejectionReason = "Connection limit exceeded for IP";
                     OnConnectionRejected(connectionArgs);
 
-                    // Fire rate limit event
+                    // Fire connection limit exceeded event (not really a rate limit)
+                    // Note: We're using RateLimitEventArgs for compatibility, but this is actually a connection limit
                     OnRateLimitExceeded(new RateLimitEventArgs(ipAddress)
                     {
-                        CurrentCount = Configuration.MaxConnectionsPerIp,
                         Limit = Configuration.MaxConnectionsPerIp,
-                        TimeWindow = TimeSpan.FromMinutes(1)
+                        CurrentCount = _connectionTracker.GetConnectionCount(ipAddress),
+                        TimeWindow = TimeSpan.Zero, // No time window for connection limits
+                        ResetTime = DateTime.UtcNow, // Connections can be tried immediately when others disconnect
+                        ResponseMessage = $"Maximum {Configuration.MaxConnectionsPerIp} concurrent connections per IP exceeded"
                     });
 
                     client.Close();

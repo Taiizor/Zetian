@@ -12,7 +12,9 @@ import {
   Zap,
   ChevronRight,
   Heart,
-  Database
+  Database,
+  Send,
+  Filter
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -87,11 +89,37 @@ const docCategories = [
     ]
   },
   {
+    title: 'Relay Extension',
+    description: 'SMTP relay and proxy features',
+    icon: Send,
+    href: '/docs/relay',
+    color: 'from-blue-500 to-purple-600',
+    items: [
+      'Smart Host Support',
+      'Queue Management',
+      'Load Balancing',
+      'MX Routing'
+    ]
+  },
+  {
+    title: 'AntiSpam',
+    description: 'Advanced spam protection',
+    icon: Filter,
+    href: '/docs/anti-spam',
+    color: 'from-red-500 to-orange-600',
+    items: [
+      'Bayesian Filtering',
+      'SPF/DKIM/DMARC',
+      'RBL/DNSBL Checking',
+      'Greylisting'
+    ]
+  },
+  {
     title: 'Extensions',
     description: 'Plugin and extension development',
     icon: Package,
     href: '/docs/extensions',
-    color: 'from-red-500 to-rose-600',
+    color: 'from-purple-500 to-indigo-600',
     items: [
       'Custom Filters',
       'Storage Providers',

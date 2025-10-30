@@ -11,7 +11,9 @@ import {
   ExternalLink,
   Check,
   Heart,
-  Layers
+  Layers,
+  Send,
+  Brain
 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
 
@@ -643,6 +645,202 @@ public class JsonMessageStore : IMessageStore
 }`
   },
   {
+    id: 'relay',
+    title: 'Relay',
+    description: 'Server with relay and smart host support',
+    icon: Send,
+    color: 'from-blue-500 to-purple-600',
+    difficulty: 'Advanced',
+    code: `using Zetian.Server;
+using Zetian.Relay.Extensions;
+using Zetian.Relay.Configuration;
+using System.Net;
+
+// SMTP server with relay support
+var server = SmtpServerBuilder
+    .CreateBasic()
+    .Port(25)
+    .ServerName("Relay SMTP Server")
+    .EnableRelay(config =>
+    {
+        // Primary smart host
+        config.DefaultSmartHost = new SmartHostConfiguration
+        {
+            Host = "smtp.office365.com",
+            Port = 587,
+            Priority = 10,
+            Credentials = new NetworkCredential("user@domain.com", "password"),
+            UseTls = true
+        };
+        
+        // Backup smart host for failover
+        config.SmartHosts.Add(new SmartHostConfiguration
+        {
+            Host = "backup.smtp.com",
+            Port = 587,
+            Priority = 20,
+            Credentials = new NetworkCredential("user", "pass")
+        });
+        
+        // Domain-specific routing
+        config.DomainRouting["gmail.com"] = new SmartHostConfiguration
+        {
+            Host = "smtp.gmail.com",
+            Port = 587,
+            Credentials = new NetworkCredential("user@gmail.com", "app_password")
+        };
+        
+        // MX routing for other domains
+        config.UseMxRouting = true;
+        config.DnsServers.Add(IPAddress.Parse("8.8.8.8"));
+        
+        // Retry configuration
+        config.MaxRetryCount = 5;
+        config.MessageLifetime = TimeSpan.FromDays(3);
+        config.QueueProcessingInterval = TimeSpan.FromMinutes(1);
+        
+        // Enable bounce messages
+        config.EnableBounceMessages = true;
+        config.BounceSender = "postmaster@mydomain.com";
+    });
+
+// Monitor relay queue
+server.MessageReceived += async (sender, e) =>
+{
+    // Queue message for relay with priority
+    var priority = e.Message.From?.Address?.Contains("@vip.com") == true
+        ? RelayPriority.Urgent
+        : RelayPriority.Normal;
+        
+    await server.QueueForRelayAsync(e.Message, e.Session, priority);
+    
+    // Get relay statistics
+    var stats = await server.GetRelayStatisticsAsync();
+    Console.WriteLine($"Queued: {stats.QueuedMessages}, In Progress: {stats.InProgressMessages}");
+};
+
+// Start with relay service
+var relayService = await server.StartWithRelayAsync();
+Console.WriteLine("SMTP Server running with relay support");`
+  },
+  {
+    id: 'antispam',
+    title: 'AntiSpam',
+    description: 'Server with comprehensive spam protection',
+    icon: Brain,
+    color: 'from-red-500 to-orange-600',
+    difficulty: 'Advanced',
+    code: `using Zetian.Server;
+using Zetian.AntiSpam.Extensions;
+using Zetian.AntiSpam.Checkers;
+
+// SMTP server with anti-spam protection
+var server = new SmtpServerBuilder()
+    .Port(25)
+    .ServerName("Protected SMTP Server")
+    .Build();
+
+// Configure comprehensive anti-spam
+server.AddAntiSpam(builder => builder
+    // SPF checking - verify sender authorization
+    .EnableSpf(failScore: 50)
+    
+    // DKIM signature verification
+    .EnableDkim(failScore: 40, strictMode: true)
+    
+    // DMARC policy enforcement
+    .EnableDmarc(failScore: 70, quarantineScore: 50, enforcePolicy: true)
+    
+    // RBL/DNSBL checking
+    .EnableRbl(
+        "zen.spamhaus.org",
+        "bl.spamcop.net",
+        "b.barracudacentral.org"
+    )
+    
+    // Bayesian filtering with training
+    .EnableBayesian(spamThreshold: 0.85)
+    
+    // Greylisting for unknown senders
+    .EnableGreylisting(initialDelay: TimeSpan.FromMinutes(5))
+    
+    // Configure thresholds
+    .WithOptions(options =>
+    {
+        options.RejectThreshold = 60;        // Score >= 60 = reject
+        options.TempFailThreshold = 40;      // Score >= 40 = temporary reject
+        options.RunChecksInParallel = true;  // Parallel checking for performance
+        options.CheckerTimeout = TimeSpan.FromSeconds(10);
+        options.EnableDetailedLogging = true;
+    }));
+
+// Train Bayesian filter
+var bayesianFilter = new BayesianSpamFilter();
+
+// Load training data (example)
+string[] spamSamples = {
+    "Get rich quick! Click here now!!!",
+    "Congratulations! You've won $1,000,000",
+    "Cheap viagra online pharmacy"
+};
+
+string[] hamSamples = {
+    "Meeting scheduled for tomorrow at 2pm",
+    "Please find the attached invoice",
+    "Thank you for your recent purchase"
+};
+
+// Train the filter
+foreach (var spam in spamSamples)
+    await bayesianFilter.TrainSpamAsync(spam);
+
+foreach (var ham in hamSamples)
+    await bayesianFilter.TrainHamAsync(ham);
+
+// Add trained filter
+server.AddSpamChecker(bayesianFilter);
+
+// Monitor spam detection
+server.MessageReceived += (sender, e) =>
+{
+    Console.WriteLine($"Message from {e.Message.From?.Address}");
+    
+    // Messages are automatically checked before this event
+    // High-scoring spam will be rejected at SMTP level
+};
+
+// Custom spam checker for additional rules
+public class CustomSpamChecker : ISpamChecker
+{
+    public string Name => "CustomRules";
+    public bool IsEnabled { get; set; } = true;
+
+    public async Task<SpamCheckResult> CheckAsync(
+        ISmtpMessage message,
+        ISmtpSession session,
+        CancellationToken cancellationToken)
+    {
+        var subject = message.Subject?.ToLower() ?? "";
+        
+        // Check for suspicious patterns
+        if (subject.Contains("lottery") || subject.Contains("winner"))
+            return SpamCheckResult.Spam(80, "Lottery scam detected");
+            
+        // Check for excessive caps
+        if (subject.Count(char.IsUpper) > subject.Length * 0.7)
+            return SpamCheckResult.Spam(50, "Excessive capitalization");
+            
+        return SpamCheckResult.Clean(0);
+    }
+}
+
+// Add custom checker
+server.AddSpamChecker(new CustomSpamChecker());
+
+await server.StartAsync();
+Console.WriteLine("SMTP Server running with comprehensive anti-spam protection");`
+  },
+  {
     id: 'health-check',
     title: 'Health Monitoring',
     description: 'Server with health monitoring and custom checks',
@@ -737,7 +935,7 @@ export default function ExamplesPage() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">14</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">16</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Code Examples</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
@@ -745,7 +943,7 @@ export default function ExamplesPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">Difficulty Levels</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">20+</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">25+</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Features</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-800">

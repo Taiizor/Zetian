@@ -29,10 +29,7 @@ namespace Zetian.Relay.Extensions
             this ISmtpServer server,
             RelayConfiguration? configuration = null)
         {
-            if (server == null)
-            {
-                throw new ArgumentNullException(nameof(server));
-            }
+            ArgumentNullException.ThrowIfNull(server);
 
             configuration ??= new RelayConfiguration();
 
@@ -55,10 +52,7 @@ namespace Zetian.Relay.Extensions
             this ISmtpServer server,
             Action<RelayConfiguration> configure)
         {
-            if (configure == null)
-            {
-                throw new ArgumentNullException(nameof(configure));
-            }
+            ArgumentNullException.ThrowIfNull(configure);
 
             RelayConfiguration configuration = new();
             configure(configuration);
@@ -80,7 +74,6 @@ namespace Zetian.Relay.Extensions
             {
                 // Enable relay with default configuration
                 server.EnableRelay();
-                relayService = GetRelayService(server);
             }
 
             SmartHostConfiguration smartHost = new()

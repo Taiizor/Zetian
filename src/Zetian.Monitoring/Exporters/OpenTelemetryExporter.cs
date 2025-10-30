@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Zetian.Monitoring.Abstractions;
+using Zetian.Monitoring.Configuration;
 
 namespace Zetian.Monitoring.Exporters
 {

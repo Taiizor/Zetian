@@ -14,20 +14,14 @@ namespace Zetian.AntiSpam.Services
     /// <summary>
     /// Coordinates anti-spam checking across multiple checkers
     /// </summary>
-    public class AntiSpamService
+    public class AntiSpamService(
+        IEnumerable<ISpamChecker> checkers,
+        AntiSpamOptions? options = null)
     {
-        private readonly List<ISpamChecker> _checkers;
-        private readonly AntiSpamOptions _options;
+        private readonly List<ISpamChecker> _checkers = checkers?.ToList() ?? [];
+        private readonly AntiSpamOptions _options = options ?? new AntiSpamOptions();
         private long _messagesChecked;
         private long _messagesBlocked;
-
-        public AntiSpamService(
-            IEnumerable<ISpamChecker> checkers,
-            AntiSpamOptions? options = null)
-        {
-            _checkers = checkers?.ToList() ?? [];
-            _options = options ?? new AntiSpamOptions();
-        }
 
         /// <summary>
         /// Checks a message for spam
@@ -163,10 +157,7 @@ namespace Zetian.AntiSpam.Services
             ISpamChecker? checker = _checkers.FirstOrDefault(c =>
                 c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-            if (checker != null)
-            {
-                checker.IsEnabled = enabled;
-            }
+            checker?.IsEnabled = enabled;
         }
 
         /// <summary>

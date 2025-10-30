@@ -48,10 +48,7 @@ namespace Zetian.Relay.Queue
             RelayPriority priority = RelayPriority.Normal,
             CancellationToken cancellationToken = default)
         {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
+            ArgumentNullException.ThrowIfNull(message);
 
             RelayMessage relayMessage = new(message, smartHost, priority);
 

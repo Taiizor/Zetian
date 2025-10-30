@@ -17,32 +17,19 @@ namespace Zetian.AntiSpam.Checkers
     /// <summary>
     /// Checks DKIM (DomainKeys Identified Mail) signatures
     /// </summary>
-    public class DkimChecker : ISpamChecker
+    public class DkimChecker(
+        ILookupClient? dnsClient = null,
+        double failScore = 40,
+        double noneScore = 10,
+        bool strictMode = false,
+        TimeSpan? maxSignatureAge = null) : ISpamChecker
     {
-        private readonly ILookupClient _dnsClient;
-        private readonly double _failScore;
-        private readonly double _noneScore;
-        private readonly bool _strictMode;
-        private readonly TimeSpan _maxSignatureAge;
-
-        public DkimChecker(
-            ILookupClient? dnsClient = null,
-            double failScore = 40,
-            double noneScore = 10,
-            bool strictMode = false,
-            TimeSpan? maxSignatureAge = null)
-        {
-            _dnsClient = dnsClient ?? new LookupClient();
-            _failScore = failScore;
-            _noneScore = noneScore;
-            _strictMode = strictMode;
-            _maxSignatureAge = maxSignatureAge ?? TimeSpan.FromDays(7);
-            IsEnabled = true;
-        }
+        private readonly ILookupClient _dnsClient = dnsClient ?? new LookupClient();
+        private readonly TimeSpan _maxSignatureAge = maxSignatureAge ?? TimeSpan.FromDays(7);
 
         public string Name => "DKIM";
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         public async Task<SpamCheckResult> CheckAsync(
             ISmtpMessage message,
@@ -60,41 +47,41 @@ namespace Zetian.AntiSpam.Checkers
                 if (!message.Headers.TryGetValue("DKIM-Signature", out string? signatureHeader) ||
                     string.IsNullOrWhiteSpace(signatureHeader))
                 {
-                    return SpamCheckResult.Clean(_noneScore, "No DKIM signature found");
+                    return SpamCheckResult.Clean(noneScore, "No DKIM signature found");
                 }
 
                 // Parse DKIM signature
                 DkimSignature? signature = DkimSignature.Parse(signatureHeader);
                 if (signature == null)
                 {
-                    return SpamCheckResult.Spam(_failScore, "Invalid DKIM signature format");
+                    return SpamCheckResult.Spam(failScore, "Invalid DKIM signature format");
                 }
 
                 // Validate signature fields
                 string? validationError = ValidateSignature(signature);
                 if (validationError != null)
                 {
-                    return SpamCheckResult.Spam(_failScore, $"DKIM validation failed: {validationError}");
+                    return SpamCheckResult.Spam(failScore, $"DKIM validation failed: {validationError}");
                 }
 
                 // Check signature expiration
                 if (signature.IsExpired())
                 {
-                    return SpamCheckResult.Spam(_failScore, "DKIM signature expired");
+                    return SpamCheckResult.Spam(failScore, "DKIM signature expired");
                 }
 
                 // Check signature age
                 TimeSpan? age = signature.GetAge();
                 if (age.HasValue && age.Value > _maxSignatureAge)
                 {
-                    return SpamCheckResult.Spam(_failScore / 2, $"DKIM signature too old: {age.Value.TotalDays:F1} days");
+                    return SpamCheckResult.Spam(failScore / 2, $"DKIM signature too old: {age.Value.TotalDays:F1} days");
                 }
 
                 // Get public key from DNS
                 DkimPublicKey? publicKey = await GetPublicKeyAsync(signature.Domain!, signature.Selector!, cancellationToken);
                 if (publicKey == null)
                 {
-                    return SpamCheckResult.Spam(_failScore, "DKIM public key not found in DNS");
+                    return SpamCheckResult.Spam(failScore, "DKIM public key not found in DNS");
                 }
 
                 // Verify signature
@@ -103,9 +90,9 @@ namespace Zetian.AntiSpam.Checkers
                 return result switch
                 {
                     DkimResult.Pass => SpamCheckResult.Clean(0, $"DKIM signature valid for {signature.Domain}"),
-                    DkimResult.Fail => SpamCheckResult.Spam(_failScore, "DKIM signature verification failed"),
-                    DkimResult.Policy => SpamCheckResult.Spam(_failScore / 2, "DKIM policy violation"),
-                    _ => SpamCheckResult.Clean(_noneScore, $"DKIM check inconclusive: {result}")
+                    DkimResult.Fail => SpamCheckResult.Spam(failScore, "DKIM signature verification failed"),
+                    DkimResult.Policy => SpamCheckResult.Spam(failScore / 2, "DKIM policy violation"),
+                    _ => SpamCheckResult.Clean(noneScore, $"DKIM check inconclusive: {result}")
                 };
             }
             catch (Exception ex)
@@ -147,10 +134,10 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             // Check required headers are signed
-            string[] requiredHeaders = new[] { "from" };
-            if (_strictMode)
+            string[] requiredHeaders = ["from"];
+            if (strictMode)
             {
-                requiredHeaders = new[] { "from", "to", "subject", "date" };
+                requiredHeaders = ["from", "to", "subject", "date"];
             }
 
             foreach (string? required in requiredHeaders)

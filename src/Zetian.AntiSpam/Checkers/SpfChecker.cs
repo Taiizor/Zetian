@@ -15,32 +15,18 @@ namespace Zetian.AntiSpam.Checkers
     /// <summary>
     /// Checks SPF (Sender Policy Framework) records
     /// </summary>
-    public class SpfChecker : ISpamChecker
+    public class SpfChecker(
+        ILookupClient? dnsClient = null,
+        double failScore = 50,
+        double softFailScore = 30,
+        double neutralScore = 10,
+        double noneScore = 5) : ISpamChecker
     {
-        private readonly ILookupClient _dnsClient;
-        private readonly double _failScore;
-        private readonly double _softFailScore;
-        private readonly double _neutralScore;
-        private readonly double _noneScore;
-
-        public SpfChecker(
-            ILookupClient? dnsClient = null,
-            double failScore = 50,
-            double softFailScore = 30,
-            double neutralScore = 10,
-            double noneScore = 5)
-        {
-            _dnsClient = dnsClient ?? new LookupClient();
-            _failScore = failScore;
-            _softFailScore = softFailScore;
-            _neutralScore = neutralScore;
-            _noneScore = noneScore;
-            IsEnabled = true;
-        }
+        private readonly ILookupClient _dnsClient = dnsClient ?? new LookupClient();
 
         public string Name => "SPF";
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         public async Task<SpamCheckResult> CheckAsync(
             ISmtpMessage message,
@@ -67,10 +53,10 @@ namespace Zetian.AntiSpam.Checkers
                 return result switch
                 {
                     SpfResult.Pass => SpamCheckResult.Clean(0, $"SPF Pass for {domain}"),
-                    SpfResult.Fail => SpamCheckResult.Spam(_failScore, "SPF Fail", $"Domain {domain} does not authorize {clientIp}"),
-                    SpfResult.SoftFail => SpamCheckResult.Spam(_softFailScore, "SPF SoftFail", $"Domain {domain} discourages use of {clientIp}"),
-                    SpfResult.Neutral => SpamCheckResult.Clean(_neutralScore, $"SPF Neutral for {domain}"),
-                    SpfResult.None => SpamCheckResult.Clean(_noneScore, $"No SPF record for {domain}"),
+                    SpfResult.Fail => SpamCheckResult.Spam(failScore, "SPF Fail", $"Domain {domain} does not authorize {clientIp}"),
+                    SpfResult.SoftFail => SpamCheckResult.Spam(softFailScore, "SPF SoftFail", $"Domain {domain} discourages use of {clientIp}"),
+                    SpfResult.Neutral => SpamCheckResult.Clean(neutralScore, $"SPF Neutral for {domain}"),
+                    SpfResult.None => SpamCheckResult.Clean(noneScore, $"No SPF record for {domain}"),
                     _ => SpamCheckResult.Clean(0, $"SPF check error for {domain}")
                 };
             }
@@ -88,7 +74,7 @@ namespace Zetian.AntiSpam.Checkers
                 IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, QueryType.TXT, cancellationToken: cancellationToken);
 
                 string? spfRecord = result.Answers
-                    .OfType<DnsClient.Protocol.TxtRecord>()
+                    .OfType<TxtRecord>()
                     .SelectMany(r => r.Text)
                     .FirstOrDefault(t => t.StartsWith("v=spf1", StringComparison.OrdinalIgnoreCase));
 
@@ -259,8 +245,8 @@ namespace Zetian.AntiSpam.Checkers
             {
                 IDnsQueryResponse result = await _dnsClient.QueryAsync(domain, ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? QueryType.AAAA : QueryType.A, cancellationToken: cancellationToken);
                 return result.Answers.Any(a =>
-                    (a is DnsClient.Protocol.ARecord aRecord && aRecord.Address.Equals(ip)) ||
-                    (a is DnsClient.Protocol.AaaaRecord aaaaRecord && aaaaRecord.Address.Equals(ip)));
+                    (a is ARecord aRecord && aRecord.Address.Equals(ip)) ||
+                    (a is AaaaRecord aaaaRecord && aaaaRecord.Address.Equals(ip)));
             }
             catch
             {
@@ -274,7 +260,7 @@ namespace Zetian.AntiSpam.Checkers
             {
                 IDnsQueryResponse mxResult = await _dnsClient.QueryAsync(domain, QueryType.MX, cancellationToken: cancellationToken);
 
-                foreach (MxRecord mx in mxResult.Answers.OfType<DnsClient.Protocol.MxRecord>())
+                foreach (MxRecord mx in mxResult.Answers.OfType<MxRecord>())
                 {
                     if (await IsIpMatchesARecordAsync(ip, mx.Exchange, cancellationToken))
                     {

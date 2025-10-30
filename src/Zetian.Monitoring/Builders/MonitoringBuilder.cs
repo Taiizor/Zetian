@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace Zetian.Monitoring
+namespace Zetian.Monitoring.Builders
 {
     /// <summary>
     /// Builder for configuring monitoring

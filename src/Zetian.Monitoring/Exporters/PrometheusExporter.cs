@@ -155,13 +155,13 @@ namespace Zetian.Monitoring.Exporters
                 new SummaryConfiguration
                 {
                     MaxAge = TimeSpan.FromMinutes(5),
-                    Objectives = new[]
-                    {
+                    Objectives =
+                    [
                         new QuantileEpsilonPair(0.5, 0.05),
                         new QuantileEpsilonPair(0.9, 0.01),
                         new QuantileEpsilonPair(0.95, 0.01),
                         new QuantileEpsilonPair(0.99, 0.001)
-                    }
+                    ]
                 });
 
             // Start metric server if port specified

@@ -393,7 +393,7 @@ namespace Zetian.HealthCheck.Services
                 status = overallStatus.ToString(),
                 timestamp = DateTimeOffset.UtcNow,
                 checks = results,
-                timedOut = timedOut
+                timedOut
             };
 
             // Set status code based on health or timeout
@@ -412,7 +412,7 @@ namespace Zetian.HealthCheck.Services
                 };
             }
 
-            await WriteJsonResponse(response, responseData);
+            await WriteJsonResponse(response, responseData, cancellationToken);
         }
 
         private async Task HandleReadinessCheckAsync(HttpListenerResponse response, CancellationToken cancellationToken)
@@ -563,7 +563,7 @@ namespace Zetian.HealthCheck.Services
                 timestamp = DateTimeOffset.UtcNow,
                 checks = results,
                 ready = overallStatus == HealthStatus.Healthy,
-                timedOut = timedOut
+                timedOut
             };
 
             // Set status code based on readiness or timeout
@@ -578,21 +578,21 @@ namespace Zetian.HealthCheck.Services
                     : (int)HttpStatusCode.ServiceUnavailable;
             }
 
-            await WriteJsonResponse(response, responseData);
+            await WriteJsonResponse(response, responseData, cancellationToken);
         }
 
         private async Task HandleLivenessCheckAsync(HttpListenerResponse response, CancellationToken cancellationToken)
         {
             // Simple liveness check - if we can respond, we're alive
             response.StatusCode = (int)HttpStatusCode.OK;
-            await WriteJsonResponse(response, new { status = "Alive", timestamp = DateTimeOffset.UtcNow });
+            await WriteJsonResponse(response, new { status = "Alive", timestamp = DateTimeOffset.UtcNow }, cancellationToken);
         }
 
 #if NET7_0_OR_GREATER
         [RequiresDynamicCode("JSON serialization/deserialization might require runtime code generation.")]
         [RequiresUnreferencedCode("JSON serialization/deserialization might require types that cannot be statically analyzed.")]
 #endif
-        private async Task WriteJsonResponse(HttpListenerResponse response, object data)
+        private async Task WriteJsonResponse(HttpListenerResponse response, object data, CancellationToken cancellationToken)
         {
             response.ContentType = "application/json";
             response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -606,7 +606,7 @@ namespace Zetian.HealthCheck.Services
             byte[] buffer = Encoding.UTF8.GetBytes(json);
             response.ContentLength64 = buffer.Length;
 
-            await response.OutputStream.WriteAsync(buffer);
+            await response.OutputStream.WriteAsync(buffer, cancellationToken);
             response.Close();
         }
 

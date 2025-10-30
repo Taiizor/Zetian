@@ -17,6 +17,8 @@ namespace Zetian.AntiSpam.Extensions
     /// </summary>
     public static class SmtpServerExtensions
     {
+        private const string AntiSpamServiceKey = "Zetian.AntiSpam.Service";
+
         /// <summary>
         /// Adds comprehensive anti-spam protection with default settings
         /// </summary>
@@ -39,6 +41,9 @@ namespace Zetian.AntiSpam.Extensions
             configure(builder);
 
             AntiSpamService antiSpamService = builder.Build();
+
+            // Store antispam service in server properties
+            server.Configuration.Properties[AntiSpamServiceKey] = antiSpamService;
 
             // Hook into message received event
             server.MessageReceived += async (sender, e) =>
@@ -285,10 +290,16 @@ namespace Zetian.AntiSpam.Extensions
             };
         }
 
+        /// <summary>
+        /// Gets the antispam service from the server
+        /// </summary>
         private static AntiSpamService? GetAntiSpamService(ISmtpServer server)
         {
-            // This would need to be stored somewhere accessible
-            // For now, return null - in production, you'd store this in server properties
+            if (server?.Configuration?.Properties?.TryGetValue(AntiSpamServiceKey, out object? service) == true)
+            {
+                return service as AntiSpamService;
+            }
+
             return null;
         }
     }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
@@ -15,32 +16,20 @@ namespace Zetian.AntiSpam.Checkers
     /// <summary>
     /// Checks IP addresses against RBL/DNSBL (Realtime Blackhole Lists)
     /// </summary>
-    public class RblChecker : ISpamChecker
+    public class RblChecker(
+        ILookupClient? dnsClient = null,
+        IEnumerable<RblProvider>? providers = null,
+        double scorePerListing = 25,
+        double maxScore = 100,
+        TimeSpan? timeout = null) : ISpamChecker
     {
-        private readonly ILookupClient _dnsClient;
-        private readonly List<RblProvider> _providers;
-        private readonly double _scorePerListing;
-        private readonly double _maxScore;
-        private readonly TimeSpan _timeout;
-
-        public RblChecker(
-            ILookupClient? dnsClient = null,
-            IEnumerable<RblProvider>? providers = null,
-            double scorePerListing = 25,
-            double maxScore = 100,
-            TimeSpan? timeout = null)
-        {
-            _dnsClient = dnsClient ?? new LookupClient();
-            _providers = providers?.ToList() ?? GetDefaultProviders();
-            _scorePerListing = scorePerListing;
-            _maxScore = maxScore;
-            _timeout = timeout ?? TimeSpan.FromSeconds(5);
-            IsEnabled = true;
-        }
+        private readonly ILookupClient _dnsClient = dnsClient ?? new LookupClient();
+        private readonly List<RblProvider> _providers = providers?.ToList() ?? GetDefaultProviders();
+        private readonly TimeSpan _timeout = timeout ?? TimeSpan.FromSeconds(5);
 
         public string Name => "RBL";
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         public async Task<SpamCheckResult> CheckAsync(
             ISmtpMessage message,
@@ -90,7 +79,7 @@ namespace Zetian.AntiSpam.Checkers
                 return SpamCheckResult.Clean(0, $"IP {clientIp} not found in any RBL");
             }
 
-            double score = Math.Min(listings.Count * _scorePerListing, _maxScore);
+            double score = Math.Min(listings.Count * scorePerListing, maxScore);
             string reason = $"Listed in {listings.Count} RBL(s)";
             string details = $"IP {clientIp} listed in: {string.Join(", ", listings)}";
 
@@ -132,7 +121,7 @@ namespace Zetian.AntiSpam.Checkers
                 if (result.Answers.Count > 0)
                 {
                     // Check if the response matches expected patterns
-                    List<ARecord> aRecords = result.Answers.OfType<DnsClient.Protocol.ARecord>().ToList();
+                    List<ARecord> aRecords = result.Answers.OfType<ARecord>().ToList();
 
                     if (provider.ExpectedResponses != null && provider.ExpectedResponses.Count > 0)
                     {
@@ -165,13 +154,13 @@ namespace Zetian.AntiSpam.Checkers
         {
             byte[] bytes = ip.GetAddressBytes();
 
-            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            if (ip.AddressFamily == AddressFamily.InterNetwork)
             {
                 // IPv4: reverse octets
                 Array.Reverse(bytes);
                 return $"{string.Join(".", bytes)}.{zone}";
             }
-            else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            else if (ip.AddressFamily == AddressFamily.InterNetworkV6)
             {
                 // IPv6: reverse nibbles
                 string hex = string.Concat(bytes.Select(b => b.ToString("x2")));
@@ -185,7 +174,7 @@ namespace Zetian.AntiSpam.Checkers
 
         private static bool IsPrivateIp(IPAddress ip)
         {
-            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            if (ip.AddressFamily == AddressFamily.InterNetwork)
             {
                 byte[] bytes = ip.GetAddressBytes();
 
@@ -213,7 +202,7 @@ namespace Zetian.AntiSpam.Checkers
                     return true;
                 }
             }
-            else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            else if (ip.AddressFamily == AddressFamily.InterNetworkV6)
             {
                 // Check for IPv6 private addresses
                 if (IPAddress.IsLoopback(ip))

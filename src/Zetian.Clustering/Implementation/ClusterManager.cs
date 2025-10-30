@@ -372,7 +372,7 @@ namespace Zetian.Clustering.Implementation
                 NetworkBandwidth = CalculateNetworkBandwidth(),
                 TotalMessagesProcessed = GetTotalMessagesProcessed(),
                 NodeFailures = _nodes.Values.Count(n => n.State == NodeState.Failed),
-                ClusterUptime = _nodes.Count > 0 ? DateTime.UtcNow - _nodes.Values.Min(n => n.JoinTime) : TimeSpan.Zero
+                ClusterUptime = !_nodes.IsEmpty ? DateTime.UtcNow - _nodes.Values.Min(n => n.JoinTime) : TimeSpan.Zero
             };
         }
 

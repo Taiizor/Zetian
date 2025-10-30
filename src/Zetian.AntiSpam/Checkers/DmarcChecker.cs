@@ -16,41 +16,21 @@ namespace Zetian.AntiSpam.Checkers
     /// <summary>
     /// Checks DMARC (Domain-based Message Authentication, Reporting &amp; Conformance) policy
     /// </summary>
-    public class DmarcChecker : ISpamChecker
+    public class DmarcChecker(
+        ILookupClient? dnsClient = null,
+        SpfChecker? spfChecker = null,
+        DkimChecker? dkimChecker = null,
+        double failScore = 70,
+        double quarantineScore = 50,
+        double noneScore = 0,
+        bool enforcePolicy = true,
+        bool checkAlignment = true) : ISpamChecker
     {
-        private readonly ILookupClient _dnsClient;
-        private readonly SpfChecker? _spfChecker;
-        private readonly DkimChecker? _dkimChecker;
-        private readonly double _failScore;
-        private readonly double _quarantineScore;
-        private readonly double _noneScore;
-        private readonly bool _enforcePolicy;
-        private readonly bool _checkAlignment;
-
-        public DmarcChecker(
-            ILookupClient? dnsClient = null,
-            SpfChecker? spfChecker = null,
-            DkimChecker? dkimChecker = null,
-            double failScore = 70,
-            double quarantineScore = 50,
-            double noneScore = 0,
-            bool enforcePolicy = true,
-            bool checkAlignment = true)
-        {
-            _dnsClient = dnsClient ?? new LookupClient();
-            _spfChecker = spfChecker;
-            _dkimChecker = dkimChecker;
-            _failScore = failScore;
-            _quarantineScore = quarantineScore;
-            _noneScore = noneScore;
-            _enforcePolicy = enforcePolicy;
-            _checkAlignment = checkAlignment;
-            IsEnabled = true;
-        }
+        private readonly ILookupClient _dnsClient = dnsClient ?? new LookupClient();
 
         public string Name => "DMARC";
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         public async Task<SpamCheckResult> CheckAsync(
             ISmtpMessage message,
@@ -77,18 +57,18 @@ namespace Zetian.AntiSpam.Checkers
 
                     if (dmarcRecord == null)
                     {
-                        return SpamCheckResult.Clean(_noneScore, "No DMARC record found");
+                        return SpamCheckResult.Clean(noneScore, "No DMARC record found");
                     }
                 }
 
                 // Get SPF result if available
-                SpamCheckResult? spfResult = _spfChecker != null
-                    ? await _spfChecker.CheckAsync(message, session, cancellationToken)
+                SpamCheckResult? spfResult = spfChecker != null
+                    ? await spfChecker.CheckAsync(message, session, cancellationToken)
                     : null;
 
                 // Get DKIM result if available  
-                SpamCheckResult? dkimResult = _dkimChecker != null
-                    ? await _dkimChecker.CheckAsync(message, session, cancellationToken)
+                SpamCheckResult? dkimResult = dkimChecker != null
+                    ? await dkimChecker.CheckAsync(message, session, cancellationToken)
                     : null;
 
                 // Check alignment
@@ -111,26 +91,26 @@ namespace Zetian.AntiSpam.Checkers
                 {
                     string reason = BuildFailureReason(spfAligned, dkimAligned, spfResult, dkimResult);
 
-                    if (!_enforcePolicy || !shouldApply)
+                    if (!enforcePolicy || !shouldApply)
                     {
                         // Report only, don't enforce
                         return SpamCheckResult.Clean(
-                            _noneScore,
+                            noneScore,
                             $"DMARC fail (not enforced): {reason}");
                     }
 
                     return effectivePolicy switch
                     {
                         DmarcPolicy.Reject => SpamCheckResult.Spam(
-                                                        _failScore,
+                                                        failScore,
                                                         $"DMARC reject policy: {reason}",
                                                         $"Domain: {organizationalDomain}, Policy: {effectivePolicy}"),
                         DmarcPolicy.Quarantine => SpamCheckResult.Spam(
-                                                        _quarantineScore,
+                                                        quarantineScore,
                                                         $"DMARC quarantine policy: {reason}",
                                                         $"Domain: {organizationalDomain}, Policy: {effectivePolicy}"),
                         _ => SpamCheckResult.Clean(
-                                                        _noneScore,
+                                                        noneScore,
                                                         $"DMARC monitoring mode: {reason}"),
                     };
                 }
@@ -184,7 +164,7 @@ namespace Zetian.AntiSpam.Checkers
             }
 
             // Check for common TLDs with second-level domains (co.uk, com.br, etc.)
-            string[] commonSlds = new[] { "co", "com", "net", "org", "gov", "edu", "ac" };
+            string[] commonSlds = ["co", "com", "net", "org", "gov", "edu", "ac"];
 
             if (parts.Length >= 3 && commonSlds.Contains(parts[^2]))
             {
@@ -201,7 +181,7 @@ namespace Zetian.AntiSpam.Checkers
             SpamCheckResult? spfResult,
             DmarcAlignment alignment)
         {
-            if (!_checkAlignment || spfResult == null || message.From == null)
+            if (!checkAlignment || spfResult == null || message.From == null)
             {
                 return false;
             }
@@ -227,7 +207,7 @@ namespace Zetian.AntiSpam.Checkers
             SpamCheckResult? dkimResult,
             DmarcAlignment alignment)
         {
-            if (!_checkAlignment || dkimResult == null || message.From == null)
+            if (!checkAlignment || dkimResult == null || message.From == null)
             {
                 return false;
             }

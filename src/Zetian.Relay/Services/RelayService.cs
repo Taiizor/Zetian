@@ -4,7 +4,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Mail;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
@@ -360,7 +362,7 @@ namespace Zetian.Relay.Services
             }
 
             // Allow relay from specific networks
-            if (session.RemoteEndPoint is System.Net.IPEndPoint ipEndPoint)
+            if (session.RemoteEndPoint is IPEndPoint ipEndPoint)
             {
                 if (Configuration.RelayNetworks.Contains(ipEndPoint.Address))
                 {
@@ -383,9 +385,8 @@ namespace Zetian.Relay.Services
             foreach (MailAddress recipient in message.Recipients)
             {
                 string domain = recipient.Host;
-                if (Configuration.DomainRouting.ContainsKey(domain))
+                if (Configuration.DomainRouting.TryGetValue(domain, out SmartHostConfiguration? config))
                 {
-                    SmartHostConfiguration config = Configuration.DomainRouting[domain];
                     return $"{config.Host}:{config.Port}";
                 }
             }
@@ -542,10 +543,10 @@ namespace Zetian.Relay.Services
 
                     // Convert bounce message to raw data
                     string fromAddress = string.IsNullOrEmpty(Configuration.BounceSender) ? "" : Configuration.BounceSender;
-                    string[] recipients = new[] { message.From.Address };
+                    string[] recipients = [message.From.Address];
 
                     // Build the raw message
-                    System.Text.StringBuilder rawMessage = new();
+                    StringBuilder rawMessage = new();
                     rawMessage.AppendLine($"From: {bounceMessage.From.Address}");
                     rawMessage.AppendLine($"To: {message.From.Address}");
                     rawMessage.AppendLine($"Subject: {bounceMessage.Subject}");
@@ -558,7 +559,7 @@ namespace Zetian.Relay.Services
                     rawMessage.AppendLine();
                     rawMessage.Append(bounceBody);
 
-                    byte[] messageData = System.Text.Encoding.UTF8.GetBytes(rawMessage.ToString());
+                    byte[] messageData = Encoding.UTF8.GetBytes(rawMessage.ToString());
 
                     // Send the bounce message
                     await client.SendRawAsync(fromAddress, recipients, messageData).ConfigureAwait(false);

@@ -15,34 +15,20 @@ namespace Zetian.AntiSpam.Checkers
     /// <summary>
     /// Bayesian spam filter using statistical analysis
     /// </summary>
-    public class BayesianSpamFilter : ISpamChecker
+    public class BayesianSpamFilter(
+        double spamThreshold = 0.9,
+        double unknownWordProbability = 0.5,
+        int minWordLength = 3,
+        int maxWordLength = 50) : ISpamChecker
     {
-        private readonly ConcurrentDictionary<string, WordStatistics> _wordStats;
-        private readonly double _spamThreshold;
-        private readonly double _unknownWordProbability;
-        private readonly int _minWordLength;
-        private readonly int _maxWordLength;
+        private readonly ConcurrentDictionary<string, WordStatistics> _wordStats = new(StringComparer.OrdinalIgnoreCase);
         private long _totalSpamMessages;
         private long _totalHamMessages;
         private readonly object _statsLock = new();
 
-        public BayesianSpamFilter(
-            double spamThreshold = 0.9,
-            double unknownWordProbability = 0.5,
-            int minWordLength = 3,
-            int maxWordLength = 50)
-        {
-            _wordStats = new ConcurrentDictionary<string, WordStatistics>(StringComparer.OrdinalIgnoreCase);
-            _spamThreshold = spamThreshold;
-            _unknownWordProbability = unknownWordProbability;
-            _minWordLength = minWordLength;
-            _maxWordLength = maxWordLength;
-            IsEnabled = true;
-        }
-
         public string Name => "Bayesian";
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         public async Task<SpamCheckResult> CheckAsync(
             ISmtpMessage message,
@@ -66,7 +52,7 @@ namespace Zetian.AntiSpam.Checkers
             double spamProbability = await CalculateSpamProbabilityAsync(tokens, cancellationToken);
             double score = spamProbability * 100;
 
-            if (spamProbability >= _spamThreshold)
+            if (spamProbability >= spamThreshold)
             {
                 return SpamCheckResult.Spam(
                     score,
@@ -252,7 +238,7 @@ namespace Zetian.AntiSpam.Checkers
                 string word = match.Value.ToLowerInvariant();
 
                 // Apply length filters
-                if (word.Length >= _minWordLength && word.Length <= _maxWordLength)
+                if (word.Length >= minWordLength && word.Length <= maxWordLength)
                 {
                     tokens.Add(word);
                 }
@@ -317,7 +303,7 @@ namespace Zetian.AntiSpam.Checkers
             if (_totalSpamMessages == 0 || _totalHamMessages == 0)
             {
                 // Not enough training data
-                return _unknownWordProbability;
+                return unknownWordProbability;
             }
 
             List<double> probabilities = [];
@@ -335,7 +321,7 @@ namespace Zetian.AntiSpam.Checkers
 
             if (probabilities.Count == 0)
             {
-                return _unknownWordProbability;
+                return unknownWordProbability;
             }
 
             // Combine probabilities using Bayes' theorem
@@ -346,7 +332,7 @@ namespace Zetian.AntiSpam.Checkers
         {
             if (!_wordStats.TryGetValue(word, out WordStatistics? stats))
             {
-                return _unknownWordProbability;
+                return unknownWordProbability;
             }
 
             double spamProbability = (double)_totalSpamMessages / (_totalSpamMessages + _totalHamMessages);

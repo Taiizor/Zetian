@@ -140,10 +140,7 @@ namespace Zetian.Relay.Client
             ISmtpMessage message,
             CancellationToken cancellationToken = default)
         {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
+            ArgumentNullException.ThrowIfNull(message);
 
             List<string> recipients = message.Recipients.Select(r => r.Address).ToList();
             return await SendAsync(message, recipients, cancellationToken).ConfigureAwait(false);
@@ -154,15 +151,9 @@ namespace Zetian.Relay.Client
             IEnumerable<string> recipients,
             CancellationToken cancellationToken = default)
         {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
+            ArgumentNullException.ThrowIfNull(message);
 
-            if (recipients == null)
-            {
-                throw new ArgumentNullException(nameof(recipients));
-            }
+            ArgumentNullException.ThrowIfNull(recipients);
 
             string from = message.From?.Address ?? "<>";
             byte[] rawData = await message.GetRawDataAsync().ConfigureAwait(false);

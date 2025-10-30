@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 
-namespace Zetian.Monitoring
+namespace Zetian.Monitoring.Configuration
 {
     /// <summary>
     /// Configuration for monitoring

@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
+using Zetian.Monitoring.Builders;
+using Zetian.Monitoring.Configuration;
 using Zetian.Monitoring.Exporters;
 using Zetian.Monitoring.Models;
 using Zetian.Monitoring.Services;

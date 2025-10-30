@@ -672,7 +672,7 @@ namespace Zetian.Clustering.Implementation
 
                 for (int i = 0; i < Math.Min(_options.ReplicationFactor - 1, availableNodes.Count); i++)
                 {
-                    var node = customLb.SelectNodeAsync(null!, availableNodes, CancellationToken.None).Result;
+                    IClusterNode? node = customLb.SelectNodeAsync(null!, availableNodes, CancellationToken.None).Result;
                     if (node is not null and ClusterNode clusterNode)
                     {
                         selectedNodes.Add(clusterNode);

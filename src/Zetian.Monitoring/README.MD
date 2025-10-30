@@ -13,11 +13,11 @@ Comprehensive monitoring and observability solution for Zetian SMTP Server with 
 - 📉 **Histograms & Percentiles** - P95, P99 latency tracking
 - 📈 **Command Metrics** - Detailed SMTP command statistics
 - 📊 **Real-time Metrics** - Live server performance monitoring
-- 🔭 **OpenTelemetry** - Full observability with distributed tracing (traces + metrics)
-- 🚀 **Performance Tracking** - Throughput, latency, and resource usage
-- 🎯 **Prometheus Ready** - Native Prometheus exporter with /metrics endpoint
-- 📍 **Distributed Tracing** - Trace requests across services with OpenTelemetry
 - 🏷️ **Custom Labels & Tags** - Add metadata to metrics and traces
+- 🚀 **Performance Tracking** - Throughput, latency, and resource usage
+- 📍 **Distributed Tracing** - Trace requests across services with OpenTelemetry
+- 🎯 **Prometheus Ready** - Native Prometheus exporter with /metrics endpoint
+- 🔭 **OpenTelemetry** - Full observability with distributed tracing (traces + metrics)
 
 ## 📦 Installation
 
@@ -296,15 +296,15 @@ public class MonitoringConfiguration
 ## 🎯 Performance Impact
 
 - **Storage**: No persistent storage required
-- **CPU Overhead**: < 1% with default settings
 - **Network**: Minimal (metrics endpoint only)
+- **CPU Overhead**: < 1% with default settings
 - **Memory Usage**: ~10-50MB depending on traffic
 
 ## 🔒 Security
 
 - Monitor for high cardinality metrics
-- Metrics endpoint should be protected in production
 - Sanitize custom labels to prevent metric explosion
+- Metrics endpoint should be protected in production
 - Use authentication/firewall rules for Prometheus endpoint
 
 ## 📚 Integration Examples

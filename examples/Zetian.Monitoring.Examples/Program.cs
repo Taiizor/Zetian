@@ -17,6 +17,7 @@ namespace Zetian.Monitoring.Examples
             Console.WriteLine("2. Prometheus Metrics Export");
             Console.WriteLine("3. Real-time Performance Monitoring");
             Console.WriteLine("4. Custom Metrics Collection");
+            Console.WriteLine("5. OpenTelemetry Metrics Export");
             Console.WriteLine("Q. Quit\n");
 
             while (true)
@@ -43,6 +44,10 @@ namespace Zetian.Monitoring.Examples
 
                         case '4':
                             await CustomMetricsExample.RunAsync();
+                            break;
+
+                        case '5':
+                            await OpenTelemetryExample.RunAsync();
                             break;
 
                         case 'q':

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Zetian.Abstractions;
+using Zetian.Monitoring.Models;
 
 namespace Zetian.Monitoring.Abstractions
 {

@@ -13,9 +13,11 @@ Comprehensive monitoring and observability solution for Zetian SMTP Server with 
 - 📉 **Histograms & Percentiles** - P95, P99 latency tracking
 - 📈 **Command Metrics** - Detailed SMTP command statistics
 - 📊 **Real-time Metrics** - Live server performance monitoring
-- 🔭 **OpenTelemetry** - Full observability with distributed tracing
+- 🔭 **OpenTelemetry** - Full observability with distributed tracing (traces + metrics)
 - 🚀 **Performance Tracking** - Throughput, latency, and resource usage
 - 🎯 **Prometheus Ready** - Native Prometheus exporter with /metrics endpoint
+- 📍 **Distributed Tracing** - Trace requests across services with OpenTelemetry
+- 🏷️ **Custom Labels & Tags** - Add metadata to metrics and traces
 
 ## 📦 Installation
 
@@ -188,35 +190,67 @@ collector.RecordRejection("Custom rejection reason");
 
 ## 🔭 OpenTelemetry Integration
 
+### Simple Setup
+
 ```csharp
-using OpenTelemetry;
 using Zetian.Server;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Metrics;
 using Zetian.Monitoring.Extensions;
 
-// Configure OpenTelemetry
-var tracerProvider = Sdk.CreateTracerProviderBuilder()
-    .AddSource("Zetian.SMTP")
-    .AddOtlpExporter(options =>
-    {
-        options.Endpoint = new Uri("http://localhost:4317");
-    })
-    .Build();
+// Create SMTP server
+var server = SmtpServerBuilder.CreateBasic();
 
-var meterProvider = Sdk.CreateMeterProviderBuilder()
-    .AddMeter("Zetian.SMTP")
-    .AddOtlpExporter(options =>
-    {
-        options.Endpoint = new Uri("http://localhost:4317");
-    })
-    .Build();
-
-// Enable monitoring with OpenTelemetry
+// Enable monitoring with OpenTelemetry (automatic tracing & metrics)
 server.EnableMonitoring(builder => builder
-    .EnableOpenTelemetry("http://localhost:4317")
-    .WithServiceName("smtp-server")
+    .EnableOpenTelemetry("http://localhost:4317") // OTLP endpoint
+    .WithServiceName("smtp-production")
     .WithServiceVersion("1.0.0"));
+
+await server.StartAsync();
+```
+
+### With Both Prometheus and OpenTelemetry
+
+```csharp
+server.EnableMonitoring(builder => builder
+    .EnablePrometheus(9090)                       // Prometheus on port 9090
+    .EnableOpenTelemetry("http://localhost:4317") // OpenTelemetry OTLP
+    .WithServiceName("smtp-server")
+    .WithServiceVersion("1.0.0")
+    .EnableDetailedMetrics()
+    .EnableCommandMetrics()
+    .WithLabels(
+        ("environment", "production"),
+        ("region", "us-east-1")));
+```
+
+### Custom Tracing
+
+```csharp
+// Start a custom activity (span) for your operations
+using (var activity = server.StartActivity("custom.operation"))
+{
+    activity?.SetTag("operation.type", "batch_process");
+    activity?.SetTag("batch.size", 100);
+    
+    // Your custom logic here
+    ProcessBatch();
+    
+    activity?.SetTag("result", "success");
+}
+
+// Trace message processing with custom attributes
+server.MessageReceived += (sender, e) =>
+{
+    using var activity = server.StartActivity("message.custom_processing");
+    activity?.SetTag("message.size", e.Message.Size);
+    activity?.SetTag("sender.domain", e.Message.From?.Domain);
+    
+    // Custom processing logic
+    if (e.Message.Size > 10_000_000)
+    {
+        activity?.AddEvent(new ActivityEvent("large_message_detected"));
+    }
+};
 ```
 
 ## ⚙️ Configuration Options

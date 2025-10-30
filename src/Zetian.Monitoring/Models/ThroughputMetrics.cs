@@ -1,6 +1,6 @@
 using System;
 
-namespace Zetian.Monitoring
+namespace Zetian.Monitoring.Models
 {
     /// <summary>
     /// Represents throughput metrics over a time window

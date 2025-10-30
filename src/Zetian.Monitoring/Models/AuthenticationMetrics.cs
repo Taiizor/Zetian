@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Zetian.Monitoring
+namespace Zetian.Monitoring.Models
 {
     /// <summary>
     /// Represents authentication metrics

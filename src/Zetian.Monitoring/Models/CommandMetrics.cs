@@ -1,6 +1,6 @@
 using System;
 
-namespace Zetian.Monitoring
+namespace Zetian.Monitoring.Models
 {
     /// <summary>
     /// Represents metrics for an SMTP command

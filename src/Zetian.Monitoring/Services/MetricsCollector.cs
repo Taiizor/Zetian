@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using Zetian.Abstractions;
 using Zetian.Monitoring.Abstractions;
+using Zetian.Monitoring.Models;
 
 namespace Zetian.Monitoring.Services
 {

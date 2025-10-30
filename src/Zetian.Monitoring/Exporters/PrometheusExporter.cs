@@ -2,6 +2,7 @@ using Prometheus;
 using System;
 using System.Collections.Generic;
 using Zetian.Monitoring.Abstractions;
+using Zetian.Monitoring.Models;
 
 namespace Zetian.Monitoring.Exporters
 {

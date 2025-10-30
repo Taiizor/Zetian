@@ -80,6 +80,7 @@
     <ItemGroup>
         <PackageReference Include="prometheus-net" Version="8.2.1" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0-rc.1" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0-rc.1" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.1-beta.1" />
     </ItemGroup>
 

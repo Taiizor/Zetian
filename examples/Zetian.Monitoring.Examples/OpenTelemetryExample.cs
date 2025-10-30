@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Zetian.Server;
 using Zetian.Monitoring.Extensions;
 using Microsoft.Extensions.Logging;
+using Zetian.Protocol;
 
 namespace Zetian.Monitoring.Examples
 {
@@ -31,7 +32,7 @@ namespace Zetian.Monitoring.Examples
                     .ServerName("OpenTelemetry SMTP Server")
                     .MaxConnections(100)
                     .MaxMessageSizeMB(10)
-                    .WithLogger(loggerFactory.CreateLogger<SmtpServer>())
+                    .LoggerFactory(loggerFactory)
                     .Build();
 
                 // Enable comprehensive monitoring with OpenTelemetry
@@ -78,7 +79,7 @@ namespace Zetian.Monitoring.Examples
                         activity.SetTag("message.id", e.Message.Id);
                         activity.SetTag("message.size", e.Message.Size);
                         activity.SetTag("sender.address", e.Message.From?.ToString());
-                        activity.SetTag("recipients.count", e.Message.To?.Count ?? 0);
+                        activity.SetTag("recipients.count", e.Message.Recipients?.Count ?? 0);
                     
                         // Add custom events
                         if (e.Message.Size > 5_000_000)
@@ -150,7 +151,7 @@ namespace Zetian.Monitoring.Examples
                 Console.WriteLine("==========================================");
                 Console.WriteLine("SMTP Server with OpenTelemetry Monitoring");
                 Console.WriteLine("==========================================");
-                Console.WriteLine($"SMTP Server: localhost:{server.Port}");
+                Console.WriteLine($"SMTP Server: localhost:{server.Configuration.Port}");
                 Console.WriteLine($"Prometheus Metrics: http://localhost:9090/metrics");
                 Console.WriteLine($"OpenTelemetry Endpoint: http://localhost:4317");
                 Console.WriteLine();

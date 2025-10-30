@@ -8,10 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Threading;
-using System.Threading.Tasks;
 using Zetian.Monitoring.Abstractions;
-using Zetian.Monitoring.Models;
 
 namespace Zetian.Monitoring.Exporters
 {
@@ -23,13 +20,13 @@ namespace Zetian.Monitoring.Exporters
         private readonly IMetricsCollector _collector;
         private readonly MonitoringConfiguration _configuration;
         private readonly ILogger<OpenTelemetryExporter>? _logger;
-        
+
         private TracerProvider? _tracerProvider;
         private MeterProvider? _meterProvider;
-        
+
         private readonly ActivitySource _activitySource;
         private readonly Meter _meter;
-        
+
         // Metrics instruments
         private readonly Counter<long> _sessionsCounter;
         private readonly Counter<long> _messagesCounter;
@@ -40,17 +37,17 @@ namespace Zetian.Monitoring.Exporters
         private readonly Counter<long> _connectionsCounter;
         private readonly Counter<long> _tlsUpgradesCounter;
         private readonly Counter<long> _rejectionsCounter;
-        
+
         private readonly ObservableGauge<int> _activeSessionsGauge;
         private readonly ObservableGauge<double> _uptimeGauge;
         private readonly ObservableGauge<long> _memoryGauge;
         private readonly ObservableGauge<double> _throughputMessagesGauge;
         private readonly ObservableGauge<double> _throughputBytesGauge;
-        
+
         private readonly Histogram<double> _commandDurationHistogram;
         private readonly Histogram<long> _messageSizeHistogram;
         private readonly Histogram<double> _sessionDurationHistogram;
-        
+
         private readonly DateTime _startTime = DateTime.UtcNow;
         private bool _disposed;
 
@@ -62,110 +59,110 @@ namespace Zetian.Monitoring.Exporters
             _collector = collector ?? throw new ArgumentNullException(nameof(collector));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger;
-            
+
             // Initialize ActivitySource for tracing
             _activitySource = new ActivitySource(
                 _configuration.ServiceName,
                 _configuration.ServiceVersion);
-            
+
             // Initialize Meter for metrics
             _meter = new Meter(
                 _configuration.ServiceName,
                 _configuration.ServiceVersion);
-            
+
             // Create metric instruments
             _sessionsCounter = _meter.CreateCounter<long>(
                 "smtp.sessions.total",
                 "sessions",
                 "Total number of SMTP sessions");
-            
+
             _messagesCounter = _meter.CreateCounter<long>(
                 "smtp.messages.total",
                 "messages",
                 "Total number of messages processed");
-            
+
             _bytesCounter = _meter.CreateCounter<long>(
                 "smtp.bytes.total",
                 "bytes",
                 "Total bytes processed");
-            
+
             _errorsCounter = _meter.CreateCounter<long>(
                 "smtp.errors.total",
                 "errors",
                 "Total number of errors");
-            
+
             _commandsCounter = _meter.CreateCounter<long>(
                 "smtp.commands.total",
                 "commands",
                 "Total SMTP commands executed");
-            
+
             _authenticationsCounter = _meter.CreateCounter<long>(
                 "smtp.authentications.total",
                 "attempts",
                 "Total authentication attempts");
-            
+
             _connectionsCounter = _meter.CreateCounter<long>(
                 "smtp.connections.total",
                 "connections",
                 "Total connection attempts");
-            
+
             _tlsUpgradesCounter = _meter.CreateCounter<long>(
                 "smtp.tls.upgrades.total",
                 "upgrades",
                 "Total TLS upgrade attempts");
-            
+
             _rejectionsCounter = _meter.CreateCounter<long>(
                 "smtp.rejections.total",
                 "rejections",
                 "Total message rejections");
-            
+
             // Observable gauges
             _activeSessionsGauge = _meter.CreateObservableGauge<int>(
                 "smtp.sessions.active",
                 () => _collector.GetStatistics()?.ActiveSessions ?? 0,
                 "sessions",
                 "Current active sessions");
-            
+
             _uptimeGauge = _meter.CreateObservableGauge<double>(
                 "smtp.uptime.seconds",
                 () => (DateTime.UtcNow - _startTime).TotalSeconds,
                 "seconds",
                 "Server uptime in seconds");
-            
+
             _memoryGauge = _meter.CreateObservableGauge<long>(
                 "smtp.memory.bytes",
                 () => GC.GetTotalMemory(false),
                 "bytes",
                 "Memory usage in bytes");
-            
+
             _throughputMessagesGauge = _meter.CreateObservableGauge<double>(
                 "smtp.throughput.messages_per_second",
                 () => _collector.GetStatistics()?.CurrentThroughput?.MessagesPerSecond ?? 0,
                 "messages/sec",
                 "Current message throughput");
-            
+
             _throughputBytesGauge = _meter.CreateObservableGauge<double>(
                 "smtp.throughput.bytes_per_second",
                 () => _collector.GetStatistics()?.CurrentThroughput?.BytesPerSecond ?? 0,
                 "bytes/sec",
                 "Current bytes throughput");
-            
+
             // Histograms
             _commandDurationHistogram = _meter.CreateHistogram<double>(
                 "smtp.command.duration",
                 "milliseconds",
                 "Command execution duration");
-            
+
             _messageSizeHistogram = _meter.CreateHistogram<long>(
                 "smtp.message.size",
                 "bytes",
                 "Message size distribution");
-            
+
             _sessionDurationHistogram = _meter.CreateHistogram<double>(
                 "smtp.session.duration",
                 "seconds",
                 "Session duration");
-            
+
             // Initialize OpenTelemetry if endpoint is configured
             if (!string.IsNullOrEmpty(_configuration.OpenTelemetryEndpoint))
             {
@@ -177,22 +174,22 @@ namespace Zetian.Monitoring.Exporters
         {
             try
             {
-                var resourceBuilder = ResourceBuilder.CreateDefault()
+                ResourceBuilder resourceBuilder = ResourceBuilder.CreateDefault()
                     .AddService(
                         serviceName: _configuration.ServiceName,
                         serviceVersion: _configuration.ServiceVersion);
-                
+
                 // Add custom labels as resource attributes
-                foreach (var label in _configuration.CustomLabels)
+                foreach (KeyValuePair<string, string> label in _configuration.CustomLabels)
                 {
                     resourceBuilder.AddAttributes(new KeyValuePair<string, object>[]
                     {
                         new(label.Key, label.Value)
                     });
                 }
-                
-                var resource = resourceBuilder.Build();
-                
+
+                Resource resource = resourceBuilder.Build();
+
                 // Configure tracing
                 _tracerProvider = Sdk.CreateTracerProviderBuilder()
                     .SetResourceBuilder(resourceBuilder)
@@ -203,7 +200,7 @@ namespace Zetian.Monitoring.Exporters
                         options.Protocol = OtlpExportProtocol.Grpc;
                     })
                     .Build();
-                
+
                 // Configure metrics
                 _meterProvider = Sdk.CreateMeterProviderBuilder()
                     .SetResourceBuilder(resourceBuilder)
@@ -212,11 +209,11 @@ namespace Zetian.Monitoring.Exporters
                     {
                         exporterOptions.Endpoint = new Uri(_configuration.OpenTelemetryEndpoint!);
                         exporterOptions.Protocol = OtlpExportProtocol.Grpc;
-                        metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 
+                        metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
                             (int)_configuration.UpdateInterval.TotalMilliseconds;
                     })
                     .Build();
-                
+
                 _logger?.LogInformation(
                     "OpenTelemetry initialized with endpoint: {Endpoint}",
                     _configuration.OpenTelemetryEndpoint);
@@ -250,16 +247,16 @@ namespace Zetian.Monitoring.Exporters
         /// </summary>
         public void RecordMessage(long size, bool delivered, string? reason = null)
         {
-            var tags = new List<KeyValuePair<string, object?>>
-            {
+            List<KeyValuePair<string, object?>> tags =
+            [
                 new("status", delivered ? "delivered" : "rejected")
-            };
-            
+            ];
+
             if (!delivered && reason != null)
             {
                 tags.Add(new("reason", reason));
             }
-            
+
             _messagesCounter.Add(1, tags.ToArray());
             _messageSizeHistogram.Record(size);
         }
@@ -277,11 +274,11 @@ namespace Zetian.Monitoring.Exporters
         /// </summary>
         public void RecordCommand(string command, bool success, double durationMs)
         {
-            _commandsCounter.Add(1, 
+            _commandsCounter.Add(1,
                 new KeyValuePair<string, object?>("command", command),
                 new KeyValuePair<string, object?>("status", success ? "success" : "failure"));
-            
-            _commandDurationHistogram.Record(durationMs, 
+
+            _commandDurationHistogram.Record(durationMs,
                 new KeyValuePair<string, object?>("command", command));
         }
 
@@ -336,8 +333,8 @@ namespace Zetian.Monitoring.Exporters
         /// </summary>
         public Activity? TraceSession(string sessionId, string? remoteEndpoint = null)
         {
-            var activity = StartActivity($"smtp.session.{sessionId}");
-            
+            Activity? activity = StartActivity($"smtp.session.{sessionId}");
+
             if (activity != null)
             {
                 activity.SetTag("session.id", sessionId);
@@ -346,7 +343,7 @@ namespace Zetian.Monitoring.Exporters
                     activity.SetTag("net.peer.name", remoteEndpoint);
                 }
             }
-            
+
             return activity;
         }
 
@@ -355,8 +352,8 @@ namespace Zetian.Monitoring.Exporters
         /// </summary>
         public Activity? TraceCommand(string command, string? sessionId = null)
         {
-            var activity = StartActivity($"smtp.command.{command}", ActivityKind.Internal);
-            
+            Activity? activity = StartActivity($"smtp.command.{command}", ActivityKind.Internal);
+
             if (activity != null)
             {
                 activity.SetTag("smtp.command", command);
@@ -365,7 +362,7 @@ namespace Zetian.Monitoring.Exporters
                     activity.SetTag("session.id", sessionId);
                 }
             }
-            
+
             return activity;
         }
 
@@ -374,8 +371,8 @@ namespace Zetian.Monitoring.Exporters
         /// </summary>
         public Activity? TraceMessage(string messageId, string? from = null, string? to = null)
         {
-            var activity = StartActivity("smtp.message.process", ActivityKind.Internal);
-            
+            Activity? activity = StartActivity("smtp.message.process", ActivityKind.Internal);
+
             if (activity != null)
             {
                 activity.SetTag("message.id", messageId);
@@ -388,19 +385,22 @@ namespace Zetian.Monitoring.Exporters
                     activity.SetTag("message.to", to);
                 }
             }
-            
+
             return activity;
         }
 
         public void Dispose()
         {
-            if (_disposed) return;
-            
+            if (_disposed)
+            {
+                return;
+            }
+
             _tracerProvider?.Dispose();
             _meterProvider?.Dispose();
             _activitySource?.Dispose();
             _meter?.Dispose();
-            
+
             _disposed = true;
             GC.SuppressFinalize(this);
         }

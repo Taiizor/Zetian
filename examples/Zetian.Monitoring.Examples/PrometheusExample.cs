@@ -1,4 +1,5 @@
 using Zetian.Monitoring.Extensions;
+using Zetian.Monitoring.Models;
 using Zetian.Monitoring.Services;
 using Zetian.Server;
 

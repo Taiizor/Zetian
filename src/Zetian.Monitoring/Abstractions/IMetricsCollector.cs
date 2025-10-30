@@ -71,6 +71,11 @@ namespace Zetian.Monitoring.Abstractions
         ThroughputMetrics GetThroughput(TimeSpan window);
 
         /// <summary>
+        /// Gets comprehensive server statistics
+        /// </summary>
+        ServerStatistics GetStatistics();
+
+        /// <summary>
         /// Resets all metrics
         /// </summary>
         void Reset();

@@ -1,6 +1,7 @@
 using Zetian.Abstractions;
 using Zetian.Monitoring.Extensions;
 using Zetian.Monitoring.Services;
+using Zetian.Monitoring.Models;
 using Zetian.Server;
 
 namespace Zetian.Monitoring.Examples

@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Monitoring.Exporters;
-using Zetian.Monitoring.Services;
 using Zetian.Monitoring.Models;
+using Zetian.Monitoring.Services;
 using Zetian.Server;
-using System.Linq;
 
 namespace Zetian.Monitoring.Extensions
 {
@@ -78,13 +78,14 @@ namespace Zetian.Monitoring.Extensions
                 // Start OpenTelemetry trace for session
                 if (openTelemetryExporter != null)
                 {
-                    var activity = openTelemetryExporter.TraceSession(
+                    Activity? activity = openTelemetryExporter.TraceSession(
                         e.Session.Id,
                         e.Session.RemoteEndPoint?.ToString());
 
-                    if (e.Session is SmtpSession smtpSession)
+                    // Store activity in server properties using session ID as key
+                    if (activity != null && server is SmtpServer smtpSvr)
                     {
-                        smtpSession.Properties["OTelActivity"] = activity;
+                        smtpSvr.Configuration.Properties[$"OTelActivity_{e.Session.Id}"] = activity;
                     }
 
                     openTelemetryExporter.RecordConnection(true);
@@ -105,13 +106,16 @@ namespace Zetian.Monitoring.Extensions
                 if (openTelemetryExporter != null)
                 {
                     // Complete session trace
-                    if (e.Session is ISmtpSession smtpSession &&
-                        smtpSession.Properties.TryGetValue("OTelActivity", out var activityObj) &&
+                    if (server is SmtpServer smtpSvr &&
+                        smtpSvr.Configuration.Properties.TryGetValue($"OTelActivity_{e.Session.Id}", out object? activityObj) &&
                         activityObj is Activity activity)
                     {
                         activity.SetTag("session.duration", duration);
                         activity.SetTag("session.messages", e.Session.MessageCount);
                         activity.Dispose();
+
+                        // Clean up the stored activity
+                        smtpSvr.Configuration.Properties.Remove($"OTelActivity_{e.Session.Id}");
                     }
 
                     openTelemetryExporter.RecordSession(duration);
@@ -136,10 +140,10 @@ namespace Zetian.Monitoring.Extensions
                     // Trace message processing
                     if (openTelemetryExporter != null)
                     {
-                        using var activity = openTelemetryExporter.TraceMessage(
+                        using Activity? activity = openTelemetryExporter.TraceMessage(
                             e.Message.Id,
                             e.Message.From?.ToString(),
-                            e.Message.To?.FirstOrDefault()?.ToString());
+                            e.Message.Recipients?.FirstOrDefault()?.ToString());
 
                         openTelemetryExporter.RecordMessage(e.Message.Size, true);
                     }
@@ -252,7 +256,7 @@ namespace Zetian.Monitoring.Extensions
                 smtpSvr.Configuration.Properties.TryGetValue("OpenTelemetryExporter", out object? otValue) &&
                 otValue is OpenTelemetryExporter otExporter)
             {
-                using var activity = otExporter.TraceCommand(command);
+                using Activity? activity = otExporter.TraceCommand(command);
                 otExporter.RecordCommand(command, success, durationMs);
             }
         }

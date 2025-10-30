@@ -89,6 +89,20 @@ namespace Zetian.Monitoring.Models
         public long MemoryUsageBytes { get; set; }
 
         /// <summary>
+        /// Gets or sets memory usage in bytes (alias for MemoryUsageBytes)
+        /// </summary>
+        public long MemoryUsage
+        {
+            get => MemoryUsageBytes;
+            set => MemoryUsageBytes = value;
+        }
+
+        /// <summary>
+        /// Gets or sets peak memory usage in bytes
+        /// </summary>
+        public long PeakMemoryUsage { get; set; }
+
+        /// <summary>
         /// Gets or sets CPU usage percentage
         /// </summary>
         public double CpuUsagePercent { get; set; }

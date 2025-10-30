@@ -205,7 +205,7 @@ export default function MonitoringPage() {
           </div>
 
           {/* Quick Start */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Zap className="w-8 h-8 mr-3 text-yellow-400" />
               Quick Start
@@ -234,7 +234,7 @@ dotnet add package Zetian.Monitoring`} />
           </div>
 
           {/* Available Metrics */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <PieChart className="w-8 h-8 mr-3 text-blue-400" />
               Available Metrics
@@ -243,7 +243,7 @@ dotnet add package Zetian.Monitoring`} />
             <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Prometheus Metrics</h3>
-                <div className="bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden">
+                <div className="bg-gray-100 dark:bg-gray-950 rounded-lg overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-gray-200 dark:bg-gray-800">
                       <tr>
@@ -279,7 +279,7 @@ dotnet add package Zetian.Monitoring`} />
           </div>
 
           {/* Advanced Configuration */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Settings className="w-8 h-8 mr-3 text-orange-400" />
               Advanced Configuration
@@ -299,7 +299,7 @@ dotnet add package Zetian.Monitoring`} />
           </div>
 
           {/* OpenTelemetry */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Globe className="w-8 h-8 mr-3 text-green-400" />
               OpenTelemetry Integration
@@ -308,7 +308,7 @@ dotnet add package Zetian.Monitoring`} />
           </div>
 
           {/* Deployment */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Server className="w-8 h-8 mr-3 text-cyan-400" />
               Deployment Examples
@@ -328,7 +328,7 @@ dotnet add package Zetian.Monitoring`} />
           </div>
 
           {/* Performance Impact */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Gauge className="w-8 h-8 mr-3 text-red-400" />
               Performance Impact

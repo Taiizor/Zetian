@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using Zetian.Monitoring.Configuration;
 
 namespace Zetian.Monitoring.Builders
 {

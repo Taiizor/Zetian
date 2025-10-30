@@ -20,11 +20,8 @@ import Link from 'next/link';
 
 export default function RelayPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="relative">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-grid-white/[0.02]" />
-        </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
@@ -32,8 +29,8 @@ export default function RelayPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6">
               <Send className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-5xl font-bold text-white mb-4">Zetian.Relay</h1>
-            <p className="text-xl text-gray-300 mb-6">
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">Zetian.Relay</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
               Advanced SMTP Relay and Proxy Extension for Zetian
             </p>
             <div className="flex justify-center gap-4">
@@ -56,24 +53,24 @@ export default function RelayPage() {
               { icon: Lock, title: 'TLS/SSL', desc: 'Secure connections with STARTTLS' },
               { icon: Globe, title: 'MX Routing', desc: 'DNS MX record-based routing' },
             ].map((feature, i) => (
-              <div key={i} className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-                <feature.icon className="w-10 h-10 text-blue-400 mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400 text-sm">{feature.desc}</p>
+              <div key={i} className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <feature.icon className="w-10 h-10 text-blue-500 dark:text-blue-400 mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{feature.desc}</p>
               </div>
             ))}
           </div>
 
           {/* Quick Start */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Zap className="w-8 h-8 mr-3 text-yellow-400" />
               Quick Start
             </h2>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Basic Relay Setup</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Basic Relay Setup</h3>
                 <CodeBlock language="csharp" code={`using Zetian.Server;
 using Zetian.Relay.Extensions;
 
@@ -87,7 +84,7 @@ var relayService = await server.StartWithRelayAsync();`} />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">With Smart Host</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">With Smart Host</h3>
                 <CodeBlock language="csharp" code={`using System.Net;
 using Zetian.Server;
 using Zetian.Relay.Extensions;
@@ -112,8 +109,8 @@ await server.StartAsync();`} />
           </div>
 
           {/* Advanced Configuration */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Settings className="w-8 h-8 mr-3 text-purple-400" />
               Advanced Configuration
             </h2>
@@ -121,8 +118,8 @@ await server.StartAsync();`} />
             <div className="space-y-6">
               {/* Multiple Smart Hosts with Failover */}
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Multiple Smart Hosts with Failover</h3>
-                <p className="text-gray-300 mb-3">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Multiple Smart Hosts with Failover</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">
                   Configure primary and backup smart hosts with automatic failover:
                 </p>
                 <CodeBlock language="csharp" code={`var server = SmtpServerBuilder
@@ -158,8 +155,8 @@ await server.StartAsync();`} />
 
               {/* Domain-Specific Routing */}
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Domain-Specific Routing</h3>
-                <p className="text-gray-300 mb-3">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Domain-Specific Routing</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">
                   Route specific domains through different smart hosts:
                 </p>
                 <CodeBlock language="csharp" code={`var server = SmtpServerBuilder
@@ -193,8 +190,8 @@ await server.StartAsync();`} />
 
               {/* MX-Based Routing */}
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">MX-Based Routing</h3>
-                <p className="text-gray-300 mb-3">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">MX-Based Routing</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">
                   Use DNS MX records for automatic routing:
                 </p>
                 <CodeBlock language="csharp" code={`var server = SmtpServerBuilder
@@ -219,8 +216,8 @@ await server.StartAsync();`} />
 
               {/* Using Relay Builder */}
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Using Relay Builder</h3>
-                <p className="text-gray-300 mb-3">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Using Relay Builder</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">
                   Fluent API for comprehensive relay configuration:
                 </p>
                 <CodeBlock language="csharp" code={`using Zetian.Relay.Builder;
@@ -247,15 +244,15 @@ var server = SmtpServerBuilder
           </div>
 
           {/* Queue Management */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Database className="w-8 h-8 mr-3 text-green-400" />
               Queue Management
             </h2>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Manual Queue Operations</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Manual Queue Operations</h3>
                 <CodeBlock language="csharp" code={`// Get relay service
 var relayService = server.GetRelayService();
 
@@ -286,7 +283,7 @@ var cleared = await relayService.Queue.ClearExpiredAsync();`} />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Message Priority</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Message Priority</h3>
                 <CodeBlock language="csharp" code={`server.MessageReceived += async (sender, e) =>
 {
     // Determine priority based on sender or content
@@ -302,15 +299,15 @@ var cleared = await relayService.Queue.ClearExpiredAsync();`} />
           </div>
 
           {/* Retry Configuration */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <RefreshCw className="w-8 h-8 mr-3 text-orange-400" />
               Retry Configuration
             </h2>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Retry Settings</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Retry Settings</h3>
                 <CodeBlock language="csharp" code={`var server = SmtpServerBuilder
     .CreateBasic()
     .EnableRelay(config =>
@@ -333,17 +330,17 @@ var cleared = await relayService.Queue.ClearExpiredAsync();`} />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Retry Schedule</h3>
-                <p className="text-gray-300 mb-3">The relay service uses exponential backoff for retries:</p>
-                <div className="bg-gray-900/50 rounded-lg p-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Retry Schedule</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">The relay service uses exponential backoff for retries:</p>
+                <div className="bg-gray-100 dark:bg-gray-950 rounded-lg p-4">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="border-b border-gray-700">
-                        <th className="py-2 text-gray-300">Retry</th>
-                        <th className="py-2 text-gray-300">Wait Time</th>
+                      <tr className="border-b border-gray-300 dark:border-gray-700">
+                        <th className="py-2 text-gray-600 dark:text-gray-300">Retry</th>
+                        <th className="py-2 text-gray-600 dark:text-gray-300">Wait Time</th>
                       </tr>
                     </thead>
-                    <tbody className="text-gray-400">
+                    <tbody className="text-gray-700 dark:text-gray-400">
                       <tr><td className="py-1">1st</td><td>1 minute</td></tr>
                       <tr><td className="py-1">2nd</td><td>2 minutes</td></tr>
                       <tr><td className="py-1">3rd</td><td>4 minutes</td></tr>
@@ -359,8 +356,8 @@ var cleared = await relayService.Queue.ClearExpiredAsync();`} />
           </div>
 
           {/* Load Balancing */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Users className="w-8 h-8 mr-3 text-indigo-400" />
               Load Balancing
             </h2>
@@ -398,8 +395,8 @@ var cleared = await relayService.Queue.ClearExpiredAsync();`} />
           </div>
 
           {/* Message Status */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Mail className="w-8 h-8 mr-3 text-blue-400" />
               Message Status
             </h2>
@@ -415,17 +412,17 @@ var cleared = await relayService.Queue.ClearExpiredAsync();`} />
                 { status: 'Cancelled', desc: 'Message was cancelled', color: 'text-gray-500' },
                 { status: 'PartiallyDelivered', desc: 'Some recipients succeeded', color: 'text-purple-400' },
               ].map((item, i) => (
-                <div key={i} className="bg-gray-900/50 rounded-lg p-4">
+                <div key={i} className="bg-gray-100 dark:bg-gray-950 rounded-lg p-4">
                   <h3 className={`font-semibold ${item.color}`}>{item.status}</h3>
-                  <p className="text-gray-400 text-sm mt-1">{item.desc}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Monitoring */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <BarChart className="w-8 h-8 mr-3 text-cyan-400" />
               Monitoring & Statistics
             </h2>
@@ -459,12 +456,12 @@ foreach (var kvp in stats.MessagesBySmartHost)
           </div>
 
           {/* Best Practices */}
-          <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6">Best Practices</h2>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-8 mb-12 border border-blue-200 dark:border-blue-800">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Best Practices</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-blue-300">Performance Tips</h3>
-                <ul className="space-y-2 text-gray-300">
+                <h3 className="text-xl font-semibold text-blue-600 dark:text-blue-300">Performance Tips</h3>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
                   <li className="flex items-start">
                     <CheckCircle className="w-5 h-5 text-green-400 mr-2 mt-0.5 flex-shrink-0" />
                     <span>Cache DNS MX record lookups for improved performance</span>
@@ -484,8 +481,8 @@ foreach (var kvp in stats.MessagesBySmartHost)
                 </ul>
               </div>
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-purple-300">Security Considerations</h3>
-                <ul className="space-y-2 text-gray-300">
+                <h3 className="text-xl font-semibold text-purple-600 dark:text-purple-300">Security Considerations</h3>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
                   <li className="flex items-start">
                     <Shield className="w-5 h-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
                     <span>Always require authentication for relay access</span>

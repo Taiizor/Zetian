@@ -74,6 +74,24 @@ const searchData: SearchItem[] = [
     category: 'Documentation',
     tags: ['extensions', 'plugins', 'rate-limit', 'spam-filter']
   },
+  { 
+    title: 'Relay Extension', 
+    description: 'SMTP relay and proxy - Smart host support, queue management, load balancing, failover, MX routing', 
+    path: '/docs/relay', 
+    category: 'Documentation',
+    tags: ['relay', 'proxy', 'smart-host', 'queue', 'mx', 'failover', 'load-balance'],
+    popular: true,
+    code: '.EnableRelay(config => config.DefaultSmartHost = ...)'
+  },
+  { 
+    title: 'AntiSpam Extension', 
+    description: 'Advanced spam protection - SPF/DKIM/DMARC, RBL/DNSBL, Bayesian filtering, Greylisting', 
+    path: '/docs/anti-spam', 
+    category: 'Documentation',
+    tags: ['antispam', 'spam', 'spf', 'dkim', 'dmarc', 'rbl', 'dnsbl', 'bayesian', 'greylist'],
+    popular: true,
+    code: 'server.AddAntiSpam(builder => builder.EnableSpf())'
+  },
   
   // Storage Providers Documentation
   { 
@@ -303,6 +321,82 @@ const searchData: SearchItem[] = [
     code: 'new AzureBlobMessageStore(connectionString, configuration)'
   },
   
+  // Relay Classes
+  { 
+    title: 'RelayConfiguration', 
+    description: 'Relay configuration - DefaultSmartHost, SmartHosts, UseMxRouting, MaxRetryCount, MessageLifetime', 
+    path: '/api#relay', 
+    category: 'API',
+    tags: ['relay', 'configuration', 'smarthost', 'mx'],
+    code: 'new RelayConfiguration { DefaultSmartHost = ... }'
+  },
+  { 
+    title: 'SmartHostConfiguration', 
+    description: 'Smart host settings - Host, Port, Priority, Credentials, UseTls, Weight for load balancing', 
+    path: '/api#relay', 
+    category: 'API',
+    tags: ['relay', 'smarthost', 'configuration'],
+    code: 'new SmartHostConfiguration { Host = "smtp.office365.com", Port = 587 }'
+  },
+  { 
+    title: 'RelayBuilder', 
+    description: 'Fluent relay builder - WithSmartHost(), MaxRetries(), MessageLifetime(), EnableTls()', 
+    path: '/api#relay', 
+    category: 'API',
+    tags: ['relay', 'builder', 'fluent'],
+    code: 'new RelayBuilder().WithSmartHost(...).Build()'
+  },
+  { 
+    title: 'IRelayQueue', 
+    description: 'Relay queue interface - EnqueueAsync(), DequeueAsync(), GetStatisticsAsync()', 
+    path: '/api#relay', 
+    category: 'API',
+    tags: ['relay', 'queue', 'interface'],
+    code: 'await queue.EnqueueAsync(relayMessage)'
+  },
+  
+  // AntiSpam Classes
+  { 
+    title: 'AntiSpamBuilder', 
+    description: 'AntiSpam builder - EnableSpf(), EnableRbl(), EnableBayesian(), EnableGreylisting()', 
+    path: '/api#antispam', 
+    category: 'API',
+    tags: ['antispam', 'spam', 'builder'],
+    code: 'new AntiSpamBuilder().EnableSpf().EnableBayesian()'
+  },
+  { 
+    title: 'ISpamChecker', 
+    description: 'Spam checker interface - CheckAsync() returns SpamCheckResult with score and reason', 
+    path: '/api#antispam', 
+    category: 'API',
+    tags: ['antispam', 'spam', 'interface', 'checker'],
+    code: 'public class CustomChecker : ISpamChecker'
+  },
+  { 
+    title: 'SpfChecker', 
+    description: 'SPF validation - CheckAsync() verifies sender policy framework records', 
+    path: '/api#antispam', 
+    category: 'API',
+    tags: ['antispam', 'spf', 'validation'],
+    code: 'new SpfChecker(failScore: 50)'
+  },
+  { 
+    title: 'BayesianSpamFilter', 
+    description: 'Machine learning filter - TrainSpamAsync(), TrainHamAsync(), ClassifyAsync()', 
+    path: '/api#antispam', 
+    category: 'API',
+    tags: ['antispam', 'bayesian', 'machine-learning', 'ml'],
+    code: 'await filter.TrainSpamAsync(spamContent)'
+  },
+  { 
+    title: 'GreylistingChecker', 
+    description: 'Greylisting - initialDelay, Whitelist(), temporary rejection for unknown senders', 
+    path: '/api#antispam', 
+    category: 'API',
+    tags: ['antispam', 'greylist', 'delay'],
+    code: 'new GreylistingChecker(TimeSpan.FromMinutes(5))'
+  },
+  
   // Extension Methods
   { 
     title: 'AddRateLimiting', 
@@ -444,6 +538,24 @@ const searchData: SearchItem[] = [
     tags: ['example', 'multi', 'failover', 'storage', 'tiered'],
     popular: true,
     code: '.WithRedisStorage().WithSqlServerStorage().WithAzureBlobStorage()'
+  },
+  { 
+    title: 'Relay Example', 
+    description: 'SMTP relay with smart host - failover, load balancing, queue management, domain routing', 
+    path: '/examples#relay', 
+    category: 'Examples',
+    tags: ['example', 'relay', 'smarthost', 'failover', 'queue'],
+    popular: true,
+    code: '.EnableRelay(config => config.DefaultSmartHost = ...)'
+  },
+  { 
+    title: 'AntiSpam Example', 
+    description: 'Comprehensive spam protection - SPF/DKIM/DMARC, RBL checking, Bayesian filter, greylisting', 
+    path: '/examples#antispam', 
+    category: 'Examples',
+    tags: ['example', 'antispam', 'spam', 'spf', 'dkim', 'bayesian'],
+    popular: true,
+    code: 'server.AddAntiSpam(builder => builder.EnableSpf().EnableBayesian())'
   },
   
   // Protocol Classes

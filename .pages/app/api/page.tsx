@@ -839,6 +839,370 @@ const apiCategories = [
         values: ['Healthy (0)', 'Degraded (1)', 'Unhealthy (2)']
       }
     ]
+  },
+  {
+    title: 'Relay Extension',
+    icon: Mail,
+    namespace: 'Zetian.Relay',
+    items: [
+      {
+        name: 'RelayConfiguration',
+        description: 'Configuration for relay service',
+        properties: [
+          'DefaultSmartHost',
+          'SmartHosts',
+          'UseMxRouting',
+          'DomainRouting',
+          'MaxRetryCount',
+          'MessageLifetime',
+          'ConnectionTimeout',
+          'QueueProcessingInterval',
+          'CleanupInterval',
+          'MaxConcurrentDeliveries',
+          'EnableBounceMessages',
+          'BounceSender',
+          'LocalDomains',
+          'RelayDomains',
+          'RelayNetworks',
+          'RequireAuthentication',
+          'EnableTls',
+          'RequireTls',
+          'SslProtocols',
+          'DnsServers'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'SmartHostConfiguration',
+        description: 'Smart host server configuration',
+        properties: [
+          'Host',
+          'Port',
+          'Priority',
+          'Weight',
+          'Credentials',
+          'UseTls',
+          'UseStartTls',
+          'SslProtocols',
+          'MaxConnections',
+          'ConnectionTimeout'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'RelayBuilder',
+        description: 'Fluent builder for relay configuration',
+        properties: [],
+        methods: [
+          'WithSmartHost(host, port, username, password)',
+          'AddSmartHost(SmartHostConfiguration)',
+          'MaxConcurrentDeliveries(int)',
+          'MaxRetries(int)',
+          'MessageLifetime(TimeSpan)',
+          'ConnectionTimeout(TimeSpan)',
+          'EnableTls(enable, require)',
+          'LocalDomain(string)',
+          'AddLocalDomains(params string[])',
+          'AddRelayDomains(params string[])',
+          'RequireAuthentication(bool)',
+          'EnableBounce(enable, senderAddress)',
+          'Build()'
+        ],
+        events: []
+      },
+      {
+        name: 'RelayService',
+        description: 'Background service for message relay',
+        properties: ['Queue', 'Configuration', 'IsRunning'],
+        methods: [
+          'StartAsync(CancellationToken)',
+          'StopAsync(CancellationToken)',
+          'QueueMessageAsync(RelayMessage)',
+          'GetStatisticsAsync()'
+        ],
+        events: []
+      },
+      {
+        name: 'IRelayQueue',
+        description: 'Interface for relay queue implementation',
+        properties: [],
+        methods: [
+          'EnqueueAsync(RelayMessage)',
+          'DequeueAsync(CancellationToken)',
+          'GetAllAsync()',
+          'GetByStatusAsync(RelayStatus)',
+          'UpdateAsync(RelayMessage)',
+          'RemoveAsync(string)',
+          'GetStatisticsAsync()',
+          'ClearExpiredAsync()'
+        ],
+        events: []
+      },
+      {
+        name: 'RelayMessage',
+        description: 'Message in relay queue',
+        properties: [
+          'Id',
+          'MessageId',
+          'From',
+          'Recipients',
+          'Data',
+          'Priority',
+          'Status',
+          'RetryCount',
+          'NextRetryTime',
+          'CreatedTime',
+          'LastAttemptTime',
+          'SmartHost',
+          'Error'
+        ],
+        methods: [],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'Relay Enums',
+    icon: Mail,
+    namespace: 'Zetian.Relay.Enums',
+    items: [
+      {
+        name: 'RelayPriority',
+        description: 'Message priority levels',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Urgent (0)', 'High (1)', 'Normal (2)', 'Low (3)']
+      },
+      {
+        name: 'RelayStatus',
+        description: 'Relay message status',
+        properties: [],
+        methods: [],
+        events: [],
+        values: [
+          'Queued',
+          'InProgress',
+          'Delivered',
+          'Failed',
+          'Deferred',
+          'Expired',
+          'Cancelled',
+          'PartiallyDelivered'
+        ]
+      }
+    ]
+  },
+  {
+    title: 'AntiSpam Extension',
+    icon: Shield,
+    namespace: 'Zetian.AntiSpam',
+    items: [
+      {
+        name: 'AntiSpamBuilder',
+        description: 'Fluent builder for anti-spam configuration',
+        properties: [],
+        methods: [
+          'EnableSpf(failScore)',
+          'EnableDkim(failScore, strictMode)',
+          'EnableDmarc(failScore, quarantineScore, enforcePolicy)',
+          'EnableRbl(params string[])',
+          'EnableBayesian(spamThreshold)',
+          'EnableGreylisting(initialDelay)',
+          'EnableEmailAuthentication(strictMode, enforcePolicy)',
+          'AddChecker(ISpamChecker)',
+          'WithDnsClient(IDnsClient)',
+          'WithOptions(AntiSpamOptions)',
+          'UseAggressive()',
+          'UseLenient()',
+          'Build()'
+        ],
+        events: []
+      },
+      {
+        name: 'AntiSpamService',
+        description: 'Main anti-spam service',
+        properties: ['Checkers', 'Options', 'Statistics'],
+        methods: [
+          'CheckMessageAsync(ISmtpMessage, ISmtpSession, CancellationToken)',
+          'GetStatistics()',
+          'ResetStatistics()',
+          'EnableChecker(string)',
+          'DisableChecker(string)'
+        ],
+        events: []
+      },
+      {
+        name: 'ISpamChecker',
+        description: 'Interface for spam checkers',
+        properties: ['Name', 'IsEnabled'],
+        methods: ['CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'SpfChecker',
+        description: 'SPF (Sender Policy Framework) checker',
+        properties: ['FailScore', 'DnsClient'],
+        methods: ['CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'DkimChecker',
+        description: 'DKIM signature verification',
+        properties: ['FailScore', 'StrictMode', 'DnsClient'],
+        methods: ['CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'DmarcChecker',
+        description: 'DMARC policy enforcement',
+        properties: ['FailScore', 'QuarantineScore', 'EnforcePolicy', 'DnsClient'],
+        methods: ['CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'RblChecker',
+        description: 'RBL/DNSBL blacklist checker',
+        properties: ['Providers', 'DnsClient'],
+        methods: ['CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)'],
+        events: []
+      },
+      {
+        name: 'BayesianSpamFilter',
+        description: 'Machine learning-based spam filter',
+        properties: ['SpamThreshold', 'MinTokenLength', 'MaxTokenLength'],
+        methods: [
+          'TrainSpamAsync(string)',
+          'TrainHamAsync(string)',
+          'ClassifyAsync(string)',
+          'GetStatistics()',
+          'SaveModelAsync(string)',
+          'LoadModelAsync(string)',
+          'CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)'
+        ],
+        events: []
+      },
+      {
+        name: 'GreylistingChecker',
+        description: 'Greylisting implementation',
+        properties: ['InitialDelay', 'AutoWhitelistAfter', 'CleanupInterval'],
+        methods: [
+          'CheckAsync(ISmtpMessage, ISmtpSession, CancellationToken)',
+          'Whitelist(string)',
+          'RemoveWhitelist(string)',
+          'ClearExpired()'
+        ],
+        events: []
+      },
+      {
+        name: 'SpamCheckResult',
+        description: 'Result of spam check',
+        properties: ['Score', 'Reason', 'IsSpam', 'Action'],
+        methods: [
+          'Spam(score, reason)',
+          'Clean(score)',
+          'TempFail(reason)',
+          'Reject(reason)'
+        ],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'AntiSpam Models',
+    icon: Shield,
+    namespace: 'Zetian.AntiSpam.Models',
+    items: [
+      {
+        name: 'AntiSpamOptions',
+        description: 'Anti-spam configuration options',
+        properties: [
+          'RejectThreshold',
+          'TempFailThreshold',
+          'RunChecksInParallel',
+          'CheckerTimeout',
+          'ContinueOnSpamDetection',
+          'EnableDetailedLogging'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'AntiSpamStatistics',
+        description: 'Anti-spam statistics',
+        properties: [
+          'MessagesChecked',
+          'MessagesBlocked',
+          'MessagesPassed',
+          'MessagesGreylisted',
+          'SpfFails',
+          'DkimFails',
+          'DmarcFails',
+          'RblHits',
+          'BayesianSpamDetected',
+          'AverageScore',
+          'CheckerStatistics'
+        ],
+        methods: [],
+        events: []
+      },
+      {
+        name: 'RblProvider',
+        description: 'RBL/DNSBL provider configuration',
+        properties: ['Name', 'Zone', 'ExpectedResponses', 'Score', 'IsEnabled'],
+        methods: [],
+        events: []
+      }
+    ]
+  },
+  {
+    title: 'AntiSpam Enums',
+    icon: Shield,
+    namespace: 'Zetian.AntiSpam.Enums',
+    items: [
+      {
+        name: 'SpamAction',
+        description: 'Action to take for spam',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Accept', 'TempFail', 'Reject', 'Discard', 'Quarantine']
+      },
+      {
+        name: 'SpfResult',
+        description: 'SPF check results',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Pass', 'Fail', 'SoftFail', 'Neutral', 'None', 'TempError', 'PermError']
+      },
+      {
+        name: 'DkimResult',
+        description: 'DKIM check results',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Pass', 'Fail', 'None', 'Policy', 'Neutral', 'TempError', 'PermError']
+      },
+      {
+        name: 'DmarcResult',
+        description: 'DMARC check results',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Pass', 'Fail', 'None', 'TempError', 'PermError']
+      },
+      {
+        name: 'DmarcPolicy',
+        description: 'DMARC policy actions',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['None', 'Quarantine', 'Reject']
+      }
+    ]
   }
 ];
 

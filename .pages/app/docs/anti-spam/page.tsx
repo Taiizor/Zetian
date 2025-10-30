@@ -124,11 +124,8 @@ server.AddSpamChecker(new CustomSpamChecker());`;
 
 export default function AntiSpamPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="relative">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-grid-white/[0.02]" />
-        </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
@@ -136,8 +133,8 @@ export default function AntiSpamPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl mb-6">
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-5xl font-bold text-white mb-4">Zetian.AntiSpam</h1>
-            <p className="text-xl text-gray-300 mb-6">
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">Zetian.AntiSpam</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
               Advanced Spam Protection for Zetian SMTP Server
             </p>
             <div className="flex justify-center gap-4">
@@ -160,24 +157,24 @@ export default function AntiSpamPage() {
               { icon: Filter, title: 'Custom Filters', desc: 'Extensible with custom spam checkers' },
               { icon: BarChart, title: 'Statistics', desc: 'Detailed metrics and reporting' },
             ].map((feature, i) => (
-              <div key={i} className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-                <feature.icon className="w-10 h-10 text-red-400 mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400 text-sm">{feature.desc}</p>
+              <div key={i} className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <feature.icon className="w-10 h-10 text-red-500 dark:text-red-400 mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{feature.desc}</p>
               </div>
             ))}
           </div>
 
           {/* Quick Start */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Zap className="w-8 h-8 mr-3 text-yellow-400" />
               Quick Start
             </h2>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Basic Anti-Spam Setup</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Basic Anti-Spam Setup</h3>
                 <CodeBlock language="csharp" code={`using Zetian.Server;
 using Zetian.AntiSpam.Extensions;
 
@@ -194,7 +191,7 @@ await server.StartAsync();`} />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Custom Configuration</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Custom Configuration</h3>
                 <CodeBlock language="csharp" code={`// Configure anti-spam features
 server.AddAntiSpam(builder => builder
     .EnableSpf(failScore: 50)
@@ -210,13 +207,13 @@ server.AddAntiSpam(builder => builder
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-900/50 rounded-lg p-4">
+                <div className="bg-gray-100 dark:bg-gray-950 rounded-lg p-4">
                   <h4 className="text-lg font-semibold text-green-400 mb-2">Lenient Protection</h4>
                   <CodeBlock language="csharp" code={`// For trusted environments
 server.AddAntiSpam(builder => 
     builder.UseLenient());`} />
                 </div>
-                <div className="bg-gray-900/50 rounded-lg p-4">
+                <div className="bg-gray-100 dark:bg-gray-950 rounded-lg p-4">
                   <h4 className="text-lg font-semibold text-red-400 mb-2">Aggressive Protection</h4>
                   <CodeBlock language="csharp" code={`// Maximum spam protection
 server.AddAntiSpam(builder => 
@@ -227,19 +224,19 @@ server.AddAntiSpam(builder =>
           </div>
 
           {/* Email Authentication */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Mail className="w-8 h-8 mr-3 text-blue-400" />
               Email Authentication (SPF, DKIM, DMARC)
             </h2>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">SPF (Sender Policy Framework)</h3>
-                <p className="text-gray-300 mb-3">Verifies that the sending server is authorized to send email for the domain:</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">SPF (Sender Policy Framework)</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">Verifies that the sending server is authorized to send email for the domain:</p>
                 <CodeBlock language="csharp" code={spfExample} />
-                <div className="mt-4 bg-gray-900/50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-300 mb-2">SPF Results & Scores</h4>
+                <div className="mt-4 bg-gray-100 dark:bg-gray-950 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">SPF Results & Scores</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between"><span className="text-green-400">Pass</span><span className="text-gray-400">0 points</span></div>
                     <div className="flex justify-between"><span className="text-gray-400">None</span><span className="text-gray-400">5 points</span></div>
@@ -251,27 +248,27 @@ server.AddAntiSpam(builder =>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">DKIM (DomainKeys Identified Mail)</h3>
-                <p className="text-gray-300 mb-3">Verifies email authenticity using digital signatures:</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">DKIM (DomainKeys Identified Mail)</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">Verifies email authenticity using digital signatures:</p>
                 <CodeBlock language="csharp" code={dkimExample} />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">DMARC (Domain-based Message Authentication)</h3>
-                <p className="text-gray-300 mb-3">Enforces policies based on SPF and DKIM results:</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">DMARC (Domain-based Message Authentication)</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">Enforces policies based on SPF and DKIM results:</p>
                 <CodeBlock language="csharp" code={dmarcExample} />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Complete Email Authentication</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Complete Email Authentication</h3>
                 <CodeBlock language="csharp" code={authExample} />
               </div>
             </div>
           </div>
 
           {/* RBL/DNSBL */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Globe className="w-8 h-8 mr-3 text-purple-400" />
               RBL/DNSBL Checking
             </h2>
@@ -279,33 +276,33 @@ server.AddAntiSpam(builder =>
           </div>
 
           {/* Bayesian */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Brain className="w-8 h-8 mr-3 text-green-400" />
               Bayesian Filtering
             </h2>
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Machine Learning Spam Detection</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Machine Learning Spam Detection</h3>
                 <CodeBlock language="csharp" code={bayesianExample} />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Training the Filter</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Training the Filter</h3>
                 <CodeBlock language="csharp" code={trainExample} />
               </div>
             </div>
           </div>
 
           {/* Greylisting */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Clock className="w-8 h-8 mr-3 text-orange-400" />
               Greylisting
             </h2>
             <CodeBlock language="csharp" code={greylistExample} />
-            <div className="mt-4 bg-gray-900/50 rounded-lg p-4">
-              <h4 className="text-lg font-semibold text-yellow-400 mb-2">How It Works</h4>
-              <ol className="space-y-2 text-gray-300">
+            <div className="mt-4 bg-gray-100 dark:bg-gray-950 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-2">How It Works</h4>
+              <ol className="space-y-2 text-gray-700 dark:text-gray-300">
                 <li>1. First email attempt is temporarily rejected</li>
                 <li>2. Legitimate servers retry after a delay</li>
                 <li>3. Retry is accepted and sender is whitelisted</li>
@@ -315,8 +312,8 @@ server.AddAntiSpam(builder =>
           </div>
 
           {/* Custom Checker */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <Settings className="w-8 h-8 mr-3 text-cyan-400" />
               Custom Spam Checker
             </h2>
@@ -324,36 +321,36 @@ server.AddAntiSpam(builder =>
           </div>
 
           {/* Score Interpretation */}
-          <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-12 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <TrendingUp className="w-8 h-8 mr-3 text-pink-400" />
               Score Interpretation
             </h2>
-            <div className="bg-gray-900/50 rounded-lg overflow-hidden">
+            <div className="bg-gray-100 dark:bg-gray-950 rounded-lg overflow-hidden">
               <table className="w-full">
-                <thead className="bg-gray-800/50">
+                <thead className="bg-gray-200 dark:bg-gray-800">
                   <tr>
-                    <th className="px-4 py-3 text-left text-gray-300">Score</th>
-                    <th className="px-4 py-3 text-left text-gray-300">Action</th>
-                    <th className="px-4 py-3 text-left text-gray-300">Description</th>
+                    <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Score</th>
+                    <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Action</th>
+                    <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Description</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700/50">
-                  <tr><td className="px-4 py-3 text-green-400">0-30</td><td className="px-4 py-3">Accept</td><td className="px-4 py-3 text-gray-400">Clean message</td></tr>
-                  <tr><td className="px-4 py-3 text-yellow-400">30-50</td><td className="px-4 py-3">Accept with caution</td><td className="px-4 py-3 text-gray-400">Possible spam</td></tr>
-                  <tr><td className="px-4 py-3 text-orange-400">50-70</td><td className="px-4 py-3">Greylist/Temp Reject</td><td className="px-4 py-3 text-gray-400">Likely spam</td></tr>
-                  <tr><td className="px-4 py-3 text-red-400">70-90</td><td className="px-4 py-3">Reject</td><td className="px-4 py-3 text-gray-400">High confidence spam</td></tr>
-                  <tr><td className="px-4 py-3 text-red-600">90-100</td><td className="px-4 py-3">Hard Reject</td><td className="px-4 py-3 text-gray-400">Definite spam</td></tr>
+                <tbody className="divide-y divide-gray-300 dark:divide-gray-700">
+                  <tr><td className="px-4 py-3 text-green-600 dark:text-green-400">0-30</td><td className="px-4 py-3 text-gray-700 dark:text-gray-300">Accept</td><td className="px-4 py-3 text-gray-600 dark:text-gray-400">Clean message</td></tr>
+                  <tr><td className="px-4 py-3 text-yellow-600 dark:text-yellow-400">30-50</td><td className="px-4 py-3 text-gray-700 dark:text-gray-300">Accept with caution</td><td className="px-4 py-3 text-gray-600 dark:text-gray-400">Possible spam</td></tr>
+                  <tr><td className="px-4 py-3 text-orange-600 dark:text-orange-400">50-70</td><td className="px-4 py-3 text-gray-700 dark:text-gray-300">Greylist/Temp Reject</td><td className="px-4 py-3 text-gray-600 dark:text-gray-400">Likely spam</td></tr>
+                  <tr><td className="px-4 py-3 text-red-600 dark:text-red-400">70-90</td><td className="px-4 py-3 text-gray-700 dark:text-gray-300">Reject</td><td className="px-4 py-3 text-gray-600 dark:text-gray-400">High confidence spam</td></tr>
+                  <tr><td className="px-4 py-3 text-red-700 dark:text-red-600">90-100</td><td className="px-4 py-3 text-gray-700 dark:text-gray-300">Hard Reject</td><td className="px-4 py-3 text-gray-600 dark:text-gray-400">Definite spam</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
           {/* Best Practices */}
-          <div className="bg-gradient-to-br from-red-900/20 to-orange-900/20 rounded-2xl p-8 mb-12">
-            <h2 className="text-3xl font-bold text-white mb-6">Best Practices</h2>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-8 mb-12 border border-blue-200 dark:border-blue-800">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Best Practices</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ul className="space-y-2 text-gray-300">
+              <ul className="space-y-2 text-gray-700 dark:text-gray-300">
                 <li className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mr-2 mt-0.5" />
                   <span>Start with lenient settings and adjust</span>
@@ -367,7 +364,7 @@ server.AddAntiSpam(builder =>
                   <span>Whitelist trusted partners</span>
                 </li>
               </ul>
-              <ul className="space-y-2 text-gray-300">
+              <ul className="space-y-2 text-gray-700 dark:text-gray-300">
                 <li className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mr-2 mt-0.5" />
                   <span>Monitor block rates regularly</span>

@@ -41,13 +41,13 @@ export default function ChangelogPage() {
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-6">
             <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-semibold">
-              Upcoming
+              Current Release
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Version 1.0.20
             </h2>
             <span className="text-gray-500 dark:text-gray-400 text-sm">
-              Initial Release
+              Full-Featured SMTP Server with Extensions
             </span>
           </div>
 
@@ -240,6 +240,52 @@ export default function ChangelogPage() {
               </ul>
             </div>
 
+            {/* Extensions */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Package className="h-5 w-5 text-red-500" />
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Extensions & Packages</h3>
+              </div>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Relay - SMTP relay with smart host support, queue management, failover</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.AntiSpam - SPF/DKIM/DMARC, RBL/DNSBL, Bayesian filtering, Greylisting</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Storage.SqlServer - Enterprise SQL Server storage provider</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Storage.PostgreSql - PostgreSQL with JSONB and partitioning</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Storage.MongoDB - NoSQL storage with GridFS</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Storage.Redis - High-performance in-memory caching</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Storage.S3 - Amazon S3 and compatible object storage</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Storage.AzureBlob - Azure Blob storage with tier management</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.HealthCheck - Health monitoring endpoints for Kubernetes/Docker</span>
+                </li>
+              </ul>
+            </div>
+
             {/* Developer Experience */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -253,7 +299,7 @@ export default function ChangelogPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Ready-to-use examples (Basic, Authenticated, CustomProcessing, etc.)</span>
+                  <span>16+ ready-to-use examples including Relay and AntiSpam</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -265,11 +311,11 @@ export default function ChangelogPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Unit test coverage</span>
+                  <span>Comprehensive unit and integration tests</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Modern documentation site with Next.js</span>
+                  <span>Modern documentation site with Next.js and interactive API reference</span>
                 </li>
               </ul>
             </div>
@@ -294,10 +340,10 @@ export default function ChangelogPage() {
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Version 1.1.0</h4>
                   <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                    <li>• DKIM signature validation</li>
-                    <li>• SPF record checking</li>
-                    <li>• Advanced spam filtering with machine learning</li>
                     <li>• WebSocket support for real-time monitoring</li>
+                    <li>• Enhanced DMARC reporting</li>
+                    <li>• Advanced queue management features</li>
+                    <li>• Performance optimizations for high-volume servers</li>
                   </ul>
                 </div>
               </div>
@@ -308,9 +354,9 @@ export default function ChangelogPage() {
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Version 1.2.0</h4>
                   <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                     <li>• Clustering support for high availability</li>
-                    <li>• Redis-based session storage</li>
+                    <li>• Distributed queue with Redis backend</li>
                     <li>• GraphQL API for management</li>
-                    <li>• Advanced metrics and monitoring</li>
+                    <li>• Advanced metrics with Prometheus export</li>
                   </ul>
                 </div>
               </div>

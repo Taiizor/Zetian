@@ -8,16 +8,16 @@ Enterprise-grade clustering solution for Zetian SMTP Server, enabling high avail
 
 ## ⚡ Features
 
+- 💾 **State Persistence** - Durable cluster configuration
+- 📈 **Monitoring** - Real-time cluster health and metrics
+- 🔁 **Failover** - Automatic session migration on node failure
+- 🗳️ **Leader Election** - Raft consensus for cluster coordination
+- 📊 **Distributed State** - Shared session and rate limiting state
+- 🔐 **Secure Communication** - TLS encryption between nodes
+- 🌐 **Multi-Region** - Support for geo-distributed deployments
+- 🔧 **Zero Downtime** - Rolling updates and maintenance mode
 - 🔄 **Auto-Discovery** - Automatic node discovery and cluster formation
 - ⚖️ **Load Balancing** - Intelligent distribution of connections across nodes
-- 🔁 **Failover** - Automatic session migration on node failure
-- 📊 **Distributed State** - Shared session and rate limiting state
-- 🗳️ **Leader Election** - Raft consensus for cluster coordination
-- 🔐 **Secure Communication** - TLS encryption between nodes
-- 📈 **Monitoring** - Real-time cluster health and metrics
-- 🌐 **Multi-Region** - Support for geo-distributed deployments
-- 💾 **State Persistence** - Durable cluster configuration
-- 🔧 **Zero Downtime** - Rolling updates and maintenance mode
 
 ## 📦 Installation
 
@@ -367,30 +367,30 @@ cluster.EnableMetricsExport(options =>
 
 ## 🔒 Security Considerations
 
-1. **Encryption**: Always enable TLS between nodes in production
-2. **Authentication**: Use shared secrets or certificates for node authentication
+1. **Firewall Rules**: Restrict cluster ports to member nodes only
+2. **Encryption**: Always enable TLS between nodes in production
 3. **Network Isolation**: Deploy cluster nodes in a private network
-4. **Firewall Rules**: Restrict cluster ports to member nodes only
-5. **Secrets Management**: Use secure key management for cluster secrets
+4. **Secrets Management**: Use secure key management for cluster secrets
+5. **Authentication**: Use shared secrets or certificates for node authentication
 
 ## 📈 Performance Tips
 
 - Use SSD storage for state persistence
-- Enable compression for cross-region deployments
+- Configure appropriate replication factors
 - Tune batch sizes based on network latency
 - Use local caching for read-heavy workloads
-- Configure appropriate replication factors
 - Monitor and adjust failure detection timeouts
+- Enable compression for cross-region deployments
 
 ## 🚨 Troubleshooting
 
 ### Common Issues
 
-1. **Split Brain**: Ensure odd number of nodes for proper quorum
-2. **Network Partitions**: Configure proper failure detection timeouts
-3. **High Latency**: Check network connectivity between nodes
-4. **State Inconsistency**: Verify replication factor and consistency levels
-5. **Memory Issues**: Tune state cache sizes and eviction policies
+1. **High Latency**: Check network connectivity between nodes
+2. **Memory Issues**: Tune state cache sizes and eviction policies
+3. **Split Brain**: Ensure odd number of nodes for proper quorum
+4. **Network Partitions**: Configure proper failure detection timeouts
+5. **State Inconsistency**: Verify replication factor and consistency levels
 
 ### Debug Logging
 
@@ -410,8 +410,8 @@ cluster.EnableDebugLogging(options =>
 - Windows, Linux, or macOS
 - .NET 6.0, 7.0, 8.0, 9.0, or 10.0
 - Zetian SMTP Server package
-- Network connectivity between cluster nodes
 - Sufficient bandwidth for state replication
+- Network connectivity between cluster nodes
 
 ## 📚 Documentation & Support
 

@@ -297,9 +297,19 @@ namespace Zetian.Clustering.Models
         public int ReplicationFactor { get; set; } = 3;
 
         /// <summary>
+        /// Custom replication factor (overrides default)
+        /// </summary>
+        public int CustomReplicationFactor { get; set; }
+
+        /// <summary>
         /// Consistency level
         /// </summary>
         public ConsistencyLevel ConsistencyLevel { get; set; } = ConsistencyLevel.Quorum;
+
+        /// <summary>
+        /// Preferred consistency level
+        /// </summary>
+        public ConsistencyLevel? PreferredConsistencyLevel { get; set; }
 
         /// <summary>
         /// Synchronization mode
@@ -320,6 +330,21 @@ namespace Zetian.Clustering.Models
         /// Enable automatic failover
         /// </summary>
         public bool AutoFailover { get; set; } = true;
+
+        /// <summary>
+        /// Replication timeout
+        /// </summary>
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
+
+        /// <summary>
+        /// Enable compression for replication
+        /// </summary>
+        public bool EnableCompression { get; set; } = true;
+
+        /// <summary>
+        /// Batch size for bulk replication
+        /// </summary>
+        public int BatchSize { get; set; } = 100;
     }
 
     /// <summary>
@@ -336,6 +361,41 @@ namespace Zetian.Clustering.Models
         /// Rate limiting algorithm
         /// </summary>
         public RateLimitAlgorithm Algorithm { get; set; } = RateLimitAlgorithm.TokenBucket;
+
+        /// <summary>
+        /// Maximum requests per second
+        /// </summary>
+        public int MaxRequestsPerSecond { get; set; } = 1000;
+
+        /// <summary>
+        /// Maximum requests per IP per hour
+        /// </summary>
+        public int MaxRequestsPerIpPerHour { get; set; } = 3600;
+
+        /// <summary>
+        /// Enable distributed rate limiting
+        /// </summary>
+        public bool EnableDistributed { get; set; } = true;
+
+        /// <summary>
+        /// Window size for rate calculations
+        /// </summary>
+        public TimeSpan WindowSize { get; set; } = TimeSpan.FromMinutes(1);
+
+        /// <summary>
+        /// Sliding window buckets
+        /// </summary>
+        public int BucketCount { get; set; } = 60;
+
+        /// <summary>
+        /// Whitelist IPs (no rate limiting)
+        /// </summary>
+        public List<string> WhitelistIps { get; set; } = [];
+
+        /// <summary>
+        /// Blacklist IPs (always blocked)
+        /// </summary>
+        public List<string> BlacklistIps { get; set; } = [];
 
         /// <summary>
         /// Global rate limit across cluster

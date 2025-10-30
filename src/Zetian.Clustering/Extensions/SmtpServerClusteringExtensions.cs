@@ -67,7 +67,7 @@ namespace Zetian.Clustering.Extensions
                 return null;
             }
 
-            return server.Configuration.Properties.TryGetValue("ClusterManager", out var manager)
+            return server.Configuration.Properties.TryGetValue("ClusterManager", out object? manager)
                 ? manager as IClusterManager
                 : null;
         }

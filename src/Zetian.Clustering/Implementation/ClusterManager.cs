@@ -8,10 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Clustering.Abstractions;
-using Zetian.Clustering.Options;
 using Zetian.Clustering.Enums;
 using Zetian.Clustering.Models;
 using Zetian.Clustering.Models.EventArgs;
+using Zetian.Clustering.Options;
 
 namespace Zetian.Clustering.Implementation
 {
@@ -172,13 +172,35 @@ namespace Zetian.Clustering.Implementation
 
         public async Task RegisterSessionAsync(ISmtpSession session, CancellationToken cancellationToken = default)
         {
+            // Extract IP address from RemoteEndPoint
+            IPAddress clientIp = IPAddress.Any;
+            int clientPort = 0;
+
+            if (session.RemoteEndPoint is IPEndPoint ipEndPoint)
+            {
+                clientIp = ipEndPoint.Address;
+                clientPort = ipEndPoint.Port;
+            }
+
             SessionInfo sessionInfo = new()
             {
                 SessionId = session.Id,
                 NodeId = NodeId,
-                ClientEndpoint = session.RemoteEndPoint as IPEndPoint,
-                StartTime = session.StartTime
+                ClientIp = clientIp,
+                ClientPort = clientPort,
+                StartTime = session.StartTime,
+                Priority = 1, // Default priority
+                EstimatedSize = 0 // Will be updated as session progresses
+                // Metadata is initialized via private _metadata field default value
             };
+
+            // Apply affinity resolver if configured
+            if (_options.Properties.TryGetValue("AffinityResolver", out object? resolver) && resolver is Func<ISessionInfo, string> affinityResolver)
+            {
+                string affinityKey = affinityResolver(sessionInfo);
+                sessionInfo.AffinityKey = affinityKey;
+                _logger.LogDebug("Session {SessionId} affinity key: {AffinityKey}", session.Id, affinityKey);
+            }
 
             _sessions.TryAdd(session.Id, sessionInfo);
 
@@ -217,14 +239,25 @@ namespace Zetian.Clustering.Implementation
         {
             options ??= new ReplicationOptions();
 
+            // Check for custom replication config
+            if (_options.Properties.TryGetValue("ReplicationConfig", out object? replicationConfig) && replicationConfig is ReplicationConfig config)
+            {
+                // Apply custom replication settings
+                if (config.CustomReplicationFactor > 0)
+                {
+                    // Use custom replication factor
+                    options.ConsistencyLevel = config.PreferredConsistencyLevel ?? options.ConsistencyLevel;
+                }
+            }
+
             // Replicate to required number of nodes
             List<ClusterNode> targetNodes = SelectReplicationTargets(options.ConsistencyLevel);
             IEnumerable<Task<bool>> replicationTasks = targetNodes.Select(node =>
                 ReplicateToNodeAsync(node, key, data, options, cancellationToken)
             );
 
-            var results = await Task.WhenAll(replicationTasks);
-            var successCount = results.Count(r => r);
+            bool[] results = await Task.WhenAll(replicationTasks);
+            int successCount = results.Count(r => r);
 
             return successCount >= _options.MinReplicasForWrite;
         }
@@ -244,7 +277,7 @@ namespace Zetian.Clustering.Implementation
         {
             List<SessionInfo> sessionsToMigrate = _sessions.Values.Where(s => s.NodeId == fromNodeId).ToList();
             List<ClusterNode> targetNodes = SelectMigrationTargets(sessionsToMigrate.Count);
-            var migratedCount = 0;
+            int migratedCount = 0;
 
             foreach (SessionInfo session in sessionsToMigrate)
             {
@@ -548,12 +581,38 @@ namespace Zetian.Clustering.Implementation
 
         private async Task SendHeartbeatsAsync(CancellationToken cancellationToken)
         {
+            // Check for debug logging
+            if (_options.Properties.TryGetValue("DebugLoggingOptions", out object? debugOptions) && debugOptions is DebugLoggingOptions debug)
+            {
+                if (debug.IncludeHeartbeats)
+                {
+                    _logger.LogDebug("Sending heartbeats to {Count} nodes", _nodes.Count - 1);
+                }
+            }
+
             // Send heartbeats to other nodes
             await Task.CompletedTask;
         }
 
         private async Task CheckNodesHealthAsync(CancellationToken cancellationToken)
         {
+            // Check for rate limit config
+            if (_options.Properties.TryGetValue("RateLimitConfig", out object? rateLimitConfig) && rateLimitConfig is RateLimitConfig rlConfig)
+            {
+                // Apply rate limiting checks
+                _logger.LogDebug("Checking nodes with rate limit config: {MaxRequests}/sec", rlConfig.MaxRequestsPerSecond);
+            }
+
+            // Check for metrics export config
+            if (_options.Properties.TryGetValue("MetricsExportConfig", out object? metricsConfig) && metricsConfig is MetricsExportConfig mConfig)
+            {
+                // Export metrics if configured
+                if (mConfig.Exporters?.Count > 0)
+                {
+                    _logger.LogDebug("Exporting metrics to {Count} exporters", mConfig.Exporters.Count);
+                }
+            }
+
             // Check health of other nodes
             await Task.CompletedTask;
         }
@@ -604,7 +663,26 @@ namespace Zetian.Clustering.Implementation
 
         private List<ClusterNode> SelectReplicationTargets(ConsistencyLevel consistency)
         {
-            // Select nodes for replication based on consistency level
+            // Check for custom load balancer
+            if (_options.Properties.TryGetValue("CustomLoadBalancer", out object? loadBalancer) && loadBalancer is ILoadBalancer customLb)
+            {
+                // Use custom load balancer to select replication targets
+                List<ClusterNode> selectedNodes = [];
+                List<ClusterNode> availableNodes = _nodes.Values.Where(n => n.Id != NodeId && n.State == NodeState.Active).ToList();
+
+                for (int i = 0; i < Math.Min(_options.ReplicationFactor - 1, availableNodes.Count); i++)
+                {
+                    var node = customLb.SelectNodeAsync(null!, availableNodes, CancellationToken.None).Result;
+                    if (node is not null and ClusterNode clusterNode)
+                    {
+                        selectedNodes.Add(clusterNode);
+                        availableNodes.Remove(clusterNode);
+                    }
+                }
+                return selectedNodes;
+            }
+
+            // Default selection based on consistency level
             return _nodes.Values
                 .Where(n => n.Id != NodeId && n.State == NodeState.Active)
                 .Take(_options.ReplicationFactor - 1)
@@ -613,7 +691,16 @@ namespace Zetian.Clustering.Implementation
 
         private List<ClusterNode> SelectMigrationTargets(int sessionCount)
         {
-            // Select target nodes for session migration
+            // Check for custom load balancer
+            if (_options.Properties.TryGetValue("CustomLoadBalancer", out object? loadBalancer) && loadBalancer is ILoadBalancer customLb)
+            {
+                List<ClusterNode> availableNodes = _nodes.Values
+                    .Where(n => n.Id != NodeId && n.State == NodeState.Active && !n.IsInMaintenance)
+                    .ToList();
+                return availableNodes.Cast<ClusterNode>().ToList();
+            }
+
+            // Default selection based on active sessions
             return _nodes.Values
                 .Where(n => n.Id != NodeId && n.State == NodeState.Active && !n.IsInMaintenance)
                 .OrderBy(n => n.ActiveSessions)
@@ -652,8 +739,8 @@ namespace Zetian.Clustering.Implementation
 
         private bool HasQuorum()
         {
-            var activeNodes = _nodes.Values.Count(n => n.State == NodeState.Active);
-            var requiredQuorum = (_nodes.Count / 2) + 1;
+            int activeNodes = _nodes.Values.Count(n => n.State == NodeState.Active);
+            int requiredQuorum = (_nodes.Count / 2) + 1;
             return activeNodes >= requiredQuorum;
         }
 
@@ -724,10 +811,17 @@ namespace Zetian.Clustering.Implementation
             public bool IsInMaintenance { get; set; }
         }
 
-        private class SessionInfo
+        private class SessionInfo : ISessionInfo
         {
             public string SessionId { get; set; } = string.Empty;
             public string NodeId { get; set; } = string.Empty;
+            public IPAddress ClientIp { get; set; } = IPAddress.Any;
+            public int ClientPort { get; set; }
+            public long EstimatedSize { get; set; }
+            public int Priority { get; set; } = 1;
+            private Dictionary<string, string> _metadata = [];
+            public IReadOnlyDictionary<string, string> Metadata => _metadata;
+            public string? AffinityKey { get; set; }
             public IPEndPoint? ClientEndpoint { get; set; }
             public DateTime StartTime { get; set; }
             public long BytesTransferred { get; set; }

@@ -45,10 +45,10 @@ namespace Zetian.Clustering.Implementation
 
             // Simple round-robin selection
             int index = Interlocked.Increment(ref _currentIndex) % healthyNodes.Count;
-            var selectedNode = healthyNodes[index];
+            IClusterNode selectedNode = healthyNodes[index];
 
             // Update statistics
-            var stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
+            NodeStatistics stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
             stats.RequestCount++;
             stats.LastSelected = DateTime.UtcNow;
 
@@ -62,7 +62,7 @@ namespace Zetian.Clustering.Implementation
                 return Task.CompletedTask;
             }
 
-            var stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
+            NodeStatistics stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
 
             if (success)
             {
@@ -125,14 +125,14 @@ namespace Zetian.Clustering.Implementation
             }
 
             // Select node with least connections
-            var selectedNode = healthyNodes
+            IClusterNode? selectedNode = healthyNodes
                 .OrderBy(n => n.ActiveSessions)
                 .ThenBy(n => n.CurrentLoad)
                 .FirstOrDefault();
 
             if (selectedNode != null)
             {
-                var stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
+                NodeStatistics stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
                 stats.RequestCount++;
                 stats.LastSelected = DateTime.UtcNow;
             }
@@ -147,7 +147,7 @@ namespace Zetian.Clustering.Implementation
                 return Task.CompletedTask;
             }
 
-            var stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
+            NodeStatistics stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
 
             if (success)
             {
@@ -241,7 +241,7 @@ namespace Zetian.Clustering.Implementation
 
             if (selectedNode != null)
             {
-                var stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
+                NodeStatistics stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
                 stats.RequestCount++;
                 stats.LastSelected = DateTime.UtcNow;
             }
@@ -256,7 +256,7 @@ namespace Zetian.Clustering.Implementation
                 return Task.CompletedTask;
             }
 
-            var stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
+            NodeStatistics stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
 
             if (success)
             {
@@ -280,7 +280,7 @@ namespace Zetian.Clustering.Implementation
         public void UpdateWeights(Dictionary<string, int> nodeWeights)
         {
             _nodeWeights.Clear();
-            foreach (var kvp in nodeWeights)
+            foreach (KeyValuePair<string, int> kvp in nodeWeights)
             {
                 _nodeWeights[kvp.Key] = kvp.Value;
             }
@@ -291,7 +291,7 @@ namespace Zetian.Clustering.Implementation
         {
             _weightedNodeList.Clear();
 
-            foreach (var kvp in _nodeWeights)
+            foreach (KeyValuePair<string, int> kvp in _nodeWeights)
             {
                 int weight = Math.Max(1, kvp.Value); // Ensure minimum weight of 1
                 for (int i = 0; i < weight; i++)
@@ -361,9 +361,9 @@ namespace Zetian.Clustering.Implementation
             // Use IP hash to select node
             int hash = sessionInfo.ClientIp.GetHashCode();
             int index = Math.Abs(hash) % healthyNodes.Count;
-            var selectedNode = healthyNodes[index];
+            IClusterNode selectedNode = healthyNodes[index];
 
-            var stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
+            NodeStatistics stats = _statistics.GetOrAdd(selectedNode.Id, k => new NodeStatistics());
             stats.RequestCount++;
             stats.LastSelected = DateTime.UtcNow;
 
@@ -377,7 +377,7 @@ namespace Zetian.Clustering.Implementation
                 return Task.CompletedTask;
             }
 
-            var stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
+            NodeStatistics stats = _statistics.GetOrAdd(node.Id, k => new NodeStatistics());
 
             if (success)
             {

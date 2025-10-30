@@ -81,7 +81,7 @@ namespace Zetian.Clustering.Implementation
         {
             Dictionary<string, byte[]> result = [];
 
-            foreach (var key in keys)
+            foreach (string key in keys)
             {
                 if (_store.TryGetValue(key, out StateEntry? entry) && !entry.IsExpired())
                 {
@@ -141,7 +141,7 @@ namespace Zetian.Clustering.Implementation
                 k => new StateEntry { Value = BitConverter.GetBytes(delta) },
                 (k, v) =>
                 {
-                    var currentValue = v.Value.Length >= 8 ? BitConverter.ToInt64(v.Value, 0) : 0;
+                    long currentValue = v.Value.Length >= 8 ? BitConverter.ToInt64(v.Value, 0) : 0;
                     return new StateEntry
                     {
                         Value = BitConverter.GetBytes(currentValue + delta),
@@ -169,7 +169,7 @@ namespace Zetian.Clustering.Implementation
 
         public async Task<IDistributedLock?> AcquireLockAsync(string resource, TimeSpan ttl, CancellationToken cancellationToken = default)
         {
-            var lockId = Guid.NewGuid().ToString("N");
+            string lockId = Guid.NewGuid().ToString("N");
             DistributedLock @lock = new(this, resource, lockId, ttl);
 
             // Try to acquire lock
@@ -218,7 +218,7 @@ namespace Zetian.Clustering.Implementation
                 .Select(kvp => kvp.Key)
                 .ToList();
 
-            foreach (var key in expiredKeys)
+            foreach (string key in expiredKeys)
             {
                 _store.TryRemove(key, out _);
             }
@@ -229,7 +229,7 @@ namespace Zetian.Clustering.Implementation
                 .Select(kvp => kvp.Key)
                 .ToList();
 
-            foreach (var resource in expiredLocks)
+            foreach (string resource in expiredLocks)
             {
                 _locks.TryRemove(resource, out _);
             }

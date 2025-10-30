@@ -90,7 +90,7 @@ const docCategories = [
     ]
   },
   {
-    title: 'Relay Extension',
+    title: 'Relay',
     description: 'SMTP relay and proxy features',
     icon: Send,
     href: '/docs/relay',
@@ -103,7 +103,7 @@ const docCategories = [
     ]
   },
   {
-    title: 'AntiSpam',
+    title: 'Anti Spam',
     description: 'Advanced spam protection',
     icon: Filter,
     href: '/docs/anti-spam',

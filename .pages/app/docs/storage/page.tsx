@@ -84,34 +84,6 @@ var server = new SmtpServerBuilder()
 
 const storageProviders = [
   {
-    category: 'Database Storage',
-    icon: Database,
-    color: 'from-blue-500 to-blue-600',
-    providers: [
-      {
-        name: 'MongoDB',
-        package: 'Zetian.Storage.MongoDB',
-        description: 'MongoDB NoSQL with GridFS for attachments',
-        href: '/docs/storage/mongodb',
-        features: ['GridFS support', 'Sharding', 'TTL indexes', 'Flexible schema']
-      },
-      {
-        name: 'SQL Server',
-        package: 'Zetian.Storage.SqlServer',
-        description: 'Microsoft SQL Server with ACID compliance',
-        href: '/docs/storage/sql-server',
-        features: ['ACID compliance', 'Auto table creation', 'Message compression', 'Full-text search']
-      },
-      {
-        name: 'PostgreSQL',
-        package: 'Zetian.Storage.PostgreSQL',
-        description: 'PostgreSQL with JSONB and partitioning support',
-        href: '/docs/storage/postgresql',
-        features: ['JSONB headers', 'Table partitioning', 'GIN indexing', 'Time-based retention']
-      }
-    ]
-  },
-  {
     category: 'Cache Storage',
     icon: Zap,
     color: 'from-yellow-500 to-orange-600',
@@ -143,6 +115,34 @@ const storageProviders = [
         description: 'S3 and S3-compatible storage',
         href: '/docs/storage/amazon-s3',
         features: ['S3 compatible', 'KMS encryption', 'Lifecycle rules', 'Versioning']
+      }
+    ]
+  },
+  {
+    category: 'Database Storage',
+    icon: Database,
+    color: 'from-blue-500 to-blue-600',
+    providers: [
+      {
+        name: 'MongoDB',
+        package: 'Zetian.Storage.MongoDB',
+        description: 'MongoDB NoSQL with GridFS for attachments',
+        href: '/docs/storage/mongodb',
+        features: ['GridFS support', 'Sharding', 'TTL indexes', 'Flexible schema']
+      },
+      {
+        name: 'SQL Server',
+        package: 'Zetian.Storage.SqlServer',
+        description: 'Microsoft SQL Server with ACID compliance',
+        href: '/docs/storage/sql-server',
+        features: ['ACID compliance', 'Auto table creation', 'Message compression', 'Full-text search']
+      },
+      {
+        name: 'PostgreSQL',
+        package: 'Zetian.Storage.PostgreSQL',
+        description: 'PostgreSQL with JSONB and partitioning support',
+        href: '/docs/storage/postgresql',
+        features: ['JSONB headers', 'Table partitioning', 'GIN indexing', 'Time-based retention']
       }
     ]
   }

@@ -9,11 +9,13 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers';
 import 'prismjs/plugins/line-highlight/prism-line-highlight';
 
 // Import Prism languages
-import 'prismjs/components/prism-csharp';
+import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-powershell';
 import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-csharp';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-powershell';
 
 interface CodeBlockProps {
   code: string;

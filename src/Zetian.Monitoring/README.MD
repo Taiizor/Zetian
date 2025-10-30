@@ -243,7 +243,8 @@ server.MessageReceived += (sender, e) =>
 {
     using var activity = server.StartActivity("message.custom_processing");
     activity?.SetTag("message.size", e.Message.Size);
-    activity?.SetTag("sender.domain", e.Message.From?.Domain);
+    activity?.SetTag("sender.host", e.Message.From?.Host);
+    activity?.SetTag("sender.address", e.Message.From?.Address);
     
     // Custom processing logic
     if (e.Message.Size > 10_000_000)

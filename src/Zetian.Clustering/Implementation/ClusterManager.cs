@@ -18,7 +18,7 @@ namespace Zetian.Clustering.Implementation
     /// <summary>
     /// Main implementation of cluster manager
     /// </summary>
-    internal class ClusterManager : IClusterManager
+    public class ClusterManager : IClusterManager
     {
         private readonly ISmtpServer _server;
         private readonly ClusterOptions _options;

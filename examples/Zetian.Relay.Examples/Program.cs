@@ -3,9 +3,9 @@ using System.Text;
 
 namespace Zetian.Relay.Examples
 {
-    class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static async Task Main()
         {
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;

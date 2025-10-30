@@ -3,9 +3,9 @@ using System.Text;
 
 namespace Zetian.HealthCheck.Examples
 {
-    class Program
+    public class Program
     {
-        static async Task Main()
+        public static async Task Main()
         {
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Text;
 using Zetian.Abstractions;
 using Zetian.Clustering.Abstractions;
 using Zetian.Clustering.Enums;
@@ -14,13 +15,16 @@ namespace Zetian.Clustering.Examples
     /// </summary>
     public class ClusteredSmtpExample
     {
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
+            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.UTF8;
+
             // Get node configuration from environment or args
             string nodeId = Environment.GetEnvironmentVariable("NODE_ID") ?? "node-1";
             int smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "25");
+            string[] seedNodes = Environment.GetEnvironmentVariable("SEED_NODES")?.Split(',') ?? [];
             int clusterPort = int.Parse(Environment.GetEnvironmentVariable("CLUSTER_PORT") ?? "7946");
-            string[] seedNodes = Environment.GetEnvironmentVariable("SEED_NODES")?.Split(',') ?? Array.Empty<string>();
 
             // Create logger
             using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
@@ -35,6 +39,7 @@ namespace Zetian.Clustering.Examples
                 .ServerName($"Clustered-SMTP-{nodeId}")
                 .MaxConnections(1000)
                 .MaxConnectionsPerIP(10)
+                .RequireAuthentication(false)
                 .LoggerFactory(loggerFactory)
                 .Build();
 
@@ -227,7 +232,7 @@ namespace Zetian.Clustering.Examples
                     case ConsoleKey.R:
                         // Test replication
                         string testKey = $"test-{Guid.NewGuid()}";
-                        byte[] testData = System.Text.Encoding.UTF8.GetBytes($"Test data from {nodeId}");
+                        byte[] testData = Encoding.UTF8.GetBytes($"Test data from {nodeId}");
                         bool replicated = await cluster.ReplicateStateAsync(testKey, testData, new ReplicationOptions
                         {
                             Priority = ReplicationPriority.High,

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Zetian.Configuration;
+using Zetian.Protocol;
 using Zetian.Server;
 
 namespace Zetian.Examples
@@ -131,7 +132,7 @@ namespace Zetian.Examples
                 if (e.Command.Verb == "VRFY")
                 {
                     e.Cancel = true;
-                    e.Response = new Protocol.SmtpResponse(502, "VRFY command disabled");
+                    e.Response = new SmtpResponse(502, "VRFY command disabled");
                     logger.LogWarning("🚫 Blocked VRFY command from session {SessionId}", e.Session.Id);
                 }
             };
@@ -204,7 +205,7 @@ namespace Zetian.Examples
             {
                 if (e.Success)
                 {
-                    var throughput = e.BytesTransferred / (e.DurationMs / 1000.0) / 1024.0;
+                    double throughput = e.BytesTransferred / (e.DurationMs / 1000.0) / 1024.0;
                     logger.LogInformation("✅ Data transfer COMPLETED: {Bytes} bytes in {Duration:F2}ms ({Throughput:F2} KB/s), Session: {SessionId}",
                         e.BytesTransferred, e.DurationMs, throughput, e.Session.Id);
                 }
@@ -227,7 +228,7 @@ namespace Zetian.Examples
                 if (e.Message.From?.Address?.Contains("spam") == true)
                 {
                     e.Cancel = true;
-                    e.Response = new Protocol.SmtpResponse(550, "Message rejected: spam detected");
+                    e.Response = new SmtpResponse(550, "Message rejected: spam detected");
                     logger.LogWarning("🚫 Rejected spam message from {From}", e.Message.From);
                 }
             };

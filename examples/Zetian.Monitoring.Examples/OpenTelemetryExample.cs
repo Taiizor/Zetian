@@ -113,9 +113,18 @@ namespace Zetian.Monitoring.Examples
                         e.Message.Size);
                 };
 
-                // Note: Authentication events can be tracked through session and message events
-                // There's no separate AuthenticationSucceeded event in the current SMTP server implementation
-                // Authentication status can be checked via session properties
+                server.AuthenticationSucceeded += (sender, e) =>
+                {
+                    using Activity? activity = server.StartActivity("auth.custom_validation");
+                    activity?.SetTag("auth.mechanism", e.Mechanism);
+                    activity?.SetTag("auth.user", e.Username);
+                    activity?.SetTag("auth.success", true);
+
+                    logger.LogInformation(
+                        "Authentication successful for user {User} using {Mechanism}",
+                        e.Username,
+                        e.Mechanism);
+                };
 
                 // Add custom tracing for sessions
                 server.SessionCreated += (sender, e) =>

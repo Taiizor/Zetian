@@ -582,22 +582,8 @@ namespace Zetian.Internal
 
             try
             {
-                // Build recipients list efficiently
-                IEnumerable<string> recipients;
-                if (_multipleRecipients != null)
-                {
-                    recipients = _multipleRecipients;
-                }
-                else if (_singleRecipient != null)
-                {
-                    recipients = [_singleRecipient];
-                }
-                else
-                {
-                    recipients = [];
-                }
-
-                _currentMessage = new SmtpMessage(Id, _mailFrom, recipients, messageData);
+                // Use the previously built recipients list
+                _currentMessage = new SmtpMessage(Id, _mailFrom, recipientsList, messageData);
                 MessageCount++;
 
                 // Save message if message store is configured

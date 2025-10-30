@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Security;
@@ -204,6 +205,22 @@ namespace Zetian.Internal
                 return;
             }
 
+            // Fire CommandReceived event
+            CommandEventArgs commandArgs = new(this, command, commandLine);
+            _server.OnCommandReceived(commandArgs);
+
+            if (commandArgs.Cancel)
+            {
+                if (commandArgs.Response != null)
+                {
+                    await SendResponseAsync(commandArgs.Response).ConfigureAwait(false);
+                }
+                return;
+            }
+
+            // Track command execution time
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             switch (command.Verb)
             {
                 case SmtpCommand.Commands.HELO:
@@ -277,6 +294,12 @@ namespace Zetian.Internal
                     }
                     break;
             }
+
+            // Stop timing and fire CommandExecuted event
+            stopwatch.Stop();
+            commandArgs.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+            commandArgs.Success = _errorCount == 0;
+            _server.OnCommandExecuted(commandArgs);
         }
 
         private async Task ProcessHeloAsync(SmtpCommand command)
@@ -502,8 +525,30 @@ namespace Zetian.Internal
                 return;
             }
 
+            // Build recipients list for event
+            List<string> recipientsList = [];
+            if (_multipleRecipients != null)
+            {
+                recipientsList.AddRange(_multipleRecipients);
+            }
+            else if (_singleRecipient != null)
+            {
+                recipientsList.Add(_singleRecipient);
+            }
+
+            // Fire DataTransferStarted event
+            DataTransferEventArgs dataArgs = new(this, _mailFrom, recipientsList);
+            _server.OnDataTransferStarted(dataArgs);
+
+            if (dataArgs.Cancel)
+            {
+                await SendResponseAsync(SmtpResponse.LocalError).ConfigureAwait(false);
+                return;
+            }
+
             await SendResponseAsync(SmtpResponse.StartMailInput).ConfigureAwait(false);
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             byte[]? messageData = null;
             try
             {
@@ -512,15 +557,28 @@ namespace Zetian.Internal
             catch (TimeoutException tex)
             {
                 _logger.LogWarning("Session {SessionId}: Data timeout - {Message}", Id, tex.Message);
+                dataArgs.Success = false;
+                dataArgs.ErrorMessage = tex.Message;
+                dataArgs.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+                _server.OnDataTransferCompleted(dataArgs);
                 await SendResponseAsync(new SmtpResponse(421, "Data transfer timeout")).ConfigureAwait(false);
                 return;
             }
 
             if (messageData == null || messageData.Length == 0)
             {
+                dataArgs.Success = false;
+                dataArgs.ErrorMessage = "No data received";
+                dataArgs.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+                _server.OnDataTransferCompleted(dataArgs);
                 await SendResponseAsync(SmtpResponse.LocalError).ConfigureAwait(false);
                 return;
             }
+
+            stopwatch.Stop();
+            dataArgs.BytesTransferred = messageData.Length;
+            dataArgs.TotalSize = messageData.Length;
+            dataArgs.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
 
             try
             {
@@ -557,10 +615,15 @@ namespace Zetian.Internal
 
                 if (eventArgs.Cancel)
                 {
+                    dataArgs.Success = false;
+                    dataArgs.ErrorMessage = "Message rejected";
+                    _server.OnDataTransferCompleted(dataArgs);
                     await SendResponseAsync(eventArgs.Response).ConfigureAwait(false);
                 }
                 else
                 {
+                    dataArgs.Success = true;
+                    _server.OnDataTransferCompleted(dataArgs);
                     await SendResponseAsync(SmtpResponse.MessageAccepted).ConfigureAwait(false);
                 }
 
@@ -570,6 +633,9 @@ namespace Zetian.Internal
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing message");
+                dataArgs.Success = false;
+                dataArgs.ErrorMessage = ex.Message;
+                _server.OnDataTransferCompleted(dataArgs);
                 await SendResponseAsync(SmtpResponse.LocalError).ConfigureAwait(false);
             }
         }
@@ -697,6 +763,19 @@ namespace Zetian.Internal
                 return;
             }
 
+            // Fire TlsNegotiationStarted event
+            TlsEventArgs tlsArgs = new(this)
+            {
+                Certificate = _configuration.Certificate
+            };
+            _server.OnTlsNegotiationStarted(tlsArgs);
+
+            if (tlsArgs.Cancel)
+            {
+                await SendResponseAsync(SmtpResponse.LocalError).ConfigureAwait(false);
+                return;
+            }
+
             await SendResponseAsync(SmtpResponse.ReadyToStartTls).ConfigureAwait(false);
 
             try
@@ -719,10 +798,22 @@ namespace Zetian.Internal
                 _state = SmtpSessionState.Connected;
                 ClientDomain = null;
                 ResetMessage();
+
+                // Fire TlsNegotiationCompleted event
+                tlsArgs.Success = true;
+                tlsArgs.ProtocolVersion = sslStream.SslProtocol.ToString();
+                tlsArgs.CipherSuite = sslStream.CipherAlgorithm.ToString();
+                _server.OnTlsNegotiationCompleted(tlsArgs);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to establish TLS");
+
+                // Fire TlsNegotiationFailed event
+                tlsArgs.Success = false;
+                tlsArgs.ErrorMessage = ex.Message;
+                _server.OnTlsNegotiationFailed(tlsArgs);
+
                 throw;
             }
         }
@@ -764,16 +855,31 @@ namespace Zetian.Internal
             }
 
             string? initialResponse = parts.Length > 1 ? parts[1] : null;
+
+            // Fire AuthenticationAttempted event
+            AuthenticationEventArgs authArgs = new(mechanism, null, null, this);
+            _server.OnAuthenticationAttempted(authArgs);
+
             AuthenticationResult result = await authenticator.AuthenticateAsync(this, initialResponse, _reader, _writer, cancellationToken).ConfigureAwait(false);
 
             if (result.Success)
             {
                 IsAuthenticated = true;
                 AuthenticatedIdentity = result.Identity;
+
+                // Fire AuthenticationSucceeded event
+                authArgs.IsAuthenticated = true;
+                authArgs.AuthenticatedIdentity = result.Identity;
+                _server.OnAuthenticationSucceeded(authArgs);
+
                 await SendResponseAsync(SmtpResponse.AuthenticationSuccessful).ConfigureAwait(false);
             }
             else
             {
+                // Fire AuthenticationFailed event
+                authArgs.IsAuthenticated = false;
+                _server.OnAuthenticationFailed(authArgs);
+
                 await SendResponseAsync(SmtpResponse.AuthenticationFailed).ConfigureAwait(false);
             }
         }

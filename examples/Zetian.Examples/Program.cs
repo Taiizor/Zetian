@@ -22,8 +22,9 @@ namespace Zetian.Examples
             Console.WriteLine("8. Protocol-Level vs Event-Based Filtering");
             Console.WriteLine("9. Certificate Formats for Secure SMTP");
             Console.WriteLine("10. SMTP Server with Timeout Settings");
+            Console.WriteLine("11. Comprehensive Event Handling in SMTP Server");
             Console.WriteLine();
-            Console.Write("Select an example (1-10): ");
+            Console.Write("Select an example (1-11): ");
 
             string? choice = Console.ReadLine();
 
@@ -60,6 +61,9 @@ namespace Zetian.Examples
                         break;
                     case "10":
                         await TimeoutTestExample.RunAsync();
+                        break;
+                    case "11":
+                        await ComprehensiveEventsExample.RunAsync();
                         break;
                     default:
                         Console.WriteLine("Invalid choice");

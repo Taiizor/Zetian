@@ -56,5 +56,70 @@ namespace Zetian.Abstractions
         /// Occurs when an error happens
         /// </summary>
         event EventHandler<ErrorEventArgs>? ErrorOccurred;
+
+        /// <summary>
+        /// Occurs when a connection is accepted
+        /// </summary>
+        event EventHandler<ConnectionEventArgs>? ConnectionAccepted;
+
+        /// <summary>
+        /// Occurs when a connection is rejected
+        /// </summary>
+        event EventHandler<ConnectionEventArgs>? ConnectionRejected;
+
+        /// <summary>
+        /// Occurs when a command is received
+        /// </summary>
+        event EventHandler<CommandEventArgs>? CommandReceived;
+
+        /// <summary>
+        /// Occurs when a command is executed
+        /// </summary>
+        event EventHandler<CommandEventArgs>? CommandExecuted;
+
+        /// <summary>
+        /// Occurs when authentication is attempted
+        /// </summary>
+        event EventHandler<AuthenticationEventArgs>? AuthenticationAttempted;
+
+        /// <summary>
+        /// Occurs when authentication succeeds
+        /// </summary>
+        event EventHandler<AuthenticationEventArgs>? AuthenticationSucceeded;
+
+        /// <summary>
+        /// Occurs when authentication fails
+        /// </summary>
+        event EventHandler<AuthenticationEventArgs>? AuthenticationFailed;
+
+        /// <summary>
+        /// Occurs when TLS negotiation starts
+        /// </summary>
+        event EventHandler<TlsEventArgs>? TlsNegotiationStarted;
+
+        /// <summary>
+        /// Occurs when TLS negotiation completes
+        /// </summary>
+        event EventHandler<TlsEventArgs>? TlsNegotiationCompleted;
+
+        /// <summary>
+        /// Occurs when TLS negotiation fails
+        /// </summary>
+        event EventHandler<TlsEventArgs>? TlsNegotiationFailed;
+
+        /// <summary>
+        /// Occurs when data transfer starts
+        /// </summary>
+        event EventHandler<DataTransferEventArgs>? DataTransferStarted;
+
+        /// <summary>
+        /// Occurs when data transfer completes
+        /// </summary>
+        event EventHandler<DataTransferEventArgs>? DataTransferCompleted;
+
+        /// <summary>
+        /// Occurs when rate limit is exceeded
+        /// </summary>
+        event EventHandler<RateLimitEventArgs>? RateLimitExceeded;
     }
 }

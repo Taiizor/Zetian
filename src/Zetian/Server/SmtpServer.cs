@@ -83,6 +83,45 @@ namespace Zetian.Server
         public event EventHandler<ErrorEventArgs>? ErrorOccurred;
 
         /// <inheritdoc />
+        public event EventHandler<ConnectionEventArgs>? ConnectionAccepted;
+
+        /// <inheritdoc />
+        public event EventHandler<ConnectionEventArgs>? ConnectionRejected;
+
+        /// <inheritdoc />
+        public event EventHandler<CommandEventArgs>? CommandReceived;
+
+        /// <inheritdoc />
+        public event EventHandler<CommandEventArgs>? CommandExecuted;
+
+        /// <inheritdoc />
+        public event EventHandler<AuthenticationEventArgs>? AuthenticationAttempted;
+
+        /// <inheritdoc />
+        public event EventHandler<AuthenticationEventArgs>? AuthenticationSucceeded;
+
+        /// <inheritdoc />
+        public event EventHandler<AuthenticationEventArgs>? AuthenticationFailed;
+
+        /// <inheritdoc />
+        public event EventHandler<TlsEventArgs>? TlsNegotiationStarted;
+
+        /// <inheritdoc />
+        public event EventHandler<TlsEventArgs>? TlsNegotiationCompleted;
+
+        /// <inheritdoc />
+        public event EventHandler<TlsEventArgs>? TlsNegotiationFailed;
+
+        /// <inheritdoc />
+        public event EventHandler<DataTransferEventArgs>? DataTransferStarted;
+
+        /// <inheritdoc />
+        public event EventHandler<DataTransferEventArgs>? DataTransferCompleted;
+
+        /// <inheritdoc />
+        public event EventHandler<RateLimitEventArgs>? RateLimitExceeded;
+
+        /// <inheritdoc />
         public async Task StartAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -297,6 +336,9 @@ namespace Zetian.Server
                     return;
                 }
 
+                IPEndPoint localEndPoint = (IPEndPoint)client.Client.LocalEndPoint!;
+                ConnectionEventArgs connectionArgs = new(remoteEndPoint, localEndPoint);
+
                 // Try to acquire a connection slot for this IP
                 IPAddress ipAddress = remoteEndPoint.Address;
                 connectionHandle = await _connectionTracker.TryAcquireAsync(ipAddress, cancellationToken).ConfigureAwait(false);
@@ -304,6 +346,18 @@ namespace Zetian.Server
                 if (connectionHandle == null)
                 {
                     _logger.LogWarning("Connection limit exceeded for IP {IPAddress}", ipAddress);
+                    connectionArgs.Accept = false;
+                    connectionArgs.RejectionReason = "Connection limit exceeded for IP";
+                    OnConnectionRejected(connectionArgs);
+
+                    // Fire rate limit event
+                    OnRateLimitExceeded(new RateLimitEventArgs(ipAddress)
+                    {
+                        CurrentCount = Configuration.MaxConnectionsPerIp,
+                        Limit = Configuration.MaxConnectionsPerIp,
+                        TimeWindow = TimeSpan.FromMinutes(1)
+                    });
+
                     client.Close();
                     return;
                 }
@@ -313,9 +367,15 @@ namespace Zetian.Server
                 if (!acquired)
                 {
                     _logger.LogWarning("Maximum connection limit reached");
+                    connectionArgs.Accept = false;
+                    connectionArgs.RejectionReason = "Maximum connection limit reached";
+                    OnConnectionRejected(connectionArgs);
                     client.Close();
                     return;
                 }
+
+                // Connection accepted
+                OnConnectionAccepted(connectionArgs);
 
                 // Create session
                 session = new SmtpSession(this, client, Configuration, _logger);
@@ -409,6 +469,162 @@ namespace Zetian.Server
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in ErrorOccurred event handler");
+            }
+        }
+
+        internal void OnConnectionAccepted(ConnectionEventArgs args)
+        {
+            try
+            {
+                ConnectionAccepted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ConnectionAccepted event handler");
+            }
+        }
+
+        internal void OnConnectionRejected(ConnectionEventArgs args)
+        {
+            try
+            {
+                ConnectionRejected?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ConnectionRejected event handler");
+            }
+        }
+
+        internal void OnCommandReceived(CommandEventArgs args)
+        {
+            try
+            {
+                CommandReceived?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in CommandReceived event handler");
+            }
+        }
+
+        internal void OnCommandExecuted(CommandEventArgs args)
+        {
+            try
+            {
+                CommandExecuted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in CommandExecuted event handler");
+            }
+        }
+
+        internal void OnAuthenticationAttempted(AuthenticationEventArgs args)
+        {
+            try
+            {
+                AuthenticationAttempted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in AuthenticationAttempted event handler");
+            }
+        }
+
+        internal void OnAuthenticationSucceeded(AuthenticationEventArgs args)
+        {
+            try
+            {
+                AuthenticationSucceeded?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in AuthenticationSucceeded event handler");
+            }
+        }
+
+        internal void OnAuthenticationFailed(AuthenticationEventArgs args)
+        {
+            try
+            {
+                AuthenticationFailed?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in AuthenticationFailed event handler");
+            }
+        }
+
+        internal void OnTlsNegotiationStarted(TlsEventArgs args)
+        {
+            try
+            {
+                TlsNegotiationStarted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in TlsNegotiationStarted event handler");
+            }
+        }
+
+        internal void OnTlsNegotiationCompleted(TlsEventArgs args)
+        {
+            try
+            {
+                TlsNegotiationCompleted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in TlsNegotiationCompleted event handler");
+            }
+        }
+
+        internal void OnTlsNegotiationFailed(TlsEventArgs args)
+        {
+            try
+            {
+                TlsNegotiationFailed?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in TlsNegotiationFailed event handler");
+            }
+        }
+
+        internal void OnDataTransferStarted(DataTransferEventArgs args)
+        {
+            try
+            {
+                DataTransferStarted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in DataTransferStarted event handler");
+            }
+        }
+
+        internal void OnDataTransferCompleted(DataTransferEventArgs args)
+        {
+            try
+            {
+                DataTransferCompleted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in DataTransferCompleted event handler");
+            }
+        }
+
+        internal void OnRateLimitExceeded(RateLimitEventArgs args)
+        {
+            try
+            {
+                RateLimitExceeded?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in RateLimitExceeded event handler");
             }
         }
 

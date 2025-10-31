@@ -106,15 +106,6 @@ cluster.ConfigureAffinity(options =>
 // Custom affinity resolver
 cluster.SetAffinityResolver((session) =>
 {
-    // Route based on sender domain
-    var domain = session.From?.Host;
-    if (domain != null)
-    {
-        var hash = domain.GetHashCode();
-        var nodeIndex = Math.Abs(hash) % cluster.NodeCount;
-        return cluster.Nodes.ElementAt(nodeIndex).Id;
-    }
-    
     // Fallback to IP-based routing
     return cluster.Nodes.ElementAt(
         Math.Abs(session.ClientIp.GetHashCode()) % cluster.NodeCount
@@ -124,45 +115,31 @@ cluster.SetAffinityResolver((session) =>
 const stateReplicationExample = `// Configure state replication
 cluster.ConfigureReplication(options =>
 {
-    options.ReplicationFactor = 3;  // Replicate to 3 nodes
+    options.ReplicationFactor = 3;
     options.ConsistencyLevel = ConsistencyLevel.Quorum;
     options.SyncMode = SyncMode.Asynchronous;
 });
 
-// Replicate session data
-await cluster.ReplicateStateAsync("session:" + sessionId, sessionData, 
-    new ReplicationOptions
-    {
-        Ttl = TimeSpan.FromHours(1),
-        Priority = ReplicationPriority.High,
-        WaitForAck = true
-    });
-
-// Retrieve replicated data
-var data = await cluster.GetReplicatedStateAsync<SessionData>(
-    "session:" + sessionId,
-    ConsistencyLevel.One  // Fast read from any replica
-);`;
+// Replicate custom data
+await cluster.ReplicateStateAsync("key", data, options =>
+{
+    options.Ttl = TimeSpan.FromMinutes(5);
+    options.Priority = ReplicationPriority.High;
+});`;
 
 const distributedRateLimitExample = `// Enable distributed rate limiting
 cluster.EnableDistributedRateLimiting(options =>
 {
     options.SyncInterval = TimeSpan.FromSeconds(1);
     options.Algorithm = RateLimitAlgorithm.TokenBucket;
-    options.GlobalLimit = 10000; // Cluster-wide limit per hour
+    options.GlobalLimit = 10000; // Cluster-wide limit
 });
 
-// Check rate limit across entire cluster
+// Check rate limit across cluster
 bool allowed = await cluster.CheckRateLimitAsync(
-    key: clientIp.ToString(),
+    clientIp,
     requestsPerHour: 100
-);
-
-if (!allowed)
-{
-    // Rate limit exceeded across cluster
-    return SmtpResponse.ServiceNotAvailable;
-}`;
+);`;
 
 const healthMonitoringExample = `// Configure health checks
 cluster.ConfigureHealthChecks(options =>
@@ -183,51 +160,42 @@ foreach (var node in cluster.Nodes)
     Console.WriteLine($"{node.Id}: {node.State} - Load: {node.CurrentLoad}");
 }`;
 
-const maintenanceExample = `// Put node in maintenance mode for updates
+const maintenanceExample = `// Put node in maintenance mode
 await cluster.EnterMaintenanceModeAsync(new MaintenanceOptions
 {
     DrainTimeout = TimeSpan.FromMinutes(5),
     GracefulShutdown = true,
-    MigrateSessions = true,
-    RejectNewConnections = true
+    MigrateSessions = true
 });
 
-// Monitor drain progress
-cluster.DrainProgress += (sender, e) =>
+// Check maintenance status
+if (cluster.IsInMaintenance)
 {
-    Console.WriteLine($"Draining: {e.SessionsRemaining} sessions remaining");
-};
+    Console.WriteLine("Node is in maintenance mode");
+}
 
-// Perform maintenance tasks
-await UpdateSoftwareAsync();
-
-// Exit maintenance mode and rejoin cluster
+// Exit maintenance mode
 await cluster.ExitMaintenanceModeAsync();`;
 
-const multiRegionExample = `// Configure for multi-region deployment
+const multiRegionExample = `// Configure for multi-region
 cluster.ConfigureRegions(options =>
 {
-    options.CurrentRegion = "us-east";
-    
-    options.Regions = new List<RegionConfig>
-    {
-        new RegionConfig
-        {
-            Name = "us-east",
-            Priority = 1,  // Primary region
-            Endpoints = new[] { "node1.us-east:7946", "node2.us-east:7946" }
-        },
-        new RegionConfig
-        {
-            Name = "eu-west",
-            Priority = 2,  // Secondary region
-            Endpoints = new[] { "node1.eu-west:7946", "node2.eu-west:7946" }
-        }
-    };
-    
-    options.PreferLocalRegion = true;
-    options.CrossRegionTimeout = TimeSpan.FromSeconds(10);
-    options.RegionFailoverEnabled = true;
+  options.CurrentRegion = "us-east";
+  options.Regions = new()
+  {
+      new RegionConfig
+      {
+          Name = "us-east",
+          Endpoints = new() { "node1.us-east:7946", "node2.us-east:7946" }
+      },
+      new RegionConfig
+      {
+          Name = "eu-west",
+          Endpoints = new() { "node1.eu-west:7946", "node2.eu-west:7946" }
+      }
+  };
+  options.PreferLocalRegion = true;
+  options.CrossRegionTimeout = TimeSpan.FromSeconds(10);
 });`;
 
 export default function ClusteringPage() {

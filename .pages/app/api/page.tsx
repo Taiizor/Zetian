@@ -14,7 +14,8 @@ import {
   Settings,
   Gauge,
   Heart,
-  Activity
+  Activity,
+  Network
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -561,6 +562,90 @@ const apiCategories = [
         properties: ['Name', 'Parameters'],
         methods: ['Parse(string)', 'IsValid()'],
         events: []
+      }
+    ]
+  },
+  {
+    title: 'Clustering',
+    icon: Network,
+    namespace: 'Zetian.Clustering',
+    items: [
+      {
+        name: 'IClusterManager',
+        description: 'Main interface for cluster management and coordination',
+        properties: ['NodeId', 'ClusterPort', 'IsLeader', 'Nodes', 'State'],
+        methods: [
+          'EnableClusteringAsync(options)',
+          'StartAsync()',
+          'StopAsync()',
+          'GetHealthAsync()',
+          'GetMetrics()',
+          'ReplicateStateAsync(key, data, options)',
+          'GetReplicatedStateAsync<T>(key)',
+          'MigrateSessionsAsync(fromNodeId)',
+          'EnterMaintenanceModeAsync(options)',
+          'ExitMaintenanceModeAsync()'
+        ],
+        events: ['NodeJoined', 'NodeLeft', 'NodeFailed', 'LeaderChanged', 'StateChanged']
+      },
+      {
+        name: 'ClusterOptions',
+        description: 'Configuration options for clustering',
+        properties: [
+          'NodeId',
+          'ClusterPort',
+          'BindAddress',
+          'DiscoveryMethod',
+          'Seeds',
+          'ReplicationFactor',
+          'ConsistencyLevel',
+          'EnableEncryption',
+          'SharedSecret',
+          'HeartbeatInterval',
+          'ElectionTimeout',
+          'FailureDetectionTimeout'
+        ],
+        methods: ['Validate()'],
+        events: []
+      },
+      {
+        name: 'IClusterNode',
+        description: 'Represents a node in the cluster',
+        properties: ['Id', 'Address', 'Port', 'State', 'IsLeader', 'CurrentLoad', 'MaxLoad', 'LastSeen'],
+        methods: ['GetHealthAsync()', 'SendAsync(message)'],
+        events: []
+      },
+      {
+        name: 'LoadBalancingStrategy',
+        description: 'Enum for load balancing strategies',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['RoundRobin', 'LeastConnections', 'WeightedRoundRobin', 'IpHash']
+      },
+      {
+        name: 'NodeState',
+        description: 'Enum for node states',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Initializing', 'Joining', 'Active', 'Maintenance', 'Draining', 'Failed']
+      },
+      {
+        name: 'ConsistencyLevel',
+        description: 'Enum for read/write consistency levels',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['One', 'Two', 'Three', 'Quorum', 'All']
+      },
+      {
+        name: 'DiscoveryMethod',
+        description: 'Enum for node discovery methods',
+        properties: [],
+        methods: [],
+        events: [],
+        values: ['Static', 'DNS', 'Multicast', 'Kubernetes', 'Consul', 'Etcd']
       }
     ]
   },

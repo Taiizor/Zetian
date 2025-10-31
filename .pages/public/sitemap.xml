@@ -104,6 +104,14 @@
     <priority>0.7</priority>
   </url>
   
+  <!-- Clustering -->
+  <url>
+    <loc>https://zetian.soferity.com/docs/clustering</loc>
+    <lastmod>2025-10-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
   <!-- Storage -->
   <url>
     <loc>https://zetian.soferity.com/docs/storage</loc>

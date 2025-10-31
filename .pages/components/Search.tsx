@@ -84,6 +84,15 @@ const searchData: SearchItem[] = [
     code: 'server.EnableMonitoring().EnablePrometheus(9090)'
   },
   { 
+    title: 'Clustering Extension', 
+    description: 'High availability, load balancing, state replication, leader election, multi-region support', 
+    path: '/docs/clustering', 
+    category: 'Documentation',
+    tags: ['clustering', 'high-availability', 'load-balancing', 'distributed', 'failover', 'replication', 'leader-election'],
+    popular: true,
+    code: 'await server.EnableClusteringAsync(options => options.NodeId = "node-1")'
+  },
+  { 
     title: 'Relay Extension', 
     description: 'SMTP relay and proxy - Smart host support, queue management, load balancing, failover, MX routing', 
     path: '/docs/relay', 
@@ -362,6 +371,32 @@ const searchData: SearchItem[] = [
     category: 'API',
     tags: ['relay', 'queue', 'interface'],
     code: 'await queue.EnqueueAsync(relayMessage)'
+  },
+  
+  // Clustering Classes
+  { 
+    title: 'IClusterManager', 
+    description: 'Cluster manager interface - EnableClusteringAsync(), GetHealthAsync(), GetMetrics(), ReplicateStateAsync()', 
+    path: '/api#clustering', 
+    category: 'API',
+    tags: ['clustering', 'interface', 'manager', 'distributed'],
+    code: 'await cluster.ReplicateStateAsync("key", data)'
+  },
+  { 
+    title: 'ClusterOptions', 
+    description: 'Clustering configuration - NodeId, ClusterPort, ReplicationFactor, ConsistencyLevel, DiscoveryMethod', 
+    path: '/api#clustering', 
+    category: 'API',
+    tags: ['clustering', 'options', 'configuration'],
+    code: 'options.NodeId = "node-1"; options.ReplicationFactor = 3;'
+  },
+  { 
+    title: 'LoadBalancingStrategy', 
+    description: 'Load balancing strategies enum - RoundRobin, LeastConnections, WeightedRoundRobin, IpHash', 
+    path: '/api#clustering', 
+    category: 'API',
+    tags: ['clustering', 'load-balancing', 'enum'],
+    code: 'LoadBalancingStrategy.LeastConnections'
   },
   
   // AntiSpam Classes

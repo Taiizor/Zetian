@@ -15,7 +15,8 @@ import {
   Database,
   Send,
   Filter,
-  Activity
+  Activity,
+  Network
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -139,6 +140,19 @@ const docCategories = [
       'OpenTelemetry',
       'Server Statistics',
       'Grafana Dashboard'
+    ]
+  },
+  {
+    title: 'Clustering',
+    description: 'High availability and scaling',
+    icon: Network,
+    href: '/docs/clustering',
+    color: 'from-cyan-500 to-teal-600',
+    items: [
+      'Leader Election',
+      'Load Balancing',
+      'State Replication',
+      'Multi-Region Support'
     ]
   },
   {

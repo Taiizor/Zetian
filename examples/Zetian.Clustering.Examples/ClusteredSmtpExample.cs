@@ -6,9 +6,7 @@ using Zetian.Clustering.Enums;
 using Zetian.Clustering.Extensions;
 using Zetian.Clustering.Models;
 using Zetian.Clustering.Options;
-using Zetian.Protocol;
 using Zetian.Server;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Zetian.Clustering.Examples
 {
@@ -19,23 +17,231 @@ namespace Zetian.Clustering.Examples
     {
         public static async Task Main()
         {
-            // Create clustered SMTP server
-            var server = new SmtpServerBuilder()
-                .Port(25)
-                .ServerName("Node-1")
+            Console.InputEncoding = Encoding.UTF8;
+            Console.OutputEncoding = Encoding.UTF8;
+
+            // Get node configuration from environment or args
+            string nodeId = Environment.GetEnvironmentVariable("NODE_ID") ?? "node-1";
+            int smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "25");
+            string[] seedNodes = Environment.GetEnvironmentVariable("SEED_NODES")?.Split(',') ?? [];
+            int clusterPort = int.Parse(Environment.GetEnvironmentVariable("CLUSTER_PORT") ?? "7946");
+
+            // Create logger
+            using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
+
+            // Create SMTP server
+            SmtpServer server = new SmtpServerBuilder()
+                .Port(smtpPort)
+                .ServerName($"Clustered-SMTP-{nodeId}")
+                .MaxConnections(1000)
+                .MaxConnectionsPerIP(10)
+                .RequireAuthentication(false)
+                .LoggerFactory(loggerFactory)
                 .Build();
 
             // Enable clustering
-            var cluster = await server.EnableClusteringAsync(options =>
+            IClusterManager cluster = await server.EnableClusteringAsync(options =>
             {
-                options.NodeId = "node-1";
-                options.ClusterPort = 7946;
-                options.DiscoveryMethod = DiscoveryMethod.Multicast;
+                // Basic configuration
+                options.NodeId = nodeId;
+                options.ClusterPort = clusterPort;
+                options.Seeds = seedNodes;
+
+                // Discovery
+                options.DiscoveryMethod = DiscoveryMethod.Static; // Use Static for simplicity
+
+                // Security
+                options.EnableEncryption = true;
+                options.SharedSecret = Environment.GetEnvironmentVariable("CLUSTER_SECRET") ?? "my-secure-secret";
+
+                // Replication
+                options.ReplicationFactor = 3;
+                options.MinReplicasForWrite = 2;
+
+                // Performance
+                options.CompressionEnabled = true;
+                options.BatchSize = 100;
+
+                // Persistence
+                options.PersistenceEnabled = true;
+                options.DataDirectory = $"./cluster-data/{nodeId}";
+
+                // Leader Election
+                options.LeaderElection = new LeaderElectionOptions
+                {
+                    Enabled = true,
+                    ElectionTimeout = TimeSpan.FromSeconds(5),
+                    HeartbeatInterval = TimeSpan.FromSeconds(1),
+                    MinNodes = 2
+                };
+
+                // Load Balancing
+                options.LoadBalancing = new LoadBalancingOptions
+                {
+                    Strategy = LoadBalancingStrategy.LeastConnections,
+                    HealthBasedRouting = true,
+                    MaxLoadPerNode = 0.8,
+                    Affinity = new AffinityOptions
+                    {
+                        Enabled = true,
+                        Method = AffinityMethod.SourceIp,
+                        SessionTimeout = TimeSpan.FromMinutes(30),
+                        FailoverMode = FailoverMode.Automatic
+                    }
+                };
+
+                // Health Checks
+                options.HealthCheck = new HealthCheckOptions
+                {
+                    Enabled = true,
+                    CheckInterval = TimeSpan.FromSeconds(10),
+                    FailureThreshold = 3,
+                    SuccessThreshold = 2,
+                    Timeout = TimeSpan.FromSeconds(5)
+                };
             });
 
+            // Subscribe to cluster events
+            cluster.NodeJoined += (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] Node joined: {e.NodeId} from {e.Address}");
+            };
 
+            cluster.NodeLeft += (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] Node left: {e.NodeId} - Reason: {e.Reason}");
+            };
 
+            cluster.NodeFailed += async (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] Node failed: {e.NodeId}");
+
+                // Automatically migrate sessions from failed node
+                if (cluster.IsLeader)
+                {
+                    int migrated = await cluster.MigrateSessionsAsync(e.NodeId);
+                    Console.WriteLine($"[CLUSTER] Migrated {migrated} sessions from {e.NodeId}");
+                }
+            };
+
+            cluster.LeaderChanged += (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] Leader changed from {e.PreviousLeaderNodeId} to {e.NewLeaderNodeId}");
+                if (cluster.IsLeader)
+                {
+                    Console.WriteLine("[CLUSTER] This node is now the leader!");
+                }
+            };
+
+            cluster.StateChanged += (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] State changed: {e.OldState} -> {e.NewState} (Active nodes: {e.ActiveNodes})");
+            };
+
+            cluster.RebalancingStarted += (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] Rebalancing started: {e.Reason} ({e.SessionsToMigrate} sessions)");
+            };
+
+            cluster.RebalancingCompleted += (sender, e) =>
+            {
+                Console.WriteLine($"[CLUSTER] Rebalancing completed: {e.SessionsMigrated} sessions moved in {e.Duration.TotalSeconds:F1}s");
+            };
+
+            // Subscribe to SMTP server events
+            server.MessageReceived += (sender, e) =>
+            {
+                string clusterInfo = cluster.IsLeader ? "[LEADER]" : $"[NODE-{nodeId}]";
+                Console.WriteLine($"{clusterInfo} Message from {e.Message.From}: {e.Message.Subject}");
+                Console.WriteLine($"  Cluster nodes: {cluster.NodeCount}, Leader: {cluster.LeaderNodeId}");
+            };
+
+            server.SessionCreated += (sender, e) =>
+            {
+                Console.WriteLine($"[SESSION] New session {e.Session.Id} from {e.Session.RemoteEndPoint}");
+            };
+
+            // Start the SMTP server
             await server.StartAsync();
+            Console.WriteLine($"[SERVER] SMTP server started on port {smtpPort}");
+            Console.WriteLine($"[CLUSTER] Node {nodeId} listening on cluster port {clusterPort}");
+
+            // Join seed nodes if provided
+            foreach (string seed in seedNodes)
+            {
+                if (!string.IsNullOrEmpty(seed) && seed != $"{nodeId}:{clusterPort}")
+                {
+                    Console.WriteLine($"[CLUSTER] Attempting to join seed node: {seed}");
+                    if (await cluster.JoinAsync(seed))
+                    {
+                        Console.WriteLine($"[CLUSTER] Successfully joined via {seed}");
+                        break;
+                    }
+                }
+            }
+
+            // Start monitoring task
+            _ = Task.Run(async () => await MonitorClusterAsync(server, cluster));
+
+            // Wait for termination
+            Console.WriteLine("Press 'q' to quit, 'm' for maintenance mode, 's' for stats...");
+
+            while (true)
+            {
+                ConsoleKeyInfo key = Console.ReadKey(true);
+
+                switch (key.Key)
+                {
+                    case ConsoleKey.Q:
+                        Console.WriteLine("[SERVER] Shutting down...");
+                        await cluster.LeaveAsync();
+                        await server.StopAsync();
+                        return;
+
+                    case ConsoleKey.M:
+                        if (!cluster.IsInMaintenance)
+                        {
+                            Console.WriteLine("[CLUSTER] Entering maintenance mode...");
+                            await cluster.EnterMaintenanceModeAsync(new MaintenanceOptions
+                            {
+                                DrainTimeout = TimeSpan.FromMinutes(2),
+                                GracefulShutdown = true,
+                                MigrateSessions = true,
+                                Reason = "Manual maintenance"
+                            });
+                        }
+                        else
+                        {
+                            Console.WriteLine("[CLUSTER] Exiting maintenance mode...");
+                            await cluster.ExitMaintenanceModeAsync();
+                        }
+                        break;
+
+                    case ConsoleKey.S:
+                        await DisplayClusterStatsAsync(cluster);
+                        break;
+
+                    case ConsoleKey.H:
+                        await DisplayClusterHealthAsync(cluster);
+                        break;
+
+                    case ConsoleKey.R:
+                        // Test replication
+                        string testKey = $"test-{Guid.NewGuid()}";
+                        byte[] testData = Encoding.UTF8.GetBytes($"Test data from {nodeId}");
+                        bool replicated = await cluster.ReplicateStateAsync(testKey, testData, new ReplicationOptions
+                        {
+                            Priority = ReplicationPriority.High,
+                            ConsistencyLevel = ConsistencyLevel.Quorum
+                        });
+                        Console.WriteLine($"[TEST] Replication test: {(replicated ? "Success" : "Failed")}");
+                        break;
+                }
+            }
         }
 
         private static async Task MonitorClusterAsync(ISmtpServer server, IClusterManager cluster)

@@ -1,9 +1,13 @@
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Zetian.WebUI.Options;
 
 namespace Zetian.WebUI.Services
@@ -97,7 +101,7 @@ namespace Zetian.WebUI.Services
 
         public Task<AuthenticationResult> RefreshTokenAsync(string refreshToken)
         {
-            if (_refreshTokens.TryGetValue(refreshToken, out var username))
+            if (_refreshTokens.TryGetValue(refreshToken, out string? username))
             {
                 UserInfo user = new()
                 {
@@ -198,7 +202,7 @@ namespace Zetian.WebUI.Services
                 .Select(s => s.Key)
                 .ToList();
 
-            foreach (var sessionId in expiredSessions)
+            foreach (string sessionId in expiredSessions)
             {
                 _sessions.TryRemove(sessionId, out _);
             }
@@ -223,7 +227,7 @@ namespace Zetian.WebUI.Services
                 new(ClaimTypes.Email, user.Email)
             ];
 
-            foreach (var role in user.Roles)
+            foreach (string role in user.Roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
@@ -236,10 +240,10 @@ namespace Zetian.WebUI.Services
                 signingCredentials: credentials
             );
 
-            var tokenString = _tokenHandler.WriteToken(token);
+            string tokenString = _tokenHandler.WriteToken(token);
 
             // Generate refresh token
-            var refreshToken = GenerateRefreshToken();
+            string refreshToken = GenerateRefreshToken();
             _refreshTokens[refreshToken] = user.Username;
 
             return (tokenString, refreshToken, expiresAt);
@@ -247,7 +251,7 @@ namespace Zetian.WebUI.Services
 
         private string GenerateRefreshToken()
         {
-            var randomBytes = new byte[32];
+            byte[] randomBytes = new byte[32];
             using RandomNumberGenerator rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomBytes);
             return Convert.ToBase64String(randomBytes);

@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Models.EventArgs;
 
@@ -50,13 +54,13 @@ namespace Zetian.WebUI.Services
 
         public Task<QueuedMessage?> GetMessageAsync(string messageId)
         {
-            _messages.TryGetValue(messageId, out var message);
+            _messages.TryGetValue(messageId, out QueuedMessage? message);
             return Task.FromResult(message);
         }
 
         public Task<IEnumerable<QueuedMessage>> SearchMessagesAsync(MessageSearchCriteria criteria)
         {
-            var query = _messages.Values.AsEnumerable();
+            IEnumerable<QueuedMessage> query = _messages.Values.AsEnumerable();
 
             if (!string.IsNullOrEmpty(criteria.From))
             {
@@ -123,7 +127,7 @@ namespace Zetian.WebUI.Services
 
         public Task<bool> ResendMessageAsync(string messageId)
         {
-            if (_messages.TryGetValue(messageId, out var message))
+            if (_messages.TryGetValue(messageId, out QueuedMessage? message))
             {
                 message.Status = MessageStatus.Queued;
                 message.RetryCount++;
@@ -137,7 +141,7 @@ namespace Zetian.WebUI.Services
         public Task<QueueStatistics> GetStatisticsAsync()
         {
             List<QueuedMessage> messages = _messages.Values.ToList();
-            var hourlyStats = GetHourlyStats(messages);
+            List<HourlyStats> hourlyStats = GetHourlyStats(messages);
 
             return Task.FromResult(new QueueStatistics
             {
@@ -174,7 +178,7 @@ namespace Zetian.WebUI.Services
 
         public Task<string> GetMessageContentAsync(string messageId)
         {
-            if (_messages.TryGetValue(messageId, out var message))
+            if (_messages.TryGetValue(messageId, out QueuedMessage? message))
             {
                 // In production, this would retrieve the actual message content
                 return Task.FromResult($"Content of message {messageId}");
@@ -210,7 +214,7 @@ namespace Zetian.WebUI.Services
             };
 
             // Copy headers
-            foreach (var header in e.Message.Headers)
+            foreach (KeyValuePair<string, string> header in e.Message.Headers)
             {
                 queuedMessage.Headers[header.Key] = header.Value;
             }
@@ -273,13 +277,13 @@ namespace Zetian.WebUI.Services
         private List<HourlyStats> GetHourlyStats(List<QueuedMessage> messages)
         {
             List<HourlyStats> stats = [];
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
 
             for (int i = 23; i >= 0; i--)
             {
-                var hour = now.AddHours(-i);
+                DateTime hour = now.AddHours(-i);
                 DateTime hourStart = new(hour.Year, hour.Month, hour.Day, hour.Hour, 0, 0);
-                var hourEnd = hourStart.AddHours(1);
+                DateTime hourEnd = hourStart.AddHours(1);
 
                 List<QueuedMessage> hourMessages = messages.Where(m =>
                     m.ReceivedTime >= hourStart && m.ReceivedTime < hourEnd).ToList();

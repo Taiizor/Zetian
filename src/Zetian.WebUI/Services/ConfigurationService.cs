@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.Configuration;
 using Zetian.WebUI.Controllers;
@@ -30,7 +34,7 @@ namespace Zetian.WebUI.Services
         {
             SmtpServerConfiguration config = _smtpServer.Configuration;
             List<string> changedProperties = [];
-            var requiresRestart = false;
+            bool requiresRestart = false;
 
             try
             {

@@ -1,6 +1,11 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Zetian.Abstractions;
 
 namespace Zetian.WebUI.Services
@@ -50,7 +55,7 @@ namespace Zetian.WebUI.Services
         public Task<PagedResult<LogEntry>> GetPagedLogsAsync(int page, int pageSize, LogFilter? filter = null)
         {
             IEnumerable<LogEntry> query = ApplyFilter(_logs.AsEnumerable(), filter);
-            var totalItems = query.Count();
+            int totalItems = query.Count();
 
             List<LogEntry> items = query
                 .OrderByDescending(l => l.Timestamp)
@@ -111,7 +116,7 @@ namespace Zetian.WebUI.Services
 
         public Task<int> ClearOldLogsAsync(DateTime before)
         {
-            var count = 0;
+            int count = 0;
             List<LogEntry> logsToKeep = [];
 
             while (_logs.TryDequeue(out LogEntry? log))
@@ -175,7 +180,7 @@ namespace Zetian.WebUI.Services
             LogFilter? filter = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var lastId = _logs.Any() ? _logs.Max(l => l.Id) : 0;
+            long lastId = _logs.Any() ? _logs.Max(l => l.Id) : 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {

@@ -1,3 +1,8 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 using Zetian.Abstractions;
 using Zetian.WebUI.Options;
 using Zetian.WebUI.Services;
@@ -184,7 +189,7 @@ namespace Zetian.WebUI.Extensions
                     endpoints.MapGet("/metrics", async context =>
                     {
                         IStatisticsService service = context.RequestServices.GetRequiredService<IStatisticsService>();
-                        var metrics = await service.GetPrometheusMetricsAsync();
+                        string metrics = await service.GetPrometheusMetricsAsync();
                         context.Response.ContentType = "text/plain";
                         await context.Response.WriteAsync(metrics);
                     });

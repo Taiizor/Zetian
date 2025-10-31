@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using Zetian.Abstractions;
 
 namespace Zetian.WebUI.Services
@@ -107,7 +111,7 @@ namespace Zetian.WebUI.Services
 
             // Check message queue
             QueueStatistics queueStats = await _messageQueueService.GetStatisticsAsync();
-            var queueHealthy = queueStats.QueuedMessages < 1000; // Example threshold
+            bool queueHealthy = queueStats.QueuedMessages < 1000; // Example threshold
             components["MessageQueue"] = new ComponentHealth
             {
                 Name = "Message Queue",
@@ -118,7 +122,7 @@ namespace Zetian.WebUI.Services
 
             // Check memory
             Process process = Process.GetCurrentProcess();
-            var memoryHealthy = process.WorkingSet64 < 2L * 1024 * 1024 * 1024; // 2GB threshold
+            bool memoryHealthy = process.WorkingSet64 < 2L * 1024 * 1024 * 1024; // 2GB threshold
             components["Memory"] = new ComponentHealth
             {
                 Name = "Memory",

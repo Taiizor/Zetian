@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Zetian.Server;
 using Zetian.WebUI.Extensions;
-using Zetian.WebUI.Options;
 using Zetian.WebUI.Services;
 
 namespace Zetian.WebUI.Examples

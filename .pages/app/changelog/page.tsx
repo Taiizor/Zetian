@@ -12,7 +12,8 @@ import {
   Code,
   Sparkles,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  Network
 } from 'lucide-react';
 
 export default function ChangelogPage() {
@@ -240,6 +241,40 @@ export default function ChangelogPage() {
               </ul>
             </div>
 
+            {/* Clustering & High Availability */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Network className="h-5 w-5 text-cyan-500" />
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Clustering & High Availability</h3>
+              </div>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Leader election with Raft consensus algorithm</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Automatic failover and session migration</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Load balancing strategies (Round-robin, Least connections, IP Hash)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>State replication across nodes</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Multi-region deployment support</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Maintenance mode with graceful draining</span>
+                </li>
+              </ul>
+            </div>
+
             {/* Extensions */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -283,6 +318,10 @@ export default function ChangelogPage() {
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>Zetian.HealthCheck - Health monitoring endpoints for Kubernetes/Docker</span>
                 </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Zetian.Clustering - High availability, load balancing, and state replication</span>
+                </li>
               </ul>
             </div>
 
@@ -299,7 +338,7 @@ export default function ChangelogPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>16+ ready-to-use examples including Relay and AntiSpam</span>
+                  <span>20+ ready-to-use examples including Relay, AntiSpam, Clustering, and Storage providers</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -341,9 +380,10 @@ export default function ChangelogPage() {
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Version 1.1.0</h4>
                   <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                     <li>• WebSocket support for real-time monitoring</li>
-                    <li>• Enhanced DMARC reporting</li>
-                    <li>• Advanced queue management features</li>
-                    <li>• Performance optimizations for high-volume servers</li>
+                    <li>• Enhanced DMARC/DKIM/SPF reporting and analytics</li>
+                    <li>• Advanced queue management with priority routing</li>
+                    <li>• Machine learning-based spam detection improvements</li>
+                    <li>• AOT compilation support for .NET 8+</li>
                   </ul>
                 </div>
               </div>
@@ -353,10 +393,10 @@ export default function ChangelogPage() {
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Version 1.2.0</h4>
                   <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                    <li>• Clustering support for high availability</li>
-                    <li>• Distributed queue with Redis backend</li>
-                    <li>• GraphQL API for management</li>
-                    <li>• Advanced metrics with Prometheus export</li>
+                    <li>• GraphQL API for management and monitoring</li>
+                    <li>• Enhanced clustering with automatic failover</li>
+                    <li>• Distributed message queue improvements</li>
+                    <li>• OpenTelemetry integration</li>
                   </ul>
                 </div>
               </div>
@@ -368,8 +408,10 @@ export default function ChangelogPage() {
                   <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                     <li>• Full IMAP server implementation</li>
                     <li>• POP3 server support</li>
-                    <li>• Web-based administration panel</li>
-                    <li>• Cloud-native deployment templates</li>
+                    <li>• Web-based administration dashboard</li>
+                    <li>• Cloud-native deployment (Kubernetes, Docker Swarm)</li>
+                    <li>• Enterprise single sign-on (SSO) integration</li>
+                    <li>• Multi-tenant architecture support</li>
                   </ul>
                 </div>
               </div>

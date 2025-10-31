@@ -151,11 +151,11 @@ export default function Home() {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
               <div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">5+</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">10+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">.NET Versions</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">100k+</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">500k+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Downloads</div>
               </div>
               <div>

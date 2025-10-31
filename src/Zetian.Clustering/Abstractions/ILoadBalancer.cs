@@ -30,40 +30,4 @@ namespace Zetian.Clustering.Abstractions
         /// </summary>
         Task ResetStatisticsAsync(CancellationToken cancellationToken = default);
     }
-
-    /// <summary>
-    /// Session information for load balancing decisions
-    /// </summary>
-    public interface ISessionInfo
-    {
-        /// <summary>
-        /// Session ID
-        /// </summary>
-        string SessionId { get; }
-
-        /// <summary>
-        /// Client IP address
-        /// </summary>
-        System.Net.IPAddress ClientIp { get; }
-
-        /// <summary>
-        /// Client port
-        /// </summary>
-        int ClientPort { get; }
-
-        /// <summary>
-        /// Estimated session size
-        /// </summary>
-        long EstimatedSize { get; }
-
-        /// <summary>
-        /// Session priority
-        /// </summary>
-        int Priority { get; }
-
-        /// <summary>
-        /// Session metadata
-        /// </summary>
-        IReadOnlyDictionary<string, string> Metadata { get; }
-    }
 }

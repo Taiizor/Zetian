@@ -107,7 +107,7 @@ if (cluster.IsLeader)
 // Subscribe to leader changes
 cluster.LeaderChanged += (sender, e) =>
 {
-    Console.WriteLine($"New leader: {e.LeaderNodeId}");
+    Console.WriteLine($"New leader: {e.NewLeaderNodeId}");
 };
 ```
 
@@ -126,7 +126,7 @@ cluster.ConfigureAffinity(options =>
 cluster.SetAffinityResolver((session) =>
 {
     // Custom logic to determine target node
-    return session.RemoteEndPoint.GetHashCode() % cluster.NodeCount;
+    return cluster.Nodes.ElementAt(Math.Abs(session.ClientIp.GetHashCode()) % cluster.NodeCount).Id;
 });
 ```
 
@@ -186,7 +186,7 @@ Console.WriteLine($"Cluster Status: {health.Status}");
 // Monitor individual nodes
 foreach (var node in cluster.Nodes)
 {
-    Console.WriteLine($"{node.Id}: {node.Status} - Load: {node.CurrentLoad}");
+    Console.WriteLine($"{node.Id}: {node.State} - Load: {node.CurrentLoad}");
 }
 ```
 
@@ -200,14 +200,14 @@ cluster.SetLoadBalancingStrategy(LoadBalancingStrategy.RoundRobin);
 cluster.SetLoadBalancingStrategy(LoadBalancingStrategy.LeastConnections);
 
 // Weighted round-robin
-cluster.SetLoadBalancingStrategy(LoadBalancingStrategy.WeightedRoundRobin, options =>
+cluster.SetLoadBalancingStrategy(LoadBalancingStrategy.WeightedRoundRobin, new LoadBalancingOptions
 {
-    options.Weights = new Dictionary<string, int>
+    NodeWeights = new Dictionary<string, int>
     {
-        { "node-1", 3 },  // 3x capacity
-        { "node-2", 2 },  // 2x capacity
-        { "node-3", 1 }   // 1x capacity
-    };
+        { "node-1", 3 },
+        { "node-2", 1 },
+        { "node-3", 2 }
+    }
 });
 
 // Custom strategy
@@ -257,11 +257,11 @@ cluster.RebalancingCompleted += (sender, e) =>
 
 ```csharp
 // Put node in maintenance mode
-await cluster.EnterMaintenanceModeAsync(options =>
+await cluster.EnterMaintenanceModeAsync(new MaintenanceOptions
 {
-    options.DrainTimeout = TimeSpan.FromMinutes(5);
-    options.GracefulShutdown = true;
-    options.MigrateSessions = true;
+    DrainTimeout = TimeSpan.FromMinutes(5),
+    GracefulShutdown = true,
+    MigrateSessions = true
 });
 
 // Check maintenance status
@@ -281,17 +281,17 @@ await cluster.ExitMaintenanceModeAsync();
 cluster.ConfigureRegions(options =>
 {
     options.CurrentRegion = "us-east";
-    options.Regions = new[]
+    options.Regions = new()
     {
         new RegionConfig
         {
             Name = "us-east",
-            Endpoints = new[] { "node1.us-east:7946", "node2.us-east:7946" }
+            Endpoints = new() { "node1.us-east:7946", "node2.us-east:7946" }
         },
         new RegionConfig
         {
             Name = "eu-west",
-            Endpoints = new[] { "node1.eu-west:7946", "node2.eu-west:7946" }
+            Endpoints = new() { "node1.eu-west:7946", "node2.eu-west:7946" }
         }
     };
     options.PreferLocalRegion = true;

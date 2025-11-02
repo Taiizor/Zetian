@@ -32,14 +32,14 @@ Choose from our pre-built storage providers:
 ### ⚡ **Cache Storage**
 - **[Zetian.Storage.Redis](https://www.nuget.org/packages/Zetian.Storage.Redis)** - Redis for high-performance caching
 
+### ☁️ **Cloud Storage**
+- **[Zetian.Storage.AmazonS3](https://www.nuget.org/packages/Zetian.Storage.AmazonS3)** - Amazon S3 and S3-compatible services
+- **[Zetian.Storage.AzureBlob](https://www.nuget.org/packages/Zetian.Storage.AzureBlob)** - Azure Blob Storage with tier management
+
 ### 💾 **Database Storage**
 - **[Zetian.Storage.MongoDB](https://www.nuget.org/packages/Zetian.Storage.MongoDB)** - MongoDB NoSQL with GridFS support
 - **[Zetian.Storage.PostgreSQL](https://www.nuget.org/packages/Zetian.Storage.PostgreSQL)** - PostgreSQL with JSONB and partitioning
 - **[Zetian.Storage.SqlServer](https://www.nuget.org/packages/Zetian.Storage.SqlServer)** - Microsoft SQL Server with ACID compliance
-
-### ☁️ **Cloud Storage**
-- **[Zetian.Storage.AmazonS3](https://www.nuget.org/packages/Zetian.Storage.AmazonS3)** - Amazon S3 and S3-compatible services
-- **[Zetian.Storage.AzureBlob](https://www.nuget.org/packages/Zetian.Storage.AzureBlob)** - Azure Blob Storage with tier management
 
 ## 🎯 Quick Start
 

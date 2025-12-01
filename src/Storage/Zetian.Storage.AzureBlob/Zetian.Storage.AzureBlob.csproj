@@ -77,8 +77,8 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Azure.Identity" Version="1.17.0" />
-        <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+        <PackageReference Include="Azure.Identity" Version="1.18.0-beta.2" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0-beta.1" />
     </ItemGroup>
 
     <ItemGroup>

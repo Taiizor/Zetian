@@ -4,7 +4,10 @@
 
 - Docker Engine 20.10+ installed
 - Docker Compose 2.0+ installed
+- Bun lockfile (`bun.lockb`) for dependency management
 - (Optional) SSL certificates for HTTPS
+
+> **Note:** This project uses [Bun](https://bun.sh) as the JavaScript runtime for faster dependency installation and build times.
 
 ## Quick Start
 
@@ -186,8 +189,9 @@ docker run -p 6746:6745 zetian-docs:latest
 # Clean Docker cache
 docker system prune -a
 
-# Remove node_modules and rebuild
-rm -rf node_modules
+# Remove node_modules and bun.lockb, then rebuild
+rm -rf node_modules bun.lockb
+bun install
 docker-compose build --no-cache
 ```
 
@@ -203,19 +207,22 @@ docker system prune -a --volumes
 
 ## Performance Optimization
 
-### 1. Multi-stage Build
-The Dockerfile uses multi-stage build to minimize image size:
-- Stage 1: Install dependencies
-- Stage 2: Build application
-- Stage 3: Production runtime (minimal)
+### 1. Bun Runtime
+The project uses Bun for significantly faster dependency installation and build times compared to npm.
 
-### 2. Layer Caching
+### 2. Multi-stage Build
+The Dockerfile uses multi-stage build to minimize image size:
+- Stage 1: Install dependencies (oven/bun:1-alpine)
+- Stage 2: Build application (oven/bun:1-alpine)
+- Stage 3: Production runtime (node:20-alpine - minimal)
+
+### 3. Layer Caching
 Dependencies are copied separately to leverage Docker layer caching.
 
-### 3. Standalone Mode
+### 4. Standalone Mode
 Next.js standalone output reduces the final image size significantly.
 
-### 4. Health Checks
+### 5. Health Checks
 Built-in health checks ensure container reliability.
 
 ## Security Best Practices

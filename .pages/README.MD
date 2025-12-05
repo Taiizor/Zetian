@@ -20,13 +20,13 @@ This folder contains the modern, SEO-optimized documentation site for Zetian SMT
 
 ```bash
 cd .pages
-npm install
+bun install
 ```
 
 2. **Start development server:**
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 The site will open at http://localhost:3000.
@@ -36,13 +36,13 @@ The site will open at http://localhost:3000.
 ### Production Build
 
 ```bash
-npm run build
+bun run build
 ```
 
 ### Production Server
 
 ```bash
-npm run start
+bun run start
 ```
 
 ## 📁 Project Structure

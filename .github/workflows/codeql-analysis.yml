@@ -39,7 +39,7 @@ jobs:
             Release
         ]
         solution: [
-            Zetian.sln
+            Zetian.slnx
         ]
 
     steps:

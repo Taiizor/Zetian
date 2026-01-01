@@ -1,0 +1,43 @@
+<Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Zetian.Benchmarks/Zetian.Benchmarks.csproj" />
+    <Project Path="benchmarks/Zetian.Compare.Benchmarks/Zetian.Compare.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/Zetian.AntiSpam.Examples/Zetian.AntiSpam.Examples.csproj" />
+    <Project Path="examples/Zetian.AotExamples/Zetian.AotExamples.csproj" />
+    <Project Path="examples/Zetian.Clustering.Examples/Zetian.Clustering.Examples.csproj" />
+    <Project Path="examples/Zetian.Examples/Zetian.Examples.csproj" />
+    <Project Path="examples/Zetian.HealthCheck.Examples/Zetian.HealthCheck.Examples.csproj" />
+    <Project Path="examples/Zetian.Monitoring.Examples/Zetian.Monitoring.Examples.csproj" />
+    <Project Path="examples/Zetian.Relay.Examples/Zetian.Relay.Examples.csproj" />
+    <Project Path="examples/Zetian.TestExamples/Zetian.TestExamples.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="global.json" />
+    <File Path="NuGet.Config" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Zetian.AntiSpam/Zetian.AntiSpam.csproj" />
+    <Project Path="src/Zetian.Clustering/Zetian.Clustering.csproj" />
+    <Project Path="src/Zetian.HealthCheck/Zetian.HealthCheck.csproj" />
+    <Project Path="src/Zetian.Monitoring/Zetian.Monitoring.csproj" />
+    <Project Path="src/Zetian.Relay/Zetian.Relay.csproj" />
+    <Project Path="src/Zetian/Zetian.csproj" />
+  </Folder>
+  <Folder Name="/src/Storage/">
+    <Project Path="src/Storage/Zetian.Storage.AmazonS3/Zetian.Storage.AmazonS3.csproj" />
+    <Project Path="src/Storage/Zetian.Storage.AzureBlob/Zetian.Storage.AzureBlob.csproj" />
+    <Project Path="src/Storage/Zetian.Storage.MongoDB/Zetian.Storage.MongoDB.csproj" />
+    <Project Path="src/Storage/Zetian.Storage.PostgreSQL/Zetian.Storage.PostgreSQL.csproj" />
+    <Project Path="src/Storage/Zetian.Storage.Redis/Zetian.Storage.Redis.csproj" />
+    <Project Path="src/Storage/Zetian.Storage.SqlServer/Zetian.Storage.SqlServer.csproj" />
+    <Project Path="src/Storage/Zetian.Storage/Zetian.Storage.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Zetian.Clustering.Tests/Zetian.Clustering.Tests.csproj" />
+    <Project Path="tests/Zetian.HealthCheck.Tests/Zetian.HealthCheck.Tests.csproj" />
+    <Project Path="tests/Zetian.Tests/Zetian.Tests.csproj" />
+  </Folder>
+</Solution>

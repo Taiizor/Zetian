@@ -11,15 +11,15 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "critters": "^0.0.25",
-    "framer-motion": "^12.23.26",
+    "framer-motion": "^12.29.2",
     "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
-    "lucide-react": "^0.562.0",
-    "next": "16.1.0",
+    "lucide-react": "^0.563.0",
+    "next": "16.1.6",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "prismjs": "^1.30.0",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1"
@@ -30,7 +30,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/prismjs": "^1.26.5",
-    "autoprefixer": "^10.4.23",
+    "autoprefixer": "^10.4.24",
     "tailwindcss": "^4.1.18",
     "typescript": "^5"
   }

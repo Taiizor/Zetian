@@ -22,13 +22,13 @@ namespace Zetian.Tests
             _testPort = TestHelper.GetAvailablePort();
         }
 
-        public async Task InitializeAsync()
+        async ValueTask IAsyncLifetime.InitializeAsync()
         {
             // Each test will create its own server to avoid interference
             await Task.CompletedTask;
         }
 
-        public async Task DisposeAsync()
+        async ValueTask IAsyncDisposable.DisposeAsync()
         {
             if (_server != null)
             {

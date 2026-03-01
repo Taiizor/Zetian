@@ -71,14 +71,14 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub">
-            <Version>10.2.0-beta.25575.105</Version>
+            <Version>11.0.100-preview.1.26104.118</Version>
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
     </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.18.0" />
-        <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.28.0-beta.1" />
     </ItemGroup>
 
     <ItemGroup>

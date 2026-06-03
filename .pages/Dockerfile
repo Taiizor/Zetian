@@ -3,8 +3,8 @@ FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lockb* ./
+# Copy package files (bun.lock = text lockfile in Bun 1.1+, bun.lockb = legacy binary)
+COPY package.json bun.lock* bun.lockb* ./
 RUN bun install --frozen-lockfile
 
 # Stage 2: Builder

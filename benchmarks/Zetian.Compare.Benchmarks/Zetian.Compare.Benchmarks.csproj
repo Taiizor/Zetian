@@ -6,7 +6,7 @@
         <LangVersion>preview</LangVersion>
         <AnalysisLevel>preview</AnalysisLevel>
         <ImplicitUsings>enable</ImplicitUsings>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <RootNamespace>Zetian.Compare.Benchmarks</RootNamespace>
     </PropertyGroup>
 
@@ -15,8 +15,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MailKit" Version="4.15.0" />
-        <PackageReference Include="MimeKit" Version="4.15.0" />
+        <PackageReference Include="MailKit" Version="4.17.0" />
+        <PackageReference Include="MimeKit" Version="4.17.0" />
         <PackageReference Include="SmtpServer" Version="11.1.0" />
         <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
     </ItemGroup>

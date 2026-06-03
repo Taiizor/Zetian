@@ -7,7 +7,7 @@
         <IsTestProject>true</IsTestProject>
         <AnalysisLevel>preview</AnalysisLevel>
         <ImplicitUsings>enable</ImplicitUsings>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <RootNamespace>Zetian.Clustering.Tests</RootNamespace>
     </PropertyGroup>
 
@@ -17,14 +17,14 @@
 
     <ItemGroup>
         <PackageReference Include="Moq" Version="4.20.72" />
-        <PackageReference Include="xunit.v3" Version="3.2.2" />
-        <PackageReference Include="coverlet.collector" Version="8.0.0">
+        <PackageReference Include="xunit.v3" Version="4.0.0-pre.128" />
+        <PackageReference Include="coverlet.collector" Version="10.0.1">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="FluentAssertions" Version="8.8.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+        <PackageReference Include="FluentAssertions" Version="8.10.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0-pre.4">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>

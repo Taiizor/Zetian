@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
         <RootNamespace>Zetian.Storage.PostgreSQL</RootNamespace>
         <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
         <ImplicitUsings>disable</ImplicitUsings>
@@ -56,14 +56,14 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub">
-            <Version>11.0.100-preview.1.26104.118</Version>
+            <Version>11.0.100-preview.4.26230.115</Version>
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Condition="'$(TargetFramework)' == 'net6.0' OR '$(TargetFramework)' == 'net7.0'" Include="Npgsql" Version="9.0.4" />
-        <PackageReference Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0'" Include="Npgsql" Version="10.0.1" />
+        <PackageReference Condition="'$(TargetFramework)' == 'net6.0' OR '$(TargetFramework)' == 'net7.0'" Include="Npgsql" Version="9.0.5" />
+        <PackageReference Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0' OR '$(TargetFramework)' == 'net10.0' OR '$(TargetFramework)' == 'net11.0'" Include="Npgsql" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>

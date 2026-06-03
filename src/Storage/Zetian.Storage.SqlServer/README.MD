@@ -392,9 +392,9 @@ SELECT * FROM sys.dm_exec_requests WHERE blocking_session_id > 0;
 
 ## 📋 Requirements
 
-- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
 - Azure SQL Database (all tiers)
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Microsoft.Data.SqlClient package (included)
 - SQL Server 2016 or later (2019+ recommended)
 

@@ -383,8 +383,8 @@ CONFIG SET maxmemory-policy allkeys-lru
 
 ## 📋 Requirements
 
-- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Redis 6.0 or later (for ACL support)
 - Redis 3.2 or later (without Streams)
 - Redis 5.0 or later (for Streams support)

@@ -408,8 +408,8 @@ cluster.EnableDebugLogging(options =>
 ## 📋 Requirements
 
 - Windows, Linux, or macOS
-- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Sufficient bandwidth for state replication
 - Network connectivity between cluster nodes
 

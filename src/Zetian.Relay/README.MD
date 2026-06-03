@@ -486,8 +486,8 @@ foreach (var kvp in stats.MessagesBySmartHost)
 ## 📋 Requirements
 
 - Windows, Linux, or macOS
-- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 
 ## 📚 Documentation & Support
 

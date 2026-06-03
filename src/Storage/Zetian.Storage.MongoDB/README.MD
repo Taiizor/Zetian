@@ -429,9 +429,9 @@ db.messages.find().limit(1000).hint({ receivedDate: -1 })
 
 ## 📋 Requirements
 
-- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
 - For Atlas: MongoDB Atlas cluster
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - MongoDB.Driver package (included)
 - For sharding: MongoDB sharded cluster
 - MongoDB 4.0 or later (4.4+ recommended)

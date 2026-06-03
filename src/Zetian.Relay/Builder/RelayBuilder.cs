@@ -41,8 +41,8 @@ namespace Zetian.Relay.Builder
                 Credentials = !string.IsNullOrEmpty(username)
                     ? new NetworkCredential(username, password)
                     : null,
-                UseTls = port is 465 or 587,
-                UseStartTls = port == 587
+                UseTls = port == 465,
+                UseStartTls = port != 465
             };
             return this;
         }
@@ -194,8 +194,8 @@ namespace Zetian.Relay.Builder
                 Credentials = !string.IsNullOrEmpty(username)
                     ? new NetworkCredential(username, password)
                     : null,
-                UseTls = port is 465 or 587,
-                UseStartTls = port == 587
+                UseTls = port == 465,
+                UseStartTls = port != 465
             };
             return this;
         }

@@ -236,8 +236,9 @@ var deferredMessages = await relayService.Queue.GetByStatusAsync(RelayStatus.Def
 // Remove a message
 await relayService.Queue.RemoveAsync(queueId);
 
-// Clear expired messages
-var cleared = await relayService.Queue.ClearExpiredAsync();
+// Clear expired messages (returns the messages that newly expired)
+var expired = await relayService.Queue.ClearExpiredAsync();
+Console.WriteLine($"Cleared {expired.Count} expired messages");
 ```
 
 ### Message Priority

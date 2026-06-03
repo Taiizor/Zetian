@@ -306,7 +306,7 @@ namespace Zetian.Relay.Queue
             return Task.FromResult<IReadOnlyList<IRelayMessage>>(messages);
         }
 
-        public async Task<int> ClearExpiredAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<IRelayMessage>> ClearExpiredAsync(CancellationToken cancellationToken = default)
         {
             await _queueLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -315,15 +315,26 @@ namespace Zetian.Relay.Queue
                     .Where(m => m.IsExpired)
                     .ToList();
 
+                List<IRelayMessage> newlyExpired = [];
+
                 foreach (RelayMessage message in expired)
                 {
+                    // Messages already in the Expired state were reported via the delivery
+                    // path; remove them but do not surface them again to avoid double-firing.
+                    bool alreadyExpired = message.Status == RelayStatus.Expired;
+
                     if (_messages.TryRemove(message.QueueId, out _))
                     {
                         if (message.Status == RelayStatus.InProgress)
                         {
                             Interlocked.Decrement(ref _activeDeliveries);
                         }
-                        message.MarkExpired();
+
+                        if (!alreadyExpired)
+                        {
+                            message.MarkExpired();
+                            newlyExpired.Add(message);
+                        }
                     }
                 }
 
@@ -332,7 +343,7 @@ namespace Zetian.Relay.Queue
                     _logger.LogInformation("Cleared {Count} expired messages from queue", expired.Count);
                 }
 
-                return expired.Count;
+                return newlyExpired;
             }
             finally
             {

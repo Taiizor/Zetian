@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
@@ -273,6 +274,47 @@ namespace Zetian.Relay.Tests
             Assert.Equal("Message expired", raised.Error);
             // The client must never be contacted for an already-expired message.
             client.Verify(c => c.SendAsync(It.IsAny<ISmtpMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task MessageExpired_IsRaised_FromCleanupSweep_PerReturnedMessage()
+        {
+            Mock<IRelayMessage> first = new();
+            first.SetupGet(m => m.QueueId).Returns("queue-1");
+            Mock<IRelayMessage> second = new();
+            second.SetupGet(m => m.QueueId).Returns("queue-2");
+
+            Mock<IRelayQueue> queue = new();
+            queue.Setup(q => q.ClearExpiredAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<IRelayMessage> { first.Object, second.Object });
+
+            RelayService service = new(CreateConfiguration(), queue.Object, logger: null);
+
+            List<RelayDeliveryEventArgs> raised = new();
+            service.MessageExpired += (_, e) => raised.Add(e);
+
+            await service.SweepExpiredMessagesAsync(CancellationToken.None);
+
+            Assert.Equal(2, raised.Count);
+            Assert.Equal(new[] { "queue-1", "queue-2" }, raised.Select(r => r.QueueId).ToArray());
+            Assert.All(raised, r => Assert.Equal("Message expired", r.Error));
+        }
+
+        [Fact]
+        public async Task MessageExpired_NotRaised_WhenSweepFindsNothing()
+        {
+            Mock<IRelayQueue> queue = new();
+            queue.Setup(q => q.ClearExpiredAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<IRelayMessage>());
+
+            RelayService service = new(CreateConfiguration(), queue.Object, logger: null);
+
+            bool raised = false;
+            service.MessageExpired += (_, _) => raised = true;
+
+            await service.SweepExpiredMessagesAsync(CancellationToken.None);
+
+            Assert.False(raised);
         }
 
         [Fact]

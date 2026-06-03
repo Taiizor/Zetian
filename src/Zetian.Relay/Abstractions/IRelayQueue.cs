@@ -94,9 +94,12 @@ namespace Zetian.Relay.Abstractions
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Clears expired messages from the queue
+        /// Removes expired messages from the queue and returns the messages that newly
+        /// transitioned to the expired state during this call. Messages that were already
+        /// marked as expired (e.g. reported via the delivery path) are removed but not
+        /// returned, so callers can raise an expiry notification exactly once per message.
         /// </summary>
-        Task<int> ClearExpiredAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<IRelayMessage>> ClearExpiredAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets queue statistics

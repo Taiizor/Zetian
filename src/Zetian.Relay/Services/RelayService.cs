@@ -384,13 +384,7 @@ namespace Zetian.Relay.Services
                     await Task.Delay(Configuration.CleanupInterval, cancellationToken)
                         .ConfigureAwait(false);
 
-                    int count = await Queue.ClearExpiredAsync(cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (count > 0)
-                    {
-                        _logger.LogInformation("Cleaned up {Count} expired messages", count);
-                    }
+                    await SweepExpiredMessagesAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -403,6 +397,29 @@ namespace Zetian.Relay.Services
             }
 
             _logger.LogInformation("Cleanup task stopped");
+        }
+
+        /// <summary>
+        /// Performs a single sweep of the queue for expired messages, raising
+        /// <see cref="MessageExpired"/> for each message that expired while waiting in the
+        /// queue (i.e. without being picked up by the delivery path, which reports expiry itself).
+        /// </summary>
+        internal async Task SweepExpiredMessagesAsync(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<IRelayMessage> expiredMessages = await Queue.ClearExpiredAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (expiredMessages.Count == 0)
+            {
+                return;
+            }
+
+            _logger.LogInformation("Cleaned up {Count} expired messages", expiredMessages.Count);
+
+            foreach (IRelayMessage expiredMessage in expiredMessages)
+            {
+                OnMessageExpired(new RelayDeliveryEventArgs(expiredMessage) { Error = "Message expired" });
+            }
         }
 
         private async Task<bool> CanRelayAsync(ISmtpSession session, ISmtpMessage message)

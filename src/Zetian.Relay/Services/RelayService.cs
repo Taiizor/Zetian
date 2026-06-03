@@ -417,21 +417,43 @@ namespace Zetian.Relay.Services
                 string host = parts[0];
                 int port = parts.Length > 1 && int.TryParse(parts[1], out int p) ? p : 25;
 
-                // Find matching configuration
+                // Prefer an explicitly configured smart host so its TLS, credential and timeout
+                // settings are honored instead of being overwritten by global defaults.
+                if (Configuration.DefaultSmartHost != null &&
+                    string.Equals(Configuration.DefaultSmartHost.Host, host, StringComparison.OrdinalIgnoreCase) &&
+                    Configuration.DefaultSmartHost.Port == port)
+                {
+                    return Configuration.DefaultSmartHost;
+                }
+
+                // Find matching failover smart host
                 SmartHostConfiguration? config = Configuration.SmartHosts
-                    .FirstOrDefault(sh => sh.Host == host && sh.Port == port && sh.Enabled);
+                    .FirstOrDefault(sh => string.Equals(sh.Host, host, StringComparison.OrdinalIgnoreCase) &&
+                                          sh.Port == port && sh.Enabled);
 
                 if (config != null)
                 {
                     return config;
                 }
 
-                // Create default configuration
+                // Find matching domain-routing smart host
+                config = Configuration.DomainRouting.Values
+                    .FirstOrDefault(sh => string.Equals(sh.Host, host, StringComparison.OrdinalIgnoreCase) &&
+                                          sh.Port == port);
+
+                if (config != null)
+                {
+                    return config;
+                }
+
+                // No explicit configuration (e.g. an MX-routed host): build a sensible default.
+                // Use implicit TLS only for the SMTPS port (465); otherwise rely on opportunistic
+                // STARTTLS so delivery falls back to plain text when the server offers no TLS.
                 return new SmartHostConfiguration
                 {
                     Host = host,
                     Port = port,
-                    UseTls = Configuration.EnableTls,
+                    UseTls = port == 465,
                     UseStartTls = Configuration.EnableTls,
                     ConnectionTimeout = Configuration.ConnectionTimeout
                 };
@@ -450,7 +472,11 @@ namespace Zetian.Relay.Services
                 {
                     Host = config.Host,
                     Port = config.Port,
-                    EnableSsl = config.UseTls,
+                    EnableSsl = config.UseTls,                                   // implicit TLS (SMTPS)
+                    UseStartTls = config.UseStartTls,                            // opportunistic STARTTLS
+                    RequireTls = Configuration.RequireTls,                       // TLS requirement policy
+                    SslProtocols = Configuration.SslProtocols,
+                    ValidateServerCertificate = Configuration.ValidateServerCertificate,
                     Credentials = config.Credentials,
                     LocalDomain = Configuration.LocalDomain,
                     Timeout = config.ConnectionTimeout
@@ -523,15 +549,10 @@ namespace Zetian.Relay.Services
                 {
                     ISmtpClient client = GetOrCreateClient(Configuration.DefaultSmartHost);
 
-                    // Connect if not connected
+                    // Connect if not connected. The client is already configured with the smart
+                    // host's TLS, credential and timeout settings by GetOrCreateClient.
                     if (!client.IsConnected)
                     {
-                        // Set connection parameters
-                        client.Host = Configuration.DefaultSmartHost.Host;
-                        client.Port = Configuration.DefaultSmartHost.Port;
-                        client.EnableSsl = Configuration.DefaultSmartHost.UseTls || Configuration.DefaultSmartHost.UseStartTls;
-                        client.Credentials = Configuration.DefaultSmartHost.Credentials;
-
                         await client.ConnectAsync().ConfigureAwait(false);
 
                         // Authenticate if credentials provided

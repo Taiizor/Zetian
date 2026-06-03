@@ -81,8 +81,8 @@ namespace Zetian.Relay.Extensions
                 Host = host,
                 Port = port,
                 Credentials = credentials,
-                UseTls = port is 465 or 587,
-                UseStartTls = port == 587
+                UseTls = port == 465,
+                UseStartTls = port != 465
             };
 
             // This is a simplified approach - in production you'd modify the configuration

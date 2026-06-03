@@ -34,7 +34,33 @@ namespace Zetian.Relay.Client
 
         public string Host { get; set; } = "localhost";
         public int Port { get; set; } = 25;
+
+        /// <summary>
+        /// Gets or sets whether to use implicit TLS (SMTPS) by negotiating TLS immediately on connect.
+        /// Typically used for port 465. For STARTTLS use <see cref="UseStartTls"/> instead.
+        /// </summary>
         public bool EnableSsl { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to attempt opportunistic STARTTLS after EHLO when the server advertises it.
+        /// Ignored when <see cref="EnableSsl"/> (implicit TLS) is enabled.
+        /// </summary>
+        public bool UseStartTls { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets whether TLS is mandatory. When true, the connection fails unless TLS is
+        /// established (via implicit TLS or STARTTLS). When false, TLS is opportunistic and the
+        /// client falls back to plain text if the server does not offer it.
+        /// </summary>
+        public bool RequireTls { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to validate the server certificate when TLS is required.
+        /// For opportunistic TLS (when <see cref="RequireTls"/> is false) certificate errors are
+        /// ignored, because encryption without authentication is still preferable to plain text.
+        /// </summary>
+        public bool ValidateServerCertificate { get; set; } = true;
+
         public SslProtocols SslProtocols { get; set; } = SslProtocols.Tls12 | SslProtocols.Tls13;
         public X509Certificate2? ClientCertificate { get; set; }
         public NetworkCredential? Credentials { get; set; }
@@ -62,10 +88,11 @@ namespace Zetian.Relay.Client
                 using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(Timeout);
 
-                await _tcpClient.ConnectAsync(Host, Port).ConfigureAwait(false);
+                await _tcpClient.ConnectAsync(Host, Port, cts.Token).ConfigureAwait(false);
 
                 _stream = _tcpClient.GetStream();
 
+                // Implicit TLS (SMTPS, e.g. port 465): negotiate TLS before the greeting.
                 if (EnableSsl)
                 {
                     await UpgradeToSslAsync(cts.Token).ConfigureAwait(false);
@@ -83,6 +110,28 @@ namespace Zetian.Relay.Client
 
                 // Send EHLO
                 await SendEhloAsync(cts.Token).ConfigureAwait(false);
+
+                // Opportunistic / required STARTTLS upgrade (only when not already using implicit TLS).
+                if (!EnableSsl && (UseStartTls || RequireTls))
+                {
+                    bool serverSupportsStartTls = _serverCapabilities?.ContainsKey("STARTTLS") == true;
+
+                    if (serverSupportsStartTls)
+                    {
+                        await StartTlsAsync(cts.Token).ConfigureAwait(false);
+                    }
+                    else if (RequireTls)
+                    {
+                        throw new InvalidOperationException(
+                            $"TLS is required but server {Host}:{Port} does not advertise STARTTLS");
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Server {Host}:{Port} does not support STARTTLS; continuing without encryption",
+                            Host, Port);
+                    }
+                }
 
                 _logger.LogInformation("Connected to {Host}:{Port}", Host, Port);
             }
@@ -386,16 +435,58 @@ namespace Zetian.Relay.Client
 
         private async Task UpgradeToSslAsync(CancellationToken cancellationToken)
         {
-            SslStream sslStream = new(_stream, false, ValidateServerCertificate);
+            SslStream sslStream = new(_stream!, false, OnCertificateValidation);
 
-            await sslStream.AuthenticateAsClientAsync(
-                Host,
-                ClientCertificate != null ? [ClientCertificate] : null,
-                SslProtocols,
-                true).ConfigureAwait(false);
+            SslClientAuthenticationOptions options = new()
+            {
+                TargetHost = Host,
+                EnabledSslProtocols = SslProtocols,
+                CertificateRevocationCheckMode = X509RevocationMode.Online
+            };
+
+            if (ClientCertificate != null)
+            {
+                options.ClientCertificates = new X509CertificateCollection { ClientCertificate };
+            }
+
+            // Pass the cancellation token so a stalled handshake honors the connection timeout.
+            await sslStream.AuthenticateAsClientAsync(options, cancellationToken).ConfigureAwait(false);
 
             _stream = sslStream;
-            _logger.LogDebug("SSL/TLS connection established");
+            _logger.LogDebug("SSL/TLS connection established with {Host}:{Port}", Host, Port);
+        }
+
+        private async Task StartTlsAsync(CancellationToken cancellationToken)
+        {
+            await SendCommandAsync("STARTTLS", cancellationToken).ConfigureAwait(false);
+            SmtpResponse response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
+
+            // RFC 3207: a 220 reply means the server is ready to negotiate TLS.
+            if (response.Code != 220)
+            {
+                if (RequireTls)
+                {
+                    throw new InvalidOperationException(
+                        $"STARTTLS command rejected by {Host}:{Port}: {response.Code} {response.Message}");
+                }
+
+                _logger.LogWarning(
+                    "STARTTLS rejected by {Host}:{Port} ({Code} {Message}); continuing without encryption",
+                    Host, Port, response.Code, response.Message);
+                return;
+            }
+
+            await UpgradeToSslAsync(cancellationToken).ConfigureAwait(false);
+
+            // The reader/writer must be rebuilt on top of the now-encrypted stream. The old ones
+            // are intentionally not disposed (that would close the underlying socket). Per RFC 3207
+            // the server must not transmit anything after its "220" until the TLS handshake, so the
+            // discarded plain-text reader cannot have buffered any post-handshake bytes.
+            _reader = new StreamReader(_stream!, Encoding.ASCII);
+            _writer = new StreamWriter(_stream!, Encoding.ASCII) { AutoFlush = true };
+
+            // RFC 3207: the client must re-issue EHLO over the secured channel.
+            await SendEhloAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private async Task AuthPlainAsync(CancellationToken cancellationToken)
@@ -548,7 +639,7 @@ namespace Zetian.Relay.Client
             return new SmtpResponse(code, [.. lines]);
         }
 
-        private bool ValidateServerCertificate(
+        private bool OnCertificateValidation(
             object sender,
             X509Certificate? certificate,
             X509Chain? chain,
@@ -559,9 +650,31 @@ namespace Zetian.Relay.Client
                 return true;
             }
 
-            _logger.LogWarning("SSL certificate validation error: {Errors}", sslPolicyErrors);
+            // Opportunistic STARTTLS only: when we upgraded an otherwise plain-text connection
+            // and TLS is not required, encryption without authentication is still better than
+            // falling back to plain text, so accept the certificate but warn. This must NOT apply
+            // to implicit TLS (EnableSsl), where there is no plain-text fallback and silently
+            // accepting any certificate would mask a man-in-the-middle.
+            if (!EnableSsl && !RequireTls)
+            {
+                _logger.LogWarning(
+                    "Ignoring SSL certificate error ({Errors}) for opportunistic TLS to {Host}:{Port}",
+                    sslPolicyErrors, Host, Port);
+                return true;
+            }
 
-            // You might want to make this configurable
+            // Implicit TLS or required TLS: honor the configured certificate validation policy.
+            if (!ValidateServerCertificate)
+            {
+                _logger.LogWarning(
+                    "SSL certificate error ({Errors}) ignored by configuration for {Host}:{Port}",
+                    sslPolicyErrors, Host, Port);
+                return true;
+            }
+
+            _logger.LogWarning(
+                "SSL certificate validation failed ({Errors}) for {Host}:{Port}",
+                sslPolicyErrors, Host, Port);
             return false;
         }
 

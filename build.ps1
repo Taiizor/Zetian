@@ -36,7 +36,7 @@ dotnet build --configuration $Configuration --no-restore
 # Test
 if ($Test) {
     Write-Host "Running tests..." -ForegroundColor Yellow
-    dotnet test --configuration $Configuration --no-build --verbosity normal
+    dotnet test --solution Zetian.slnx --configuration $Configuration --no-build --verbosity normal --max-parallel-test-modules 1 -- -parallel none
 }
 
 # Pack

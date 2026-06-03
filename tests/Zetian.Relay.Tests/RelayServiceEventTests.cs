@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mail;
-using System.Threading;
-using System.Threading.Tasks;
 using Moq;
+using Moq.Language.Flow;
+using System.Net.Mail;
 using Xunit;
 using Zetian.Abstractions;
 using Zetian.Relay.Abstractions;
@@ -33,7 +29,7 @@ namespace Zetian.Relay.Tests
             Mock<ISmtpMessage> message = new();
             message.SetupGet(m => m.Id).Returns(Guid.NewGuid().ToString("N"));
             message.SetupGet(m => m.From).Returns(new MailAddress(from));
-            message.SetupGet(m => m.Recipients).Returns(new List<MailAddress> { new(to) });
+            message.SetupGet(m => m.Recipients).Returns([new(to)]);
             message.SetupGet(m => m.Subject).Returns("Test message");
             message.SetupGet(m => m.Headers).Returns(new Dictionary<string, string>());
             return message;
@@ -67,7 +63,7 @@ namespace Zetian.Relay.Tests
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(SmtpDeliveryResult.CreateSuccess(Array.Empty<string>()));
 
-            var send = client.Setup(c => c.SendAsync(It.IsAny<ISmtpMessage>(), It.IsAny<CancellationToken>()));
+            ISetup<ISmtpClient, Task<SmtpDeliveryResult>> send = client.Setup(c => c.SendAsync(It.IsAny<ISmtpMessage>(), It.IsAny<CancellationToken>()));
             if (sendThrows != null)
             {
                 send.ThrowsAsync(sendThrows);
@@ -286,11 +282,11 @@ namespace Zetian.Relay.Tests
 
             Mock<IRelayQueue> queue = new();
             queue.Setup(q => q.ClearExpiredAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<IRelayMessage> { first.Object, second.Object });
+                .ReturnsAsync([first.Object, second.Object]);
 
             RelayService service = new(CreateConfiguration(), queue.Object, logger: null);
 
-            List<RelayDeliveryEventArgs> raised = new();
+            List<RelayDeliveryEventArgs> raised = [];
             service.MessageExpired += (_, e) => raised.Add(e);
 
             await service.SweepExpiredMessagesAsync(CancellationToken.None);

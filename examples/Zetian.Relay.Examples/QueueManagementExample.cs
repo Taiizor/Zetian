@@ -401,7 +401,7 @@ namespace Zetian.Relay.Examples
 
         private static async Task ClearExpiredMessages(Zetian.Relay.Abstractions.IRelayQueue queue)
         {
-            var expired = await queue.ClearExpiredAsync();
+            IReadOnlyList<IRelayMessage> expired = await queue.ClearExpiredAsync();
             Console.WriteLine($"[INFO] Cleared {expired.Count} expired messages");
         }
 

@@ -424,7 +424,7 @@ namespace Zetian.Relay.Client
             else
             {
                 // Parse capabilities from EHLO response
-                _serverCapabilities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                _serverCapabilities = [with(StringComparer.OrdinalIgnoreCase)];
                 foreach (string? line in response.Lines.Skip(1))
                 {
                     string[] parts = line.Split(' ', 2);
@@ -446,7 +446,7 @@ namespace Zetian.Relay.Client
 
             if (ClientCertificate != null)
             {
-                options.ClientCertificates = new X509CertificateCollection { ClientCertificate };
+                options.ClientCertificates = [ClientCertificate];
             }
 
             // Pass the cancellation token so a stalled handshake honors the connection timeout.

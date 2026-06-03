@@ -251,7 +251,7 @@ namespace Zetian.Internal
 
         private void ParseHeaders()
         {
-            _headers = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            _headers = [with(StringComparer.OrdinalIgnoreCase)];
             using MemoryStream stream = new(_rawData);
             using StreamReader reader = new(stream, Encoding.ASCII);
 
@@ -308,7 +308,7 @@ namespace Zetian.Internal
 
         private void AddHeader(string name, string value)
         {
-            _headers ??= new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            _headers ??= [with(StringComparer.OrdinalIgnoreCase)];
             if (!_headers.TryGetValue(name, out List<string>? values))
             {
                 values = [];
@@ -375,7 +375,7 @@ namespace Zetian.Internal
                 }
 
                 using StringReader partReader = new(part);
-                Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
+                Dictionary<string, string> headers = [with(StringComparer.OrdinalIgnoreCase)];
                 string? line;
 
                 // Read part headers

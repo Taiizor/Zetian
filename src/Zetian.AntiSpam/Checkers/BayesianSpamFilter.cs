@@ -228,7 +228,7 @@ namespace Zetian.AntiSpam.Checkers
 
         private HashSet<string> Tokenize(string content)
         {
-            HashSet<string> tokens = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> tokens = [with(StringComparer.OrdinalIgnoreCase)];
 
             // Split by word boundaries
             MatchCollection matches = Regex.Matches(content, @"\b[\w']+\b");

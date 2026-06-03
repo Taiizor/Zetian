@@ -93,12 +93,12 @@ namespace Zetian.Relay.Configuration
         /// <summary>
         /// Gets or sets domains that should be delivered locally (not relayed)
         /// </summary>
-        public HashSet<string> LocalDomains { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<string> LocalDomains { get; set; } = [with(StringComparer.OrdinalIgnoreCase)];
 
         /// <summary>
         /// Gets or sets domains that should always be relayed
         /// </summary>
-        public HashSet<string> RelayDomains { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<string> RelayDomains { get; set; } = [with(StringComparer.OrdinalIgnoreCase)];
 
         /// <summary>
         /// Gets or sets IP addresses allowed to relay without authentication
@@ -115,7 +115,7 @@ namespace Zetian.Relay.Configuration
         /// <summary>
         /// Gets or sets routing rules for specific domains
         /// </summary>
-        public Dictionary<string, SmartHostConfiguration> DomainRouting { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, SmartHostConfiguration> DomainRouting { get; set; } = [with(StringComparer.OrdinalIgnoreCase)];
 
         /// <summary>
         /// Gets or sets whether to enable bounce messages

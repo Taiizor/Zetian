@@ -10,7 +10,7 @@ namespace Zetian.Authentication
     /// </summary>
     public static class AuthenticatorFactory
     {
-        private static readonly Dictionary<string, Func<IAuthenticator>> _authenticators = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, Func<IAuthenticator>> _authenticators = [with(StringComparer.OrdinalIgnoreCase)];
         private static AuthenticationHandler? _defaultHandler;
 
         static AuthenticatorFactory()

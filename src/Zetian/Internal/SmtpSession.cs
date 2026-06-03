@@ -505,7 +505,7 @@ namespace Zetian.Internal
             else if (_singleRecipient != null && _multipleRecipients == null)
             {
                 // Convert to multiple recipients
-                _multipleRecipients = new List<string>(4) { _singleRecipient, rcptTo };
+                _multipleRecipients = [with(4), _singleRecipient, rcptTo];
                 _singleRecipient = null;
             }
             else
@@ -639,7 +639,7 @@ namespace Zetian.Internal
                 dataTimeoutCts.CancelAfter(_configuration.DataTimeout);
 
                 bool previousWasCr = false;
-                List<byte> currentLine = new(64); // Smaller initial capacity
+                List<byte> currentLine = [with(64)]; // Smaller initial capacity
 
                 while (!dataTimeoutCts.Token.IsCancellationRequested)
                 {

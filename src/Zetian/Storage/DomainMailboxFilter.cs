@@ -15,10 +15,10 @@ namespace Zetian.Storage
     /// <param name="allowByDefault">Whether to allow domains by default if not in any list</param>
     public class DomainMailboxFilter(bool allowByDefault = true) : IMailboxFilter
     {
-        private readonly HashSet<string> _allowedFromDomains = new(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> _blockedFromDomains = new(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> _allowedToDomains = new(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> _blockedToDomains = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _allowedFromDomains = [with(StringComparer.OrdinalIgnoreCase)];
+        private readonly HashSet<string> _blockedFromDomains = [with(StringComparer.OrdinalIgnoreCase)];
+        private readonly HashSet<string> _allowedToDomains = [with(StringComparer.OrdinalIgnoreCase)];
+        private readonly HashSet<string> _blockedToDomains = [with(StringComparer.OrdinalIgnoreCase)];
 
         /// <summary>
         /// Add allowed sender domains

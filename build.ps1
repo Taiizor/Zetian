@@ -3,8 +3,11 @@
 param(
     [string]$Configuration = "Release",
     [switch]$Pack,
+    [switch]$Push,
     [switch]$Test,
-    [switch]$Clean
+    [switch]$Clean,
+    [string]$ApiKey = "",
+    [string]$Source = "https://api.nuget.org/v3/index.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -65,6 +68,37 @@ if ($Pack) {
     Get-ChildItem -Path "artifacts" -Filter "*.nupkg" | Sort-Object Name | ForEach-Object {
         Write-Host "  - $($_.Name)" -ForegroundColor Gray
     }
+}
+
+# Push
+if ($Push) {
+    Write-Host "Pushing NuGet packages to $Source..." -ForegroundColor Yellow
+
+    # Fall back to the NUGET_API_KEY environment variable when no key is passed
+    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
+        $ApiKey = $env:NUGET_API_KEY
+    }
+
+    if ([string]::IsNullOrWhiteSpace($ApiKey)) {
+        throw "No NuGet API key provided. Pass -ApiKey <key> or set the NUGET_API_KEY environment variable."
+    }
+
+    $packages = Get-ChildItem -Path "artifacts" -Filter "*.nupkg" | Sort-Object Name
+    if (-not $packages) {
+        throw "No .nupkg files found in artifacts. Run with -Pack first."
+    }
+
+    foreach ($package in $packages) {
+        Write-Host "  Pushing $($package.Name)..." -ForegroundColor Yellow
+        # Symbol packages (.snupkg) in the same folder are pushed automatically alongside each .nupkg.
+        # --skip-duplicate keeps the run going when a version already exists on the feed.
+        dotnet nuget push $package.FullName `
+            --api-key $ApiKey `
+            --source $Source `
+            --skip-duplicate
+    }
+
+    Write-Host "All packages pushed to $Source" -ForegroundColor Green
 }
 
 Write-Host ""

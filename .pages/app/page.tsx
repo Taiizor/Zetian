@@ -6,7 +6,6 @@ import {
   Zap, 
   Shield, 
   Code2, 
-  Github, 
   Globe, 
   ArrowRight,
   CheckCircle,
@@ -15,6 +14,7 @@ import {
   Layers,
   Calendar
 } from 'lucide-react';
+import { Github } from '@/components/GitHubIcon';
 import CodeBlock from '@/components/CodeBlock';
 
 const features = [

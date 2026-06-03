@@ -12,9 +12,9 @@ import {
   AlertCircle,
   CheckCircle,
   Layers,
-  Github,
   Zap
 } from 'lucide-react';
+import { Github } from '@/components/GitHubIcon';
 import CodeBlock from '@/components/CodeBlock';
 
 const customFilterExample = `using System.Net;

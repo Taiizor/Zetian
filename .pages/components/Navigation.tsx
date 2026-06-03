@@ -8,12 +8,12 @@ import {
   BookOpen, 
   Code2, 
   Package, 
-  Github, 
   Menu, 
   X, 
   Sun, 
   Moon
 } from 'lucide-react';
+import { Github } from '@/components/GitHubIcon';
 import { useTheme } from 'next-themes';
 import { Search } from './Search';
 import Image from 'next/image';

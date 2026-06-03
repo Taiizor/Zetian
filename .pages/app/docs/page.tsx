@@ -8,7 +8,6 @@ import {
   Code2, 
   Package,
   FileText,
-  Github,
   Zap,
   ChevronRight,
   Heart,
@@ -18,6 +17,7 @@ import {
   Activity,
   Network
 } from 'lucide-react';
+import { Github } from '@/components/GitHubIcon';
 
 export const metadata: Metadata = {
   title: 'Documentation',

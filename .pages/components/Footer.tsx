@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Package, Github, Mail, Heart } from 'lucide-react';
+import { Package, Mail, Heart } from 'lucide-react';
+import { Github } from '@/components/GitHubIcon';
 import Image from 'next/image';
 
 export function Footer() {

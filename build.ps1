@@ -38,19 +38,31 @@ if ($Test) {
 
 # Pack
 if ($Pack) {
-    Write-Host "Creating NuGet package..." -ForegroundColor Yellow
-    
+    Write-Host "Creating NuGet packages..." -ForegroundColor Yellow
+
     if (-not (Test-Path "artifacts")) {
         New-Item -ItemType Directory -Path "artifacts" | Out-Null
     }
-    
-    dotnet pack src/Zetian/Zetian.csproj `
-        --configuration $Configuration `
-        --no-build `
-        --output artifacts
-    
-    Write-Host "Package created in artifacts folder" -ForegroundColor Green
-    Get-ChildItem -Path "artifacts" -Filter "*.nupkg" | ForEach-Object {
+
+    # Discover every packable library project under src (those that produce a NuGet package)
+    $packableProjects = Get-ChildItem -Path "src" -Recurse -Filter "*.csproj" |
+        Where-Object { Select-String -Path $_.FullName -Pattern "<GeneratePackageOnBuild>true</GeneratePackageOnBuild>" -Quiet } |
+        Sort-Object FullName
+
+    if (-not $packableProjects) {
+        throw "No packable projects found under src."
+    }
+
+    foreach ($project in $packableProjects) {
+        Write-Host "  Packing $($project.BaseName)..." -ForegroundColor Yellow
+        dotnet pack $project.FullName `
+            --configuration $Configuration `
+            --no-build `
+            --output artifacts
+    }
+
+    Write-Host "Packages created in artifacts folder" -ForegroundColor Green
+    Get-ChildItem -Path "artifacts" -Filter "*.nupkg" | Sort-Object Name | ForEach-Object {
         Write-Host "  - $($_.Name)" -ForegroundColor Gray
     }
 }

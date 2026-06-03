@@ -16,6 +16,7 @@ using Zetian.Abstractions;
 using Zetian.Protocol;
 using Zetian.Relay.Abstractions;
 using Zetian.Relay.Models;
+using Zetian.Relay.Services;
 
 namespace Zetian.Relay.Client
 {
@@ -62,13 +63,27 @@ namespace Zetian.Relay.Client
                 using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(Timeout);
 
-                await _tcpClient.ConnectAsync(Host, Port).ConfigureAwait(false);
+                await _tcpClient.ConnectAsync(Host, Port, cts.Token).ConfigureAwait(false);
 
                 _stream = _tcpClient.GetStream();
 
                 if (EnableSsl)
                 {
-                    await UpgradeToSslAsync(cts.Token).ConfigureAwait(false);
+                    try
+                    {
+                        await UpgradeToSslAsync(cts.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        _logger.LogInformation("Failed to connect as SMTPS on {Host}:{Port}", Host, Port);
+                        
+                        _stream.Close();
+                        await _stream.DisposeAsync();
+
+                        _tcpClient = new TcpClient();
+                        await _tcpClient.ConnectAsync(Host, Port, cts.Token).ConfigureAwait(false);
+                        _stream = _tcpClient.GetStream();
+                    }
                 }
 
                 _reader = new StreamReader(_stream, Encoding.ASCII);
@@ -83,6 +98,15 @@ namespace Zetian.Relay.Client
 
                 // Send EHLO
                 await SendEhloAsync(cts.Token).ConfigureAwait(false);
+
+                // Upgrade the connection to STARTTLS if allowed
+                if (EnableSsl && _stream is not SslStream && _serverCapabilities?.ContainsKey("STARTTLS") == true)
+                {
+                    await UpgradeToStartTlsAsync(cts.Token).ConfigureAwait(false);
+
+                    _reader = new StreamReader(_stream, Encoding.ASCII);
+                    _writer = new StreamWriter(_stream, Encoding.ASCII) { AutoFlush = true };
+                }
 
                 _logger.LogInformation("Connected to {Host}:{Port}", Host, Port);
             }
@@ -396,6 +420,18 @@ namespace Zetian.Relay.Client
 
             _stream = sslStream;
             _logger.LogDebug("SSL/TLS connection established");
+        }
+
+        private async Task UpgradeToStartTlsAsync(CancellationToken cancellationToken)
+        {
+            await SendCommandAsync("STARTTLS", cancellationToken).ConfigureAwait(false);
+
+            SmtpResponse response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
+
+            if (response.IsSuccess)
+            {
+                await UpgradeToSslAsync(cancellationToken);
+            }
         }
 
         private async Task AuthPlainAsync(CancellationToken cancellationToken)

@@ -426,6 +426,11 @@ namespace Zetian.Relay.Services
                     return config;
                 }
 
+                if (Configuration.DefaultSmartHost?.Host == host && Configuration.DefaultSmartHost?.Port == port)
+                {
+                    return Configuration.DefaultSmartHost;
+                }
+
                 // Create default configuration
                 return new SmartHostConfiguration
                 {

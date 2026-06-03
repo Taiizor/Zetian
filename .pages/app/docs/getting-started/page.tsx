@@ -96,7 +96,7 @@ export default function GettingStartedPage() {
               <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Requirements</h3>
               <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
                 <li>• Windows, Linux, or macOS</li>
-                <li>• .NET 6.0, 7.0, 8.0, 9.0, or 10.0</li>
+                <li>• .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0</li>
                 <li>• Administrator/root privileges (for low port numbers)</li>
               </ul>
             </div>

@@ -74,7 +74,7 @@ export default function ChangelogPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>.NET 6, 7, 8, 9, and 10 support</span>
+                  <span>.NET 6, 7, 8, 9, 10, and 11 support</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />

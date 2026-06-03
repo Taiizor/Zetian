@@ -44,12 +44,12 @@ After publishing, run the native executable:
 
 ### Windows
 ```powershell
-.\bin\Release\net10.0\win-x64\publish\Zetian.AotExample.exe
+.\bin\Release\net11.0\win-x64\publish\Zetian.AotExample.exe
 ```
 
 ### Linux/macOS
 ```bash
-./bin/Release/net10.0/linux-x64/publish/Zetian.AotExample
+./bin/Release/net11.0/linux-x64/publish/Zetian.AotExample
 ```
 
 ## Testing
@@ -90,7 +90,7 @@ The hybrid approach provides:
 
 ## Notes
 
-- Requires .NET 10.0 SDK or later
+- Requires .NET 11.0 SDK or later
 - macOS requires Xcode command line tools
 - Linux requires clang and developer packages
 - Visual Studio 2022 17.8+ recommended for Windows

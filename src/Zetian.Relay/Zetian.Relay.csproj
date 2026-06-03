@@ -95,4 +95,8 @@
         <Folder Include="Properties\" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Zetian.Relay.Tests" />
+    </ItemGroup>
+
 </Project>

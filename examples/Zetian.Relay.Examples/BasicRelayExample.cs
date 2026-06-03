@@ -62,6 +62,29 @@ namespace Zetian.Relay.Examples
             Console.WriteLine("[INFO] Starting SMTP server with relay on port 25025...");
             RelayService relayService = await server.StartWithRelayAsync();
 
+            // Subscribe to relay delivery lifecycle events.
+            // These are ideal for persisting delivery outcomes to an external store (e.g. a database).
+            relayService.MessageDelivered += (sender, e) =>
+            {
+                Console.WriteLine($"[RELAY] DELIVERED {e.QueueId} from {e.From?.Address} via {e.SmartHost}");
+            };
+
+            relayService.MessageBounced += (sender, e) =>
+            {
+                Console.WriteLine($"[RELAY] BOUNCED   {e.QueueId} from {e.From?.Address}: {e.Error} (attempts: {e.RetryCount})");
+                // e.g. persist the failure: await failureStore.SaveAsync(e.QueueId, e.From?.Address, e.Error);
+            };
+
+            relayService.MessageDeferred += (sender, e) =>
+            {
+                Console.WriteLine($"[RELAY] DEFERRED  {e.QueueId}: {e.Error} — next attempt at {e.NextRetryTime:HH:mm:ss} UTC");
+            };
+
+            relayService.MessageExpired += (sender, e) =>
+            {
+                Console.WriteLine($"[RELAY] EXPIRED   {e.QueueId} from {e.From?.Address} after {e.RetryCount} attempts");
+            };
+
             // Handle message received event - just for logging
             // The actual relay queuing is handled by EnableRelay's event handler
             server.MessageReceived += (sender, e) =>

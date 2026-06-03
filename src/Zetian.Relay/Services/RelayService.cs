@@ -15,6 +15,7 @@ using Zetian.Relay.Client;
 using Zetian.Relay.Configuration;
 using Zetian.Relay.Enums;
 using Zetian.Relay.Models;
+using Zetian.Relay.Models.EventArgs;
 using Zetian.Relay.Queue;
 
 namespace Zetian.Relay.Services
@@ -27,6 +28,7 @@ namespace Zetian.Relay.Services
         private readonly ILogger<RelayService> _logger;
         private readonly ConcurrentDictionary<string, ISmtpClient> _clientPool;
         private readonly SemaphoreSlim _deliverySemaphore;
+        private readonly Func<SmartHostConfiguration, ISmtpClient> _clientFactory;
 
         private CancellationTokenSource? _cancellationTokenSource;
         private Task? _processingTask;
@@ -36,7 +38,8 @@ namespace Zetian.Relay.Services
         public RelayService(
             RelayConfiguration configuration,
             IRelayQueue? queue = null,
-            ILogger<RelayService>? logger = null)
+            ILogger<RelayService>? logger = null,
+            Func<SmartHostConfiguration, ISmtpClient>? clientFactory = null)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             Configuration.Validate();
@@ -45,6 +48,7 @@ namespace Zetian.Relay.Services
             _logger = logger ?? NullLogger<RelayService>.Instance;
             _clientPool = new ConcurrentDictionary<string, ISmtpClient>();
             _deliverySemaphore = new SemaphoreSlim(Configuration.MaxConcurrentDeliveries);
+            _clientFactory = clientFactory ?? CreateDefaultClient;
         }
 
         /// <summary>
@@ -61,6 +65,29 @@ namespace Zetian.Relay.Services
         /// Gets the relay configuration
         /// </summary>
         public RelayConfiguration Configuration { get; }
+
+        /// <summary>
+        /// Occurs when a message has been successfully delivered to all of its recipients.
+        /// </summary>
+        public event EventHandler<RelayDeliveryEventArgs>? MessageDelivered;
+
+        /// <summary>
+        /// Occurs when a message permanently fails delivery (a permanent SMTP error or the
+        /// maximum retry count was reached) and is therefore bounced. Raised regardless of
+        /// whether a bounce (NDR) message is generated.
+        /// </summary>
+        public event EventHandler<RelayDeliveryEventArgs>? MessageBounced;
+
+        /// <summary>
+        /// Occurs when a delivery attempt fails temporarily and the message is rescheduled
+        /// for a later retry.
+        /// </summary>
+        public event EventHandler<RelayDeliveryEventArgs>? MessageDeferred;
+
+        /// <summary>
+        /// Occurs when a message exceeds its lifetime and expires before being delivered.
+        /// </summary>
+        public event EventHandler<RelayDeliveryEventArgs>? MessageExpired;
 
         /// <summary>
         /// Starts the relay service
@@ -214,7 +241,7 @@ namespace Zetian.Relay.Services
             _logger.LogInformation("Queue processing stopped");
         }
 
-        private async Task DeliverMessageAsync(IRelayMessage message, CancellationToken cancellationToken)
+        internal async Task DeliverMessageAsync(IRelayMessage message, CancellationToken cancellationToken)
         {
             try
             {
@@ -226,6 +253,8 @@ namespace Zetian.Relay.Services
                 {
                     await Queue.UpdateStatusAsync(message.QueueId, RelayStatus.Expired,
                         "Message expired", cancellationToken).ConfigureAwait(false);
+
+                    OnMessageExpired(new RelayDeliveryEventArgs(message) { Error = "Message expired" });
                     return;
                 }
 
@@ -267,6 +296,8 @@ namespace Zetian.Relay.Services
 
                     _logger.LogInformation("Message {QueueId} delivered successfully to {Count} recipients",
                         message.QueueId, result.DeliveredRecipients.Count);
+
+                    OnMessageDelivered(new RelayDeliveryEventArgs(message) { Result = result });
                 }
                 else if (result.IsTemporaryFailure && message.RetryCount < Configuration.MaxRetryCount)
                 {
@@ -277,6 +308,13 @@ namespace Zetian.Relay.Services
 
                     _logger.LogWarning("Message {QueueId} delivery deferred: {Error}",
                         message.QueueId, result.Message);
+
+                    OnMessageDeferred(new RelayDeliveryEventArgs(message)
+                    {
+                        Result = result,
+                        Error = result.Message,
+                        NextRetryTime = message.NextDeliveryTime
+                    });
                 }
                 else
                 {
@@ -289,6 +327,12 @@ namespace Zetian.Relay.Services
 
                     _logger.LogError("Message {QueueId} delivery failed: {Error}",
                         message.QueueId, result.Message);
+
+                    OnMessageBounced(new RelayDeliveryEventArgs(message)
+                    {
+                        Result = result,
+                        Error = result.Message ?? "Delivery failed"
+                    });
 
                     // Send bounce if enabled
                     if (Configuration.EnableBounceMessages && message.From != null)
@@ -308,6 +352,12 @@ namespace Zetian.Relay.Services
                     TimeSpan delay = CalculateRetryDelay(message.RetryCount);
                     await Queue.RescheduleAsync(message.QueueId, delay, cancellationToken)
                         .ConfigureAwait(false);
+
+                    OnMessageDeferred(new RelayDeliveryEventArgs(message)
+                    {
+                        Error = ex.Message,
+                        NextRetryTime = message.NextDeliveryTime
+                    });
                 }
                 else
                 {
@@ -317,6 +367,8 @@ namespace Zetian.Relay.Services
                         RelayStatus.Failed,
                         ex.Message,
                         cancellationToken).ConfigureAwait(false);
+
+                    OnMessageBounced(new RelayDeliveryEventArgs(message) { Error = ex.Message });
                 }
             }
         }
@@ -466,24 +518,24 @@ namespace Zetian.Relay.Services
         {
             string key = $"{config.Host}:{config.Port}";
 
-            return _clientPool.GetOrAdd(key, _ =>
-            {
-                SmtpRelayClient client = new(_logger as ILogger<SmtpRelayClient>)
-                {
-                    Host = config.Host,
-                    Port = config.Port,
-                    EnableSsl = config.UseTls,                                   // implicit TLS (SMTPS)
-                    UseStartTls = config.UseStartTls,                            // opportunistic STARTTLS
-                    RequireTls = Configuration.RequireTls,                       // TLS requirement policy
-                    SslProtocols = Configuration.SslProtocols,
-                    ValidateServerCertificate = Configuration.ValidateServerCertificate,
-                    Credentials = config.Credentials,
-                    LocalDomain = Configuration.LocalDomain,
-                    Timeout = config.ConnectionTimeout
-                };
+            return _clientPool.GetOrAdd(key, _ => _clientFactory(config));
+        }
 
-                return client;
-            });
+        private ISmtpClient CreateDefaultClient(SmartHostConfiguration config)
+        {
+            return new SmtpRelayClient(_logger as ILogger<SmtpRelayClient>)
+            {
+                Host = config.Host,
+                Port = config.Port,
+                EnableSsl = config.UseTls,                                   // implicit TLS (SMTPS)
+                UseStartTls = config.UseStartTls,                            // opportunistic STARTTLS
+                RequireTls = Configuration.RequireTls,                       // TLS requirement policy
+                SslProtocols = Configuration.SslProtocols,
+                ValidateServerCertificate = Configuration.ValidateServerCertificate,
+                Credentials = config.Credentials,
+                LocalDomain = Configuration.LocalDomain,
+                Timeout = config.ConnectionTimeout
+            };
         }
 
         private TimeSpan CalculateRetryDelay(int retryCount)
@@ -500,6 +552,54 @@ namespace Zetian.Relay.Services
             delay = delay.Add(TimeSpan.FromMilliseconds(delay.TotalMilliseconds * jitter));
 
             return delay > maxDelay ? maxDelay : delay;
+        }
+
+        private void OnMessageDelivered(RelayDeliveryEventArgs args)
+        {
+            try
+            {
+                MessageDelivered?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in MessageDelivered event handler");
+            }
+        }
+
+        private void OnMessageBounced(RelayDeliveryEventArgs args)
+        {
+            try
+            {
+                MessageBounced?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in MessageBounced event handler");
+            }
+        }
+
+        private void OnMessageDeferred(RelayDeliveryEventArgs args)
+        {
+            try
+            {
+                MessageDeferred?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in MessageDeferred event handler");
+            }
+        }
+
+        private void OnMessageExpired(RelayDeliveryEventArgs args)
+        {
+            try
+            {
+                MessageExpired?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in MessageExpired event handler");
+            }
         }
 
         private async Task SendBounceMessageAsync(IRelayMessage message, string error)

@@ -21,7 +21,7 @@ A professional, high-performance SMTP server library for .NET with minimal depen
 
 - 🔒 **Security**: Full TLS/SSL support with STARTTLS
 - 📦 **Minimal Dependencies**: Only essential packages required
-- 🎯 **Multi-Framework**: Supports .NET 6.0, 7.0, 8.0, 9.0, and 10.0
+- 🎯 **Multi-Framework**: Supports .NET 6.0, 7.0, 8.0, 9.0, 10.0, and 11.0
 - 🛡️ **Rate Limiting**: Protect against abuse with configurable rate limits
 - 🔑 **Authentication**: Built-in PLAIN and LOGIN mechanisms, easily extensible
 - 📊 **Event-Driven**: Rich event system for message processing and monitoring
@@ -400,7 +400,7 @@ Zetian is built for high performance:
 ## Requirements
 
 - Windows, Linux, or macOS
-- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 
 ## Contributing
 

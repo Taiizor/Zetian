@@ -381,7 +381,7 @@ await s3Client.RestoreObjectAsync(new RestoreObjectRequest
 
 ## 📋 Requirements
 
-- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
 - For KMS: KMS key permissions
 - AWSSDK.S3 package (included)

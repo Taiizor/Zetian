@@ -429,7 +429,7 @@ WHERE relname = 'messages';
 ## 📋 Requirements
 
 - Npgsql package (included)
-- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
 - PostgreSQL 11 or later (for partitioning)
 - PostgreSQL 9.4 or later (without partitioning)

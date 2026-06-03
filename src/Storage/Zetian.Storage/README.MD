@@ -272,7 +272,7 @@ protected async Task<T> ExecuteWithRetryAsync<T>(
 
 ## 📋 Requirements
 
-- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 - Zetian SMTP Server package
 - Storage-specific dependencies based on provider
 

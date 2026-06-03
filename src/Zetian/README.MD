@@ -66,9 +66,9 @@ await server.StartAsync();
 - **Security** - Full TLS/SSL support with STARTTLS
 - **Extensible** - Plugin architecture for custom logic
 - **Rate Limiting** - Built-in protection against abuse
-- **Multi-Framework** - Supports .NET 6.0, 7.0, 8.0, 9.0, 10.0
 - **Event-Driven** - Rich event system for message processing
 - **Composite Filters** - Chain multiple filters with AND/OR logic
+- **Multi-Framework** - Supports .NET 6.0, 7.0, 8.0, 9.0, 10.0, 11.0
 - **SMTPUTF8** - Full UTF-8 support for international email addresses
 - **Authentication** - PLAIN, LOGIN mechanisms + custom auth support
 - **High Performance** - Efficient async/await patterns and optimized I/O
@@ -284,7 +284,7 @@ var server = new SmtpServerBuilder()
 ## 📦 Requirements
 
 - Windows, Linux, or macOS
-- .NET 6.0, 7.0, 8.0, 9.0, or 10.0
+- .NET 6.0, 7.0, 8.0, 9.0, 10.0, or 11.0
 
 ## 📚 Documentation & Support
 

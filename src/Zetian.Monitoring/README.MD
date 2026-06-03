@@ -354,7 +354,7 @@ services:
 
 ## 📋 Requirements
 
-- .NET 8.0, 9.0, or 10.0
+- .NET 8.0, 9.0, 10.0, or 11.0
 - OpenTelemetry packages
 - Zetian SMTP Server package
 - Prometheus.NET for metrics export

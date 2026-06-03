@@ -38,6 +38,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Zetian.Clustering.Tests/Zetian.Clustering.Tests.csproj" />
     <Project Path="tests/Zetian.HealthCheck.Tests/Zetian.HealthCheck.Tests.csproj" />
+    <Project Path="tests/Zetian.Relay.Tests/Zetian.Relay.Tests.csproj" />
     <Project Path="tests/Zetian.Tests/Zetian.Tests.csproj" />
   </Folder>
 </Solution>

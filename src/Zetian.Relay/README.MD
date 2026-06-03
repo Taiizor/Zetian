@@ -20,6 +20,7 @@ SMTP relay and proxy extension for Zetian SMTP Server with smart host support, q
 - ⚖️ **Load Balancing** - Distribute load across multiple relay servers
 - 🔄 **Queue Management** - Persistent queue with retry mechanisms
 - 📬 **Smart Host Support** - Route messages through configured relay servers
+- 📡 **Delivery Events** - Lifecycle events for delivered, bounced, deferred and expired messages
 
 ## 📦 Installation
 
@@ -306,6 +307,67 @@ var server = SmtpServerBuilder
     config.EnableDsn = true;
 });
 ```
+
+## 📡 Delivery Events
+
+The relay service raises events for every stage of a message's delivery lifecycle.
+These are ideal for logging delivery outcomes to an external store (such as a database),
+metrics, or alerting. All events share the `RelayDeliveryEventArgs` payload.
+
+| Event | Raised when |
+| --- | --- |
+| `MessageDelivered` | The message was successfully delivered to all recipients. |
+| `MessageBounced` | Delivery permanently failed (a permanent SMTP error or the retry limit was reached). Fires regardless of whether a bounce/NDR message is generated. |
+| `MessageDeferred` | A delivery attempt failed temporarily and the message was rescheduled for retry. |
+| `MessageExpired` | The message exceeded its lifetime before being delivered. |
+
+```csharp
+using Zetian.Relay.Services;
+using Zetian.Relay.Extensions;
+
+RelayService relayService = await server.StartWithRelayAsync();
+// (or retrieve it later with: var relayService = server.GetRelayService();)
+
+relayService.MessageDelivered += (sender, e) =>
+{
+    Console.WriteLine($"Delivered {e.QueueId} from {e.From?.Address} via {e.SmartHost}");
+};
+
+relayService.MessageBounced += async (sender, e) =>
+{
+    // Persist the failure to another database
+    await failureStore.SaveAsync(e.QueueId, e.From?.Address, e.Error, e.RetryCount);
+};
+
+relayService.MessageDeferred += (sender, e) =>
+{
+    Console.WriteLine($"Deferred {e.QueueId}: {e.Error} — next attempt at {e.NextRetryTime:u}");
+};
+
+relayService.MessageExpired += (sender, e) =>
+{
+    Console.WriteLine($"Expired {e.QueueId} after {e.RetryCount} attempts");
+};
+```
+
+### RelayDeliveryEventArgs
+
+| Property | Description |
+| --- | --- |
+| `Message` | The underlying `IRelayMessage` (queue ID, recipients, status, metadata, …). |
+| `QueueId` | Unique queue ID of the message. |
+| `From` | The sender address, if any. |
+| `Status` | The message status at the time the event was raised. |
+| `SmartHost` | The target smart host the message was routed to, when known. |
+| `RetryCount` | Number of delivery attempts made so far. |
+| `Result` | The `SmtpDeliveryResult` of the attempt, when available (delivered / bounced / deferred). |
+| `Error` | The error or diagnostic message (bounced / deferred / expired). |
+| `NextRetryTime` | The scheduled time of the next attempt (deferred only). |
+| `Timestamp` | UTC time the event was raised. |
+
+> Event handlers are invoked synchronously from the delivery pipeline and any exception
+> they throw is caught and logged, so a faulty handler never interrupts delivery. Keep
+> handlers fast; offload heavy work (database writes, network calls) to a background queue.
 
 ## 🔐 Authentication Methods
 

@@ -9,6 +9,8 @@ using Zetian.Abstractions;
 using Zetian.AntiSpam.Abstractions;
 using Zetian.AntiSpam.Enums;
 using Zetian.AntiSpam.Models;
+using MxRecord = DnsClient.Protocol.MxRecord;
+using TxtRecord = DnsClient.Protocol.TxtRecord;
 
 namespace Zetian.AntiSpam.Checkers
 {

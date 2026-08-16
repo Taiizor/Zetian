@@ -67,13 +67,13 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub">
-            <Version>11.0.100-preview.4.26230.115</Version>
+            <Version>11.0.100-preview.7.26381.103</Version>
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0-preview.7.26381.103" />
     </ItemGroup>
 
     <ItemGroup>

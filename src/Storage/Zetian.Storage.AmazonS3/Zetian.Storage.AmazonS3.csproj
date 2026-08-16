@@ -71,13 +71,13 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub">
-            <Version>11.0.100-preview.4.26230.115</Version>
+            <Version>11.0.100-preview.7.26381.103</Version>
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.S3" Version="4.0.101.6" />
+        <PackageReference Include="AWSSDK.S3" Version="4.0.102.1" />
     </ItemGroup>
 
     <ItemGroup>

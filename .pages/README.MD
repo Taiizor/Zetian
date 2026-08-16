@@ -4,7 +4,7 @@ This folder contains the modern, SEO-optimized documentation site for Zetian SMT
 
 ## 🚀 Features
 
-- ✅ **Next.js 15** - Modern React framework
+- ✅ **Next.js 16** - Modern React framework
 - ✅ **Server-Side Rendering (SSR)** - Excellent SEO performance
 - ✅ **Responsive Design** - Great appearance on all devices
 - ✅ **Dark Mode** - Eye-friendly dark theme support
